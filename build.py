@@ -77,6 +77,7 @@ def card(e, prefix=''):
     <div class="hmeta">{esc(wd)}</div>
     <div class="hmeta">{esc(fmt_time(e))}</div>
     <div class="hcity">{esc(e['city'] or '')}</div>
+    <div class="hlink"><a href="{esc(e['url'])}" target="_blank" rel="noopener">{esc(e['id'])}</a></div>
   </div>
   <div class="edesc">
     <div class="suplink">{esc(sup_txt)}</div>
@@ -141,21 +142,26 @@ TOOLBAR = '''<div class="toolbar">
   <div class="toolbar-more" title="Место для будущих кнопок (пост для Телеграма, обход источников, фильтры показа)"></div>
 </div>'''
 
+PANEL = '''<div class="update-panel" id="update-panel" hidden>
+  <div class="update-progress" id="up-progress" hidden>
+    <div class="bar"><div class="bar-fill" id="up-bar"></div></div>
+    <div class="bar-msg" id="up-msg"></div>
+  </div>
+  <div class="update-status" id="up-status"></div>
+  <div class="update-actions" id="up-actions" hidden>
+    <button type="button" class="tbtn sec" id="up-close">Закрыть</button>
+  </div>
+</div>'''
+
 MODAL = '''<div class="modal-overlay" id="modal-update" hidden>
   <div class="modal">
-    <div class="modal-title">Обновить данные</div>
+    <div class="modal-title">Обновить данные?</div>
     <div class="modal-body">
       <p class="modal-hint" id="mp-hint">Будут удалены прошедшие события, добавлены новые, а события, у которых изменились название, авторы, дата, лекторий, место или цена, будут обновлены и помечены.</p>
     </div>
-    <div class="modal-progress" id="mp-progress" hidden>
-      <div class="bar"><div class="bar-fill" id="mp-bar"></div></div>
-      <div class="bar-msg" id="mp-msg"></div>
-    </div>
-    <div class="modal-status" id="mp-status"></div>
     <div class="modal-actions">
-      <button type="button" class="tbtn" id="mp-ok">Подтвердить</button>
-      <button type="button" class="tbtn sec" id="mp-cancel">Отмена</button>
-      <button type="button" class="tbtn sec" id="mp-close" hidden>Закрыть</button>
+      <button type="button" class="tbtn" id="mp-ok">Да</button>
+      <button type="button" class="tbtn sec" id="mp-cancel">Нет</button>
     </div>
   </div>
 </div>'''
@@ -163,7 +169,8 @@ MODAL = '''<div class="modal-overlay" id="modal-update" hidden>
 def build_index():
     body_parts = ['<h1>Календарь событий</h1>',
                   '<p class="intro">Предстоящие научно-популярные лекции, встречи и круглые столы. Открывайте событие, чтобы узнать подробности и стоимость.</p>',
-                  TOOLBAR]
+                  TOOLBAR,
+                  PANEL]
     cur_month = None
     for e in evs:
         ml = month_label(e['date_iso'])
@@ -208,7 +215,7 @@ def build_event_pages():
     <div class="price-short">Стоимость: <b>{esc(e['price_short'] or 'не указана')}</b></div>
     {upd_src}
     {reg}
-    <div class="src">Источник: <a href="{esc(e['url'])}" target="_blank" rel="noopener">страница на elementy.ru</a></div>
+    <div class="src">Источник: <a href="{esc(e['url'])}" target="_blank" rel="noopener">страница на elementy.ru</a> (ID {esc(e['id'])})</div>
   </div>
   <div class="pagenavs">
     {nav_prev}{nav_next}
@@ -231,6 +238,7 @@ def build_calendar():
             'place': e.get('place'),
             'price': e.get('price_short'),
             'url': 'event/%s.html' % e['id'],
+            'source': e.get('url'),
         })
     js = 'window.EVENTS = ' + json.dumps(js_events, ensure_ascii=False) + ';'
     open(os.path.join(JS_DIR, 'events.js'), 'w', encoding='utf-8').write(js)
@@ -293,6 +301,9 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .event .price { margin-top: 5px; display: inline-block; background: #e9e2cf; border: 1px solid #d8cdb0; border-radius: 3px; padding: 1px 8px; font-size: 13px; color: #4a3b1f; }
 .event .price + .price { margin-left: 6px; }
 .event .annot { margin-top: 6px; color: #555; font-size: 13px; }
+.event .hlink { margin-top: 4px; font-size: 12px; }
+.event .hlink a { color: #6a84a8; }
+.event .hlink a:hover { color: #02334d; }
 .badge-upd { margin-top: 5px; display: inline-block; background: #e2eee2; border: 1px solid #c3dcc3; border-radius: 3px; padding: 1px 8px; font-size: 12px; color: #2e5d2e; }
 .upd-src { margin-bottom: 4px; color: #2e5d2e; font-size: 12px; }
 
@@ -351,15 +362,20 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .toolbar-more { flex: 1 1 auto; min-width: 120px; border: 1px dashed #cfc4a6; border-radius: 4px; min-height: 36px; }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal-overlay[hidden] { display: none; }
 .modal { background: #fff; max-width: 560px; width: 92%; border-radius: 8px; padding: 22px 24px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
 .modal-title { font: bold 20px/1.3 Georgia, serif; color: #3a2f16; margin-bottom: 10px; }
-.modal-hint, .modal-status { font-size: 14px; color: #444; line-height: 1.5; }
-.modal-progress { margin: 14px 0 4px; }
+.modal-hint { font-size: 14px; color: #444; line-height: 1.5; }
+.modal-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+.update-panel { margin: -6px 0 18px; background: #fff; border: 1px solid #ddd5c3; border-radius: 6px; padding: 14px 16px; }
+.update-panel[hidden] { display: none; }
+.update-status { margin-top: 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+.update-actions { margin-top: 14px; display: flex; justify-content: flex-end; }
+
 .bar { height: 14px; background: #ece4d0; border-radius: 7px; overflow: hidden; }
 .bar-fill { height: 100%; width: 0; background: #b07a2f; transition: width .4s ease; }
 .bar-msg { margin-top: 6px; font-size: 13px; color: #6a643f; }
-.modal-status { margin-top: 12px; white-space: pre-wrap; }
-.modal-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 
 /* footer */
 .footer { background: #efe9da; border-top: 1px solid #d8d2c4; margin-top: 30px; padding: 18px 0 26px; font-size: 12.5px; color: #6a643f; }
@@ -437,7 +453,8 @@ def build_calendar_js():
     var div = document.createElement('div');
     div.className = 'event';
     var meta = (ev.time || '') + (ev.time_end ? '\u2013' + ev.time_end : '') + (ev.city ? ' · ' + ev.city : '');
-    div.innerHTML = '<div class="edate"><div class="hday">' + ev.date.slice(8) + '</div><div class="hmeta">' + meta + '</div></div>' +
+    div.innerHTML = '<div class="edate"><div class="hday">' + ev.date.slice(8) + '</div><div class="hmeta">' + meta + '</div>' +
+      (ev.source ? '<div class="hlink"><a href="' + ev.source + '" target="_blank" rel="noopener">' + ev.id + '</a></div>' : '') + '</div>' +
       '<div class="edesc"><a class="nohover" href="' + ev.url + '"><div class="pretitle">' + (ev.lecturer || '') + '</div>' +
       '<div class="title">' + ev.title + '</div><div class="lectory">' + (ev.lectory || '') + '</div></a>' +
       '<div class="sublink">' + (ev.place || '') + '</div>' +
@@ -483,35 +500,30 @@ def build_calendar_js():
     open(os.path.join(JS_DIR, 'calendar.js'), 'w', encoding='utf-8').write(js)
 
 def build_toolbar_js():
-    js = r'''/* Кнопка «Обновить данные» + модальное окно с прогрессом */
+    js = r'''/* Кнопка «Обновить данные»: вопрос «Да/Нет», прогресс и результат — в панели под кнопкой */
 (function () {
   var btn = document.getElementById('btn-update');
   var modal = document.getElementById('modal-update');
   if (!btn || !modal) return;
   var ok = document.getElementById('mp-ok');
   var cancel = document.getElementById('mp-cancel');
-  var close = document.getElementById('mp-close');
-  var hint = document.getElementById('mp-hint');
-  var progress = document.getElementById('mp-progress');
-  var bar = document.getElementById('mp-bar');
-  var msg = document.getElementById('mp-msg');
-  var status = document.getElementById('mp-status');
+  var panel = document.getElementById('update-panel');
+  var progress = document.getElementById('up-progress');
+  var bar = document.getElementById('up-bar');
+  var msg = document.getElementById('up-msg');
+  var status = document.getElementById('up-status');
+  var actions = document.getElementById('up-actions');
   var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
   var timer = null;
 
-  function showConfirm() {
-    modal.hidden = false;
-    hint.hidden = false;
-    status.textContent = '';
-    status.hidden = true;
-    progress.hidden = true;
-    ok.hidden = false;
-    cancel.hidden = false;
-    close.hidden = true;
-  }
+  modal.hidden = true; // страховка: окно всегда закрыто при загрузке
+
+  function showConfirm() { modal.hidden = false; }
+  function hideModal() { modal.hidden = true; }
   function showProgress(m) {
-    hint.hidden = true;
+    panel.hidden = false;
     status.hidden = true;
+    actions.hidden = true;
     progress.hidden = false;
     setProgress(0, m || 'Начинаем обновление…');
   }
@@ -520,16 +532,16 @@ def build_toolbar_js():
     msg.textContent = m;
   }
   function showResult(txt, isErr) {
+    if (timer) { clearInterval(timer); timer = null; }
+    panel.hidden = false;
     progress.hidden = true;
     status.textContent = txt;
+    status.style.color = isErr ? '#8c2f2f' : '#2e5d2e';
     status.hidden = false;
-    if (isErr) status.style.color = '#8c2f2f'; else status.style.color = '#2e5d2e';
-    ok.hidden = true;
-    cancel.hidden = true;
-    close.hidden = false;
+    actions.hidden = false;
   }
-  function hide() {
-    modal.hidden = true;
+  function hidePanel() {
+    panel.hidden = true;
     if (timer) { clearInterval(timer); timer = null; }
   }
   function reportText(r) {
@@ -542,6 +554,7 @@ def build_toolbar_js():
     return lines.join('\n');
   }
   function startUpdate() {
+    hideModal();
     showProgress();
     fetch('/api/update', { method: 'POST' }).then(function (res) {
       if (res.status === 409) { showResult('Обновление уже идёт.', true); return; }
@@ -554,7 +567,7 @@ def build_toolbar_js():
     fetch('/api/update/status').then(function (r) { return r.json(); }).then(function (s) {
       setProgress(s.percent, s.message || '');
       if (!s.running) {
-        clearInterval(timer); timer = null;
+        if (timer) { clearInterval(timer); timer = null; }
         if (s.error) {
           showResult('Ошибка:\n' + s.error, true);
         } else {
@@ -566,23 +579,17 @@ def build_toolbar_js():
   }
 
   btn.addEventListener('click', function () {
-    if (isLocal) {
-      showConfirm();
-    } else {
-      modal.hidden = false;
-      status.textContent = 'Обновление работает только на локальном сервере.\nЗапустите в терминале: python serve.py\nи откройте http://localhost:8000';
-      status.style.color = '#444';
-      status.hidden = false;
-      hint.hidden = true;
-      progress.hidden = true;
-      ok.hidden = true;
-      cancel.hidden = true;
-      close.hidden = false;
-    }
+    if (isLocal) { showConfirm(); return; }
+    panel.hidden = false;
+    progress.hidden = true;
+    actions.hidden = false;
+    status.style.color = '#444';
+    status.textContent = 'Обновление работает только на локальном сервере.\nЗапустите в терминале: python serve.py\nи откройте http://localhost:8000';
+    status.hidden = false;
   });
   ok.addEventListener('click', startUpdate);
-  cancel.addEventListener('click', hide);
-  close.addEventListener('click', hide);
+  cancel.addEventListener('click', hideModal);
+  document.getElementById('up-close').addEventListener('click', hidePanel);
 })();
 '''
     open(os.path.join(JS_DIR, 'toolbar.js'), 'w', encoding='utf-8').write(js)

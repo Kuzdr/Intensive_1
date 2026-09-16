@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Создаёт собственную фавиконку на основе фавиконки «Элементов» (серую вместо чёрной).
+"""Создаёт собственную фавиконку на основе фавиконки «Элементов» (нейтрально-серая).
 
 Результат: assets/favicon.ico (16/32/48) и assets/favicon.png.
 Запуск:  python make_favicon.py
@@ -16,7 +16,6 @@ ASSETS = os.path.join(ROOT, 'assets')
 os.makedirs(ASSETS, exist_ok=True)
 
 SRC = 'https://elementy.ru/favicon.ico'
-GRAY = (170, 170, 170)  # целевой серый цвет
 
 def main():
     r = requests.get(SRC, timeout=30)
@@ -29,9 +28,8 @@ def main():
             rr, gg, bb, aa = px[x, y]
             if aa == 0:
                 continue
-            lum = 0.299 * rr + 0.587 * gg + 0.114 * bb
-            if lum < 128:  # тёмные пиксели (в т.ч. чёрные) — в серый
-                px[x, y] = (GRAY[0], GRAY[1], GRAY[2], aa)
+            lum = int(0.299 * rr + 0.587 * gg + 0.114 * bb)
+            px[x, y] = (lum, lum, lum, aa)  # все пиксели — в серый по яркости (силуэт сохраняется)
     im.save(os.path.join(ASSETS, 'favicon.png'))
     im.save(os.path.join(ASSETS, 'favicon.ico'), sizes=[(16, 16), (32, 32), (48, 48)])
     print('Создано:', os.path.join(ASSETS, 'favicon.ico'), '(16/32/48) и favicon.png')
