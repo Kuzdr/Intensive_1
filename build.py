@@ -44,9 +44,95 @@ def fmt_time(e):
         t += '\u2013' + e['time_end']
     return t
 
-def month_label(iso):
-    y, m, d = map(int, iso.split('-'))
+def day_midnight_msk(iso):
+    """Unix-время 00:00 московского времени для даты iso (YYYY-MM-DD)."""
+    dt = datetime.datetime.strptime(iso + ' 00:00', '%Y-%m-%d %H:%M')
+    return int(dt.replace(tzinfo=datetime.timezone(datetime.timedelta(hours=3))).timestamp())
+
+def clean_place(s):
+    """Убрать инициалы людей из названий площадок: «им. Н. А. Некрасова» → «им. Некрасова»."""
+    return re.sub(r'\b([А-ЯЁ])\.\s*([А-ЯЁ])\.\s*', '', s or '').strip()
+
+def price_txt(p):
+    p = (p or '').strip()
+    if not p:
+        return ''
+    if 'бесплатно' in p.lower():
+        return '(бесплатно)'
+    t = p.replace('₽', 'руб.').strip()
+    if t and t[0].isupper():
+        t = t[0].lower() + t[1:]
+    return '(' + t + ')'
+
+POST_STOP = {'лекторий', 'лектория', 'лектории', 'имени', 'открытый',
+             'центральный', 'сообщество', 'сообщества', 'научно', 'популярный'}
+
+def post_keywords(s):
+    s = (s or '').lower()
+    s = re.sub(r'[«»"“”(),:;.\-–—]', ' ', s)
+    return [w for w in s.split() if len(w) > 2 and w not in POST_STOP]
+
+def kw_prefix(a, b):
+    n = min(len(a), len(b))
+    return (a[:4] == b[:4]) if n >= 4 else (a == b)
+
+def post_subtitle(e):
+    """Подзаголовок (поле lectory) — показываем в скобках, если он нетривиален
+    по сравнению с площадкой (не повторяет её)."""
+    lec = (e.get('lectory') or '').strip()
+    if not lec:
+        return ''
+    place = (e.get('place') or '').strip()
+    if not place:
+        return ' (' + lec + ')'
+    lkeys = post_keywords(lec)
+    pkeys = post_keywords(place)
+    if not lkeys or not pkeys:
+        return ''
+    covered = sum(any(kw_prefix(lk, pk) for pk in pkeys) for lk in lkeys)
+    if covered == len(lkeys):
+        return ''
+    return ' (' + lec + ')'
+
+def month_id(date):
+    return 'm-%04d-%02d' % (date.year, date.month)
+
+def month_label_ym(y, m):
     return '%s %d' % (MONTHS_NOM[m - 1], y)
+
+def week_start(date):
+    return date - datetime.timedelta(days=date.weekday())
+
+def month_bounds(date):
+    y, m = date.year, date.month
+    first = datetime.date(y, m, 1)
+    last = (datetime.date(y + 1, 1, 1) if m == 12 else datetime.date(y, m + 1, 1)) - datetime.timedelta(days=1)
+    return first, last
+
+def week_range_label(lo, hi):
+    if lo == hi:
+        return '%02d.%02d' % (lo.day, lo.month)
+    return '%02d\u2013%02d.%02d' % (lo.day, hi.day, lo.month)
+
+def month_weeks(y, m):
+    first, last = month_bounds(datetime.date(y, m, 1))
+    weeks = {}
+    d = first
+    while d <= last:
+        weeks.setdefault(week_start(d), []).append(d)
+        d += datetime.timedelta(days=1)
+    out = []
+    total = 0
+    for ws in sorted(weeks):
+        days = weeks[ws]
+        label = week_range_label(days[0], days[-1])
+        out.append((ws, label, len(days)))
+        total += len(days)
+    assert total == (last - first).days + 1, 'Недели месяца %d-%02d не покрывают месяц целиком' % (y, m)
+    return out
+
+def week_id(y, m, ws):
+    return 'w-%04d-%02d-%s' % (y, m, ws.isoformat())
 
 def url_detail(e, prefix=''):
     return prefix + 'event/%s.html' % e['id']
@@ -110,10 +196,14 @@ def header(title, active, prefix=''):
   </div>
 </div>'''
 
+def snapshot_str():
+    ts = os.path.getmtime(DATA) if os.path.exists(DATA) else 0
+    return datetime.datetime.fromtimestamp(ts).strftime('%d.%m.%Y %H:%M')
+
 def footer(prefix=''):
     return f'''<div class="footer">
   <div class="wrap">
-    <div class="source">Данные: <a href="https://elementy.ru/events" target="_blank">elementy.ru/events</a> — предстоящие события (снимок от 16.09.2026).</div>
+    <div class="source">Данные: <a href="https://elementy.ru/events" target="_blank">elementy.ru/events</a> — предстоящие события (снимок от {snapshot_str()}).</div>
     <div class="note">Прототип. Не является официальным сайтом «Элементов». Уточняйте условия у организаторов.</div>
   </div>
 </div>'''
@@ -139,7 +229,8 @@ def page(title, body, active, prefix=''):
 
 TOOLBAR = '''<div class="toolbar">
   <button type="button" class="tbtn" id="btn-update">Обновить данные</button>
-  <div class="toolbar-more" title="Место для будущих кнопок (пост для Телеграма, обход источников, фильтры показа)"></div>
+  <button type="button" class="tbtn" id="btn-post">Пост в Телеграм</button>
+  <div class="toolbar-more" title="Место для будущих кнопок (обход источников, фильтры показа)"></div>
 </div>'''
 
 PANEL = '''<div class="update-panel" id="update-panel" hidden>
@@ -166,20 +257,71 @@ MODAL = '''<div class="modal-overlay" id="modal-update" hidden>
   </div>
 </div>'''
 
+MODAL_POST = '''<div class="modal-overlay" id="modal-post" hidden>
+  <div class="modal modal-post">
+    <div class="modal-title">Пост в Телеграм</div>
+    <div class="modal-body">
+      <div class="post-controls">
+        <label>С: <input type="date" id="pp-from"></label>
+        <label>По: <input type="date" id="pp-to"></label>
+        <button type="button" class="tbtn" id="pp-gen">Сформировать</button>
+      </div>
+      <div class="post-hint">Пост собирается по правилам «Научного календаря»: первый абзац — ссылка на лекции, далее по три абзаца на событие. Длина строк не переносится вручную — CSS переносит их сам.</div>
+      <div class="post-preview" id="pp-preview"></div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="tbtn" id="pp-copy">Копировать</button>
+      <button type="button" class="tbtn sec" id="pp-close">Закрыть</button>
+    </div>
+  </div>
+</div>'''
+
+def build_toc(sections):
+    months = []
+    for mid, ml, weeks in sections:
+        wlis = ''.join(f'<li><a href="#{wid}">{esc(wl)}</a></li>' for wid, wl in weeks)
+        months.append(f'<li><a href="#{mid}">{esc(ml)}</a><ul>{wlis}</ul></li>')
+    return '<aside class="toc"><div class="toc-title">Содержание</div><nav><ul>' + ''.join(months) + '</ul></nav></aside>'
+
 def build_index():
-    body_parts = ['<h1>Календарь событий</h1>',
-                  '<p class="intro">Предстоящие научно-популярные лекции, встречи и круглые столы. Открывайте событие, чтобы узнать подробности и стоимость.</p>',
-                  TOOLBAR,
-                  PANEL]
-    cur_month = None
+    head = ['<h1>Календарь событий</h1>',
+            '<p class="intro">Предстоящие научно-популярные лекции, встречи и круглые столы. Открывайте событие, чтобы узнать подробности и стоимость.</p>',
+            TOOLBAR,
+            PANEL]
+    by_month = {}
     for e in evs:
-        ml = month_label(e['date_iso'])
-        if ml != cur_month:
-            cur_month = ml
-            body_parts.append(f'<h2 class="month">{esc(ml)}</h2>')
-        body_parts.append(card(e))
-    body_parts.append(MODAL)
-    body_parts.append('<script src="js/toolbar.js"></script>')
+        d = datetime.date(*map(int, e['date_iso'].split('-')))
+        by_month.setdefault((d.year, d.month), []).append(e)
+    sections = []
+    main = []
+    for (y, m), evlist in sorted(by_month.items()):
+        mid = month_id(datetime.date(y, m, 1))
+        main.append(f'<h2 class="month" id="{mid}">{esc(month_label_ym(y, m))}</h2>')
+        weeks = []
+        for ws, wl, _days in month_weeks(y, m):
+            wid = week_id(y, m, ws)
+            weeks.append((wid, wl))
+        sections.append((mid, month_label_ym(y, m), weeks))
+        by_week = {}
+        for e in evlist:
+            d = datetime.date(*map(int, e['date_iso'].split('-')))
+            by_week.setdefault(week_start(d), []).append(e)
+        for ws, wl, _days in month_weeks(y, m):
+            wid = week_id(y, m, ws)
+            main.append(f'<h3 class="week" id="{wid}">{esc(wl)}</h3>')
+            for e in by_week.get(ws, []):
+                main.append(card(e))
+    body_parts = [*head,
+                  '<div class="idxbody">',
+                  build_toc(sections),
+                  '<div class="idxmain">',
+                  '\n'.join(main),
+                  '</div>',
+                  '</div>',
+                  MODAL,
+                  MODAL_POST,
+                  '<script src="js/post.js"></script>',
+                  '<script src="js/toolbar.js"></script>']
     body = '\n'.join(body_parts)
     open(os.path.join(SITE, 'index.html'), 'w', encoding='utf-8').write(page('Календарь событий', body, 'events'))
 
@@ -266,7 +408,30 @@ CSS = r'''/* base */
 body { margin: 0; background: #f4f1ea; color: #222; font: 14px/1.5 Arial, Helvetica, sans-serif; }
 a { color: #005e8a; text-decoration: none; }
 a:hover { color: #02334d; }
-.wrap { max-width: 920px; margin: 0 auto; padding: 0 16px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+/* index: sidebar + main column */
+.idxbody { display: flex; gap: 28px; align-items: flex-start; }
+.toc { flex: 0 0 200px; position: sticky; top: 14px; }
+.toc-title { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: #8a7040; margin-bottom: 6px; }
+.toc nav { font-size: 13px; max-height: calc(100vh - 60px); overflow: auto; border-left: 2px solid #e3dccb; padding-left: 10px; }
+.toc ul { list-style: none; margin: 0; padding: 0; }
+.toc ul ul { margin: 2px 0 6px 12px; }
+.toc li { margin: 2px 0; }
+.toc a { color: #6a643f; }
+.toc a:hover { color: #005e8a; }
+.toc ul ul a { color: #8a8270; }
+.idxmain { flex: 1 1 auto; min-width: 0; }
+
+/* week header */
+.week { font: normal 15px/1.2 Georgia, serif; color: #8a7040; margin: 4px 0 8px; }
+.month + .week { margin-top: -4px; }
+
+/* mobile: hide toc sidebar */
+@media (max-width: 860px) {
+  .idxbody { display: block; }
+  .toc { display: none; }
+}
 
 /* header */
 .header { background: #fff; border-bottom: 1px solid #d8d2c4; }
@@ -367,6 +532,15 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .modal-title { font: bold 20px/1.3 Georgia, serif; color: #3a2f16; margin-bottom: 10px; }
 .modal-hint { font-size: 14px; color: #444; line-height: 1.5; }
 .modal-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* post modal */
+.modal-post { max-width: 720px; }
+.post-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.post-controls label { font-size: 13px; color: #444; }
+.post-controls input[type="date"] { font: 13px/1.3 Arial, Helvetica, sans-serif; padding: 4px 8px; border: 1px solid #ccc3aa; border-radius: 3px; color: #4a3b1f; }
+.post-controls .tbtn { padding: 5px 12px; }
+.post-hint { font-size: 12.5px; color: #8a8270; margin-bottom: 8px; }
+.post-preview { background: #fffdf5; border: 1px solid #ddd5c3; border-radius: 4px; padding: 14px 16px; font: 14px/1.55 Arial, Helvetica, sans-serif; color: #333; white-space: pre-line; overflow-wrap: anywhere; word-break: break-word; max-height: 56vh; overflow: auto; }
 
 .update-panel { margin: -6px 0 18px; background: #fff; border: 1px solid #ddd5c3; border-radius: 6px; padding: 14px 16px; }
 .update-panel[hidden] { display: none; }
@@ -594,13 +768,205 @@ def build_toolbar_js():
 '''
     open(os.path.join(JS_DIR, 'toolbar.js'), 'w', encoding='utf-8').write(js)
 
+POST_JS = r'''/* Кнопка «Пост в Телеграм»: диапазон дат и формирование поста.
+   Правила — .opencode/skills/telegram-post/SKILL.md; поля событий подготовлены
+   сборщиком (место без инициалов, цена, подзаголовок). Текст не режется
+   вручную — в CSS настроен перенос длинных строк (white-space: pre-line). */
+(function () {
+  var POST_EVENTS = /*POST_EVENTS*/;
+  var btn = document.getElementById('btn-post');
+  var modal = document.getElementById('modal-post');
+  if (!btn || !modal) return;
+  var fFrom = document.getElementById('pp-from');
+  var fTo = document.getElementById('pp-to');
+  var preview = document.getElementById('pp-preview');
+  var btnGen = document.getElementById('pp-gen');
+  var btnCopy = document.getElementById('pp-copy');
+  var cur = { text: '' };
+
+  /* --- даты по умолчанию (Москва, UTC+3) --- */
+  function mskNow() {
+    var now = new Date();
+    var utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    return new Date(utc + 3 * 3600000);
+  }
+  function iso(d) {
+    var y = d.getUTCFullYear();
+    var m = ('0' + (d.getUTCMonth() + 1)).slice(-2);
+    var day = ('0' + d.getUTCDate()).slice(-2);
+    return y + '-' + m + '-' + day;
+  }
+  function addDays(isoStr, n) {
+    var p = isoStr.split('-');
+    return iso(new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + n)));
+  }
+  function wdNum(isoStr) {
+    var p = isoStr.split('-');
+    return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay();
+  }
+  function defaultRange() {
+    var m = mskNow();
+    var from = iso(m);
+    if (m.getUTCHours() >= 18) from = addDays(from, 1);
+    var wd = wdNum(from);
+    var target = 2;            // Вс -> Вт
+    if (wd === 5 || wd === 6) target = 0;  // Пт/Сб -> Вс
+    else if (wd === 3 || wd === 4) target = 5;  // Ср/Чт -> Пт
+    else if (wd === 1 || wd === 2) target = 3;  // Пн/Вт -> Ср
+    var to = addDays(from, (target - wd + 7) % 7);
+    return { from: from, to: to };
+  }
+
+  /* --- имена дней недели в винительном падеже после «в» --- */
+  var WD_ACC = ['воскресенье', 'понедельник', 'вторник', 'среду', 'четверг', 'пятницу', 'субботу'];
+
+  function mskMidnightTs(isoStr) {
+    var p = isoStr.split('-');
+    return Math.floor(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 1000 - 10800);
+  }
+  function dayUrl(isoStr) {
+    return 'https://elementy.ru/events?archive=2&evdate=' + mskMidnightTs(isoStr) + '&period=d&from=tg';
+  }
+
+  function buildPost(from, to) {
+    var inRange = POST_EVENTS.filter(function (e) {
+      return e.date >= from && e.date <= to;
+    }).sort(function (a, b) {
+      return a.date === b.date
+        ? ((a.time_start || '99:99') < (b.time_start || '99:99') ? -1 : 1)
+        : (a.date < b.date ? -1 : 1);
+    });
+    var days = [];
+    inRange.forEach(function (e) {
+      if (days.indexOf(e.date) === -1) days.push(e.date);
+    });
+    days.sort();
+    if (!days.length) return 'В выбранном диапазоне нет событий.';
+
+    var first = WD_ACC[wdNum(days[0])];
+    var links = days.map(function (d) {
+      return WD_ACC[wdNum(d)] + '|' + dayUrl(d);
+    });
+    var introDays = links.length === 1 ? links[0]
+      : links.slice(0, -1).join(', ') + ' и ' + links[links.length - 1];
+    var prep = first === 'вторник' ? 'во ' : 'в ';
+    var intro = 'Научно-популярные лекции|https://elementy.ru/events?from=tg ' + prep + introDays + ':';
+
+    var blocks = inRange.map(function (e) {
+      var p1 = [e.date.slice(8) + '.' + e.date.slice(5, 7)];
+      if (e.time_start) p1.push(e.time_start);
+      if (e.city) p1.push(e.city);
+      var loc = e.place;
+      if (e.price) loc += ' ' + e.price;
+      if (loc) p1.push(loc);
+      var lines = [p1.join(', ')];
+      if (e.lecturer) lines.push('**' + e.lecturer + '**');
+      lines.push((e.lecturer ? e.title : '**' + e.title + '**') + '|' + e.url + (e.subtitle || ''));
+      return lines.join('\n');
+    });
+
+    return intro + '\n\n' + blocks.join('\n\n');
+  }
+
+  function render() {
+    var from = fFrom.value || '';
+    var to = fTo.value || '';
+    if (!from || !to || from > to) return;
+    cur.text = buildPost(from, to);
+    preview.textContent = cur.text;
+  }
+
+  function open() {
+    var d = defaultRange();
+    fFrom.value = d.from;
+    fTo.value = d.to;
+    render();
+    modal.hidden = false;
+  }
+
+  function flashCopied() {
+    btnCopy.textContent = 'Скопировано';
+    setTimeout(function () { btnCopy.textContent = 'Копировать'; }, 1500);
+  }
+  function legacyCopy() {
+    var ta = document.createElement('textarea');
+    ta.value = cur.text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    flashCopied();
+  }
+  function copyText() {
+    if (!cur.text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(cur.text).then(flashCopied, legacyCopy);
+    } else {
+      legacyCopy();
+    }
+  }
+
+  btn.addEventListener('click', open);
+  btnGen.addEventListener('click', render);
+  btnCopy.addEventListener('click', copyText);
+  document.getElementById('pp-close').addEventListener('click', function () { modal.hidden = true; });
+  modal.addEventListener('click', function (ev) {
+    if (ev.target === modal) modal.hidden = true;
+  });
+})();
+'''
+
+def build_post_js():
+    post = []
+    for e in evs:
+        post.append({
+            'date': e['date_iso'],
+            'time_start': e.get('time_start') or '',
+            'city': e.get('city') or '',
+            'place': clean_place(e.get('place') or ''),
+            'price': price_txt(e.get('price_short') or ''),
+            'lecturer': e.get('lecturer') or '',
+            'title': e.get('title') or '',
+            'subtitle': post_subtitle(e),
+            'url': (e.get('url') or '') + '?period=m&from=tg',
+        })
+    data = json.dumps(post, ensure_ascii=False, indent=1)
+    js = POST_JS.replace('/*POST_EVENTS*/', data)
+    open(os.path.join(JS_DIR, 'post.js'), 'w', encoding='utf-8').write(js)
+
 def copy_favicon():
     for name in ('favicon.ico', 'favicon.png'):
         src = os.path.join(ROOT, 'assets', name)
         if os.path.exists(src):
             shutil.copy2(src, os.path.join(SITE, name))
 
+def write_robots():
+    with open(os.path.join(SITE, 'robots.txt'), 'w', encoding='utf-8') as f:
+        f.write('User-agent: *\nDisallow: /\n')
+
+def verify_calendar():
+    # Калибровка недельной сетки. Неделя = Пн–Вс, все недели месяца показываются
+    # (даже без событий), каждая неделя ограничена границами месяца.
+    # 1: понедельник должен быть началом недели самого себя.
+    monday = datetime.date(2026, 9, 28)   # понедельник
+    assert week_start(monday) == monday
+    assert week_start(monday + datetime.timedelta(days=6)) == monday  # воскресенье в той же неделе
+    # 2: эталонная полная сетка недель (все недели месяца, включая пустые).
+    ref = {
+        202609: ['01–06.09', '07–13.09', '14–20.09', '21–27.09', '28–30.09'],
+        202610: ['01–04.10', '05–11.10', '12–18.10', '19–25.10', '26–31.10'],
+        202611: ['01.11', '02–08.11', '09–15.11', '16–22.11', '23–29.11', '30.11'],
+        202612: ['01–06.12', '07–13.12', '14–20.12', '21–27.12', '28–31.12'],
+    }
+    for ym, expected in ref.items():
+        y, m = divmod(ym, 100) if ym >= 202600 else (ym // 100, ym % 100)
+        labels = [wl for _ws, wl, _n in month_weeks(y, m)]
+        assert labels == expected, 'Сетка недель %d-%02d не совпала: %s (ожидалось %s)' % (y, m, labels, expected)
+    assert sum(n for _ws, _l, n in month_weeks(2026, 2)) == 28  # високосных проверок не трогаем, но февраль 2026 простой
+    print('Календарная сетка недель: OK (неделя Пн–Вс, все недели месяца показаны)')
+
 def main():
+    verify_calendar()
     progress(30, 'Страница событий…')
     build_index()
     progress(55, 'Страницы событий…')
@@ -609,9 +975,11 @@ def main():
     build_calendar()
     build_calendar_js()
     build_toolbar_js()
+    build_post_js()
     with open(os.path.join(CSS_DIR, 'style.css'), 'w', encoding='utf-8') as f:
         f.write(CSS)
     copy_favicon()
+    write_robots()
     progress(100, 'Сайт собран.')
     print('Done. Pages:', len(evs) + 3)
 
