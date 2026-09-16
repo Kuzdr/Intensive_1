@@ -1,6 +1,10 @@
-site/
+site/*
+!site/assets/
+!site/assets/img/
 __pycache__/
 data/raw/
+data/update_report.json
+data/update_state.json
 *.pyc
 .vscode/
 .idea/

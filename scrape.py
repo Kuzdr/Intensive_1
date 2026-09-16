@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """Скрейпер предстоящих событий с elementy.ru/events -> data/events.json"""
-import re, os, sys, json, time, unicodedata
+import re, os, sys, json, time, unicodedata, datetime
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 import requests
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -272,10 +276,49 @@ def short_price(text):
 
     return ', '.join(parts)
 
+def norm_key(s):
+    if not s:
+        return ''
+    s = unicodedata.normalize('NFKC', str(s)).lower().replace('ё', 'е')
+    s = re.sub(r'\s+', ' ', s)
+    s = re.sub(r'[^\w\s]', ' ', s, flags=re.UNICODE)
+    return re.sub(r'\s+', ' ', s).strip()
+
+def describe_change(old, fresh):
+    """Короткая сверка по основным полям. Возвращает список изменившихся полей."""
+    keys = []
+    for k in ('title', 'lecturer', 'date_iso', 'lectory', 'city', 'place'):
+        if norm_key(old.get(k)) != norm_key(fresh.get(k)):
+            keys.append(k)
+    # цена: сравнение по исходному тексту; если сырой текст изменился,
+    # дополнительно сверяем итоговую (адаптированную) цену, чтобы смена
+    # формулировки без смены цены не перепорождала анонс
+    if norm_key(old.get('price_raw')) != norm_key(fresh.get('price_raw')):
+        if norm_key(old.get('price_short')) != norm_key(fresh.get('price_short')):
+            keys.append('price')
+    return keys
+
+def progress(pct, msg):
+    print('PROGRESS:%d:%s' % (pct, msg), flush=True)
+
+def load_old_events():
+    fp = os.path.join(DATA_DIR, 'events.json')
+    if os.path.exists(fp):
+        try:
+            return json.load(open(fp, encoding='utf-8'))
+        except Exception:
+            return []
+    return []
+
+def write_report(report):
+    with open(os.path.join(DATA_DIR, 'update_report.json'), 'w', encoding='utf-8') as f:
+        json.dump(report, f, ensure_ascii=False, indent=1)
+
 def main():
-    print('Parsing list page...')
+    progress(2, 'Загрузка списка событий с elementy.ru…')
     events = parse_list_page()
-    print('Events:', len(events))
+    progress(10, 'Найдено %d событий, скачиваю страницы…' % len(events))
+    n = len(events)
     for i, ev in enumerate(events):
         print('Fetching', ev['id'], ev['title'])
         try:
@@ -291,11 +334,59 @@ def main():
             dt = pick_year(ev['date_dot'], ev['weekday'])
             y, m, d = dt.year, dt.month, dt.day
         ev['date_iso'] = '%04d-%02d-%02d' % (y, m, d)
+        progress(10 + int(60 * (i + 1) / max(n, 1)), 'Событие %d из %d: %s' % (i + 1, n, (ev.get('title') or '')[:40]))
         time.sleep(0.4)
-    events.sort(key=lambda e: (e['date_iso'], e['time_start'] or '99:99'))
+
+    today = datetime.date.today().isoformat()
+    fresh = events
+    fresh_by_id = {e['id']: e for e in fresh}
+    old_by_id = {e['id']: e for e in load_old_events()}
+
+    new_events, added, changed, removed = [], [], [], []
+
+    # события, уже бывшие на сайте
+    for oid, o in old_by_id.items():
+        if (o.get('date_iso') or '9999-99-99') < today:
+            removed.append({'id': oid, 'title': o.get('title'), 'reason': 'событие уже прошло'})
+            continue
+        f = fresh_by_id.get(oid)
+        if f is None:
+            removed.append({'id': oid, 'title': o.get('title'), 'reason': 'больше нет на elementy.ru'})
+            continue
+        keys = describe_change(o, f)
+        if keys:
+            ev = dict(f)
+            ev['updated'] = True
+            ev['updated_at'] = today
+            changed.append({'id': oid, 'title': ev.get('title'), 'fields': keys})
+            progress(75, 'Обновлено: %s' % (ev.get('title') or '')[:40])
+            new_events.append(ev)
+        else:
+            new_events.append(o)  # описания не трогаем, если основное не изменилось
+            progress(75, 'Без изменений: %s' % (o.get('title') or '')[:40])
+
+    # новые события
+    for f in fresh:
+        if f['id'] not in old_by_id:
+            added.append({'id': f['id'], 'title': f.get('title')})
+            new_events.append(f)
+
+    new_events.sort(key=lambda e: (e['date_iso'], e['time_start'] or '99:99'))
     with open(os.path.join(DATA_DIR, 'events.json'), 'w', encoding='utf-8') as f:
-        json.dump(events, f, ensure_ascii=False, indent=1)
-    print('Saved to', os.path.join(DATA_DIR, 'events.json'))
+        json.dump(new_events, f, ensure_ascii=False, indent=1)
+
+    report = {
+        'date': today,
+        'added': added,
+        'changed': changed,
+        'removed': removed,
+        'total': len(new_events),
+    }
+    write_report(report)
+
+    print('REPORT: добавлено %d, изменено %d, удалено %d, всего событий %d'
+          % (len(added), len(changed), len(removed), len(new_events)))
+    progress(100, 'Данные обновлены.')
 
 if __name__ == '__main__':
     main()

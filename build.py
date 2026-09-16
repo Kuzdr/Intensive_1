@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 """Сборка статического сайта из data/events.json -> site/"""
-import os, re, json, datetime, html as H
+import os, re, json, datetime, html as H, shutil
+
+if hasattr(__import__('sys').stdout, 'reconfigure'):
+    import sys
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(ROOT, 'data', 'events.json')
@@ -11,6 +16,9 @@ CSS_DIR = os.path.join(SITE, 'css')
 os.makedirs(EVENT_DIR, exist_ok=True)
 os.makedirs(JS_DIR, exist_ok=True)
 os.makedirs(CSS_DIR, exist_ok=True)
+
+def progress(pct, msg):
+    print('PROGRESS:%d:%s' % (pct, msg), flush=True)
 
 evs = json.load(open(DATA, encoding='utf-8'))
 evs.sort(key=lambda e: (e['date_iso'], e['time_start'] or '99:99'))
@@ -60,6 +68,9 @@ def card(e, prefix=''):
     if e.get('topics'):
         supl.append(', '.join(e['topics']))
     sup_txt = ' • '.join(supl)
+    upd = ''
+    if e.get('updated'):
+        upd = f'<div class="badge-upd">обновлено {esc(e.get("updated_at", ""))}</div>'
     return f'''<div class="event">
   <div class="edate">
     <div class="hday">{esc(fmt_date_short(e['date_iso']))}</div>
@@ -75,7 +86,7 @@ def card(e, prefix=''):
       <div class="lectory">{esc(e['lectory'] or '')}</div>
     </a>
     <div class="sublink">{esc(e['place'] or '')}</div>
-    <div class="price">{esc(e['price_short'] or '')}</div>
+    <div class="price">{esc(e['price_short'] or '')}</div>{upd}
     <div class="annot">{esc(annot_snippet(e))}</div>
   </div>
 </div>'''
@@ -113,6 +124,7 @@ def page(title, body, active, prefix=''):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(title)} — Научный календарь</title>
+<link rel="icon" type="image/x-icon" href="{prefix}favicon.ico">
 <link rel="stylesheet" href="{prefix}css/style.css">
 </head>
 <body>
@@ -124,9 +136,34 @@ def page(title, body, active, prefix=''):
 </body>
 </html>'''
 
+TOOLBAR = '''<div class="toolbar">
+  <button type="button" class="tbtn" id="btn-update">Обновить данные</button>
+  <div class="toolbar-more" title="Место для будущих кнопок (пост для Телеграма, обход источников, фильтры показа)"></div>
+</div>'''
+
+MODAL = '''<div class="modal-overlay" id="modal-update" hidden>
+  <div class="modal">
+    <div class="modal-title">Обновить данные</div>
+    <div class="modal-body">
+      <p class="modal-hint" id="mp-hint">Будут удалены прошедшие события, добавлены новые, а события, у которых изменились название, авторы, дата, лекторий, место или цена, будут обновлены и помечены.</p>
+    </div>
+    <div class="modal-progress" id="mp-progress" hidden>
+      <div class="bar"><div class="bar-fill" id="mp-bar"></div></div>
+      <div class="bar-msg" id="mp-msg"></div>
+    </div>
+    <div class="modal-status" id="mp-status"></div>
+    <div class="modal-actions">
+      <button type="button" class="tbtn" id="mp-ok">Подтвердить</button>
+      <button type="button" class="tbtn sec" id="mp-cancel">Отмена</button>
+      <button type="button" class="tbtn sec" id="mp-close" hidden>Закрыть</button>
+    </div>
+  </div>
+</div>'''
+
 def build_index():
     body_parts = ['<h1>Календарь событий</h1>',
-                  '<p class="intro">Предстоящие научно-популярные лекции, встречи и круглые столы. Открывайте событие, чтобы узнать подробности и стоимость.</p>']
+                  '<p class="intro">Предстоящие научно-популярные лекции, встречи и круглые столы. Открывайте событие, чтобы узнать подробности и стоимость.</p>',
+                  TOOLBAR]
     cur_month = None
     for e in evs:
         ml = month_label(e['date_iso'])
@@ -134,6 +171,8 @@ def build_index():
             cur_month = ml
             body_parts.append(f'<h2 class="month">{esc(ml)}</h2>')
         body_parts.append(card(e))
+    body_parts.append(MODAL)
+    body_parts.append('<script src="js/toolbar.js"></script>')
     body = '\n'.join(body_parts)
     open(os.path.join(SITE, 'index.html'), 'w', encoding='utf-8').write(page('Календарь событий', body, 'events'))
 
@@ -158,12 +197,16 @@ def build_event_pages():
             links = ' · '.join(
                 f'<a href="{esc(l["href"])}" target="_blank" rel="noopener">{esc(l["text"])}</a>' for l in e['reg_links'])
             reg = f'<div class="reglinks"><span class="lbl">Регистрация:</span> {links}</div>'
+        upd_src = ''
+        if e.get('updated'):
+            upd_src = f'<div class="upd-src">Обновлено: {esc(e.get("updated_at", ""))}</div>'
         body = f'''<div class="crumb"><a href="../index.html">Календарь событий</a> » <span>{esc(e['title'] or '')}</span></div>
   <div class="detailblk">
     {render_memo(e, '../')}
   </div>
   <div class="sourcebox">
     <div class="price-short">Стоимость: <b>{esc(e['price_short'] or 'не указана')}</b></div>
+    {upd_src}
     {reg}
     <div class="src">Источник: <a href="{esc(e['url'])}" target="_blank" rel="noopener">страница на elementy.ru</a></div>
   </div>
@@ -250,6 +293,8 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .event .price { margin-top: 5px; display: inline-block; background: #e9e2cf; border: 1px solid #d8cdb0; border-radius: 3px; padding: 1px 8px; font-size: 13px; color: #4a3b1f; }
 .event .price + .price { margin-left: 6px; }
 .event .annot { margin-top: 6px; color: #555; font-size: 13px; }
+.badge-upd { margin-top: 5px; display: inline-block; background: #e2eee2; border: 1px solid #c3dcc3; border-radius: 3px; padding: 1px 8px; font-size: 12px; color: #2e5d2e; }
+.upd-src { margin-bottom: 4px; color: #2e5d2e; font-size: 12px; }
 
 /* detail page */
 .crumb { font-size: 13px; color: #6a643f; margin: 6px 0 14px; }
@@ -297,6 +342,24 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .day.ev .daycnt { color: #ffe9c2; }
 .calhint { font-size: 12px; color: #999; margin-top: 10px; }
 .calperiod { margin-top: 16px; border-top: 1px solid #e3dccb; padding-top: 6px; }
+
+/* toolbar + modal */
+.toolbar { display: flex; gap: 10px; align-items: stretch; margin: 0 0 18px; flex-wrap: wrap; }
+.tbtn { border: 1px solid #b9a878; background: #fffdf5; color: #4a3b1f; font-size: 14px; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+.tbtn:hover { background: #e9e2cf; }
+.tbtn.sec { color: #6a643f; }
+.toolbar-more { flex: 1 1 auto; min-width: 120px; border: 1px dashed #cfc4a6; border-radius: 4px; min-height: 36px; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal { background: #fff; max-width: 560px; width: 92%; border-radius: 8px; padding: 22px 24px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+.modal-title { font: bold 20px/1.3 Georgia, serif; color: #3a2f16; margin-bottom: 10px; }
+.modal-hint, .modal-status { font-size: 14px; color: #444; line-height: 1.5; }
+.modal-progress { margin: 14px 0 4px; }
+.bar { height: 14px; background: #ece4d0; border-radius: 7px; overflow: hidden; }
+.bar-fill { height: 100%; width: 0; background: #b07a2f; transition: width .4s ease; }
+.bar-msg { margin-top: 6px; font-size: 13px; color: #6a643f; }
+.modal-status { margin-top: 12px; white-space: pre-wrap; }
+.modal-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 
 /* footer */
 .footer { background: #efe9da; border-top: 1px solid #d8d2c4; margin-top: 30px; padding: 18px 0 26px; font-size: 12.5px; color: #6a643f; }
@@ -419,13 +482,130 @@ def build_calendar_js():
 '''
     open(os.path.join(JS_DIR, 'calendar.js'), 'w', encoding='utf-8').write(js)
 
+def build_toolbar_js():
+    js = r'''/* Кнопка «Обновить данные» + модальное окно с прогрессом */
+(function () {
+  var btn = document.getElementById('btn-update');
+  var modal = document.getElementById('modal-update');
+  if (!btn || !modal) return;
+  var ok = document.getElementById('mp-ok');
+  var cancel = document.getElementById('mp-cancel');
+  var close = document.getElementById('mp-close');
+  var hint = document.getElementById('mp-hint');
+  var progress = document.getElementById('mp-progress');
+  var bar = document.getElementById('mp-bar');
+  var msg = document.getElementById('mp-msg');
+  var status = document.getElementById('mp-status');
+  var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  var timer = null;
+
+  function showConfirm() {
+    modal.hidden = false;
+    hint.hidden = false;
+    status.textContent = '';
+    status.hidden = true;
+    progress.hidden = true;
+    ok.hidden = false;
+    cancel.hidden = false;
+    close.hidden = true;
+  }
+  function showProgress(m) {
+    hint.hidden = true;
+    status.hidden = true;
+    progress.hidden = false;
+    setProgress(0, m || 'Начинаем обновление…');
+  }
+  function setProgress(p, m) {
+    bar.style.width = Math.round(p) + '%';
+    msg.textContent = m;
+  }
+  function showResult(txt, isErr) {
+    progress.hidden = true;
+    status.textContent = txt;
+    status.hidden = false;
+    if (isErr) status.style.color = '#8c2f2f'; else status.style.color = '#2e5d2e';
+    ok.hidden = true;
+    cancel.hidden = true;
+    close.hidden = false;
+  }
+  function hide() {
+    modal.hidden = true;
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+  function reportText(r) {
+    if (!r) return 'Данные обновлены, отчёт не сохранился.';
+    var lines = [];
+    lines.push('Добавлено: ' + (r.added || []).length);
+    lines.push('Изменено: ' + (r.changed || []).length);
+    lines.push('Удалено: ' + (r.removed || []).length);
+    lines.push('Всего в календаре: ' + (r.total || 0));
+    return lines.join('\n');
+  }
+  function startUpdate() {
+    showProgress();
+    fetch('/api/update', { method: 'POST' }).then(function (res) {
+      if (res.status === 409) { showResult('Обновление уже идёт.', true); return; }
+      timer = setInterval(poll, 700);
+    }).catch(function () {
+      showResult('Не удалось связаться с сервером. Убедитесь, что serve.py запущен.', true);
+    });
+  }
+  function poll() {
+    fetch('/api/update/status').then(function (r) { return r.json(); }).then(function (s) {
+      setProgress(s.percent, s.message || '');
+      if (!s.running) {
+        clearInterval(timer); timer = null;
+        if (s.error) {
+          showResult('Ошибка:\n' + s.error, true);
+        } else {
+          var extra = s.commit ? '\nКоммит: ' + s.commit : '';
+          showResult(s.message + '\n\n' + reportText(s.report) + extra, false);
+        }
+      }
+    }).catch(function () {});
+  }
+
+  btn.addEventListener('click', function () {
+    if (isLocal) {
+      showConfirm();
+    } else {
+      modal.hidden = false;
+      status.textContent = 'Обновление работает только на локальном сервере.\nЗапустите в терминале: python serve.py\nи откройте http://localhost:8000';
+      status.style.color = '#444';
+      status.hidden = false;
+      hint.hidden = true;
+      progress.hidden = true;
+      ok.hidden = true;
+      cancel.hidden = true;
+      close.hidden = false;
+    }
+  });
+  ok.addEventListener('click', startUpdate);
+  cancel.addEventListener('click', hide);
+  close.addEventListener('click', hide);
+})();
+'''
+    open(os.path.join(JS_DIR, 'toolbar.js'), 'w', encoding='utf-8').write(js)
+
+def copy_favicon():
+    for name in ('favicon.ico', 'favicon.png'):
+        src = os.path.join(ROOT, 'assets', name)
+        if os.path.exists(src):
+            shutil.copy2(src, os.path.join(SITE, name))
+
 def main():
+    progress(30, 'Страница событий…')
     build_index()
+    progress(55, 'Страницы событий…')
     build_event_pages()
+    progress(75, 'Календарь…')
     build_calendar()
     build_calendar_js()
+    build_toolbar_js()
     with open(os.path.join(CSS_DIR, 'style.css'), 'w', encoding='utf-8') as f:
         f.write(CSS)
+    copy_favicon()
+    progress(100, 'Сайт собран.')
     print('Done. Pages:', len(evs) + 3)
 
 if __name__ == '__main__':
