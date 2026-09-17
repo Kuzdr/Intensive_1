@@ -59,7 +59,12 @@ def price_txt(p):
         return ''
     if 'бесплатно' in p.lower():
         return '(бесплатно)'
-    t = p.replace('₽', 'руб.').strip()
+    # убираем пробелы между группами цифр: «10 000» → «10000» (только в посте)
+    t = re.sub(r'(?<=\d)\s+(?=\d)', '', p).replace('₽', 'руб.').strip()
+    # диапазон «от X до Y руб.» → «от X руб.» (только нижняя граница)
+    if re.search(r'\sдо\s', t, flags=re.I):
+        t = re.split(r'\sдо\s', t, maxsplit=1, flags=re.I)[0].strip() + ' руб.'
+    t = re.sub(r'\s{2,}', ' ', t).strip()
     if t and t[0].isupper():
         t = t[0].lower() + t[1:]
     return '(' + t + ')'
@@ -126,7 +131,7 @@ def month_weeks(y, m):
     for ws in sorted(weeks):
         days = weeks[ws]
         label = week_range_label(days[0], days[-1])
-        out.append((ws, label, len(days)))
+        out.append((ws, label, days))
         total += len(days)
     assert total == (last - first).days + 1, 'Недели месяца %d-%02d не покрывают месяц целиком' % (y, m)
     return out
@@ -201,10 +206,13 @@ def snapshot_str():
     return datetime.datetime.fromtimestamp(ts).strftime('%d.%m.%Y %H:%M')
 
 def footer(prefix=''):
+    docs = 'https://github.com/Kuzdr/Intensive_1/blob/master/ПАМЯТКА.md'
+    skill = 'https://github.com/Kuzdr/Intensive_1/tree/master/.opencode/skills'
     return f'''<div class="footer">
   <div class="wrap">
     <div class="source">Данные: <a href="https://elementy.ru/events" target="_blank">elementy.ru/events</a> — предстоящие события (снимок от {snapshot_str()}).</div>
     <div class="note">Прототип. Не является официальным сайтом «Элементов». Уточняйте условия у организаторов.</div>
+    <div class="docs"><a href="{docs}" target="_blank" rel="noopener">Памятка проекта</a> · <a href="{skill}" target="_blank" rel="noopener">Скиллы (правила поста в Телеграм и др.)</a></div>
   </div>
 </div>'''
 
@@ -262,11 +270,10 @@ MODAL_POST = '''<div class="modal-overlay" id="modal-post" hidden>
     <div class="modal-title">Пост в Телеграм</div>
     <div class="modal-body">
       <div class="post-controls">
-        <label>С: <input type="date" id="pp-from"></label>
-        <label>По: <input type="date" id="pp-to"></label>
+        <label>С: <select id="pp-from"></select></label>
+        <label>По: <select id="pp-to"></select></label>
         <button type="button" class="tbtn" id="pp-gen">Сформировать</button>
       </div>
-      <div class="post-hint">Пост собирается по правилам «Научного календаря»: первый абзац — ссылка на лекции, далее по три абзаца на событие. Длина строк не переносится вручную — CSS переносит их сам.</div>
       <div class="post-preview" id="pp-preview"></div>
     </div>
     <div class="modal-actions">
@@ -279,9 +286,28 @@ MODAL_POST = '''<div class="modal-overlay" id="modal-post" hidden>
 def build_toc(sections):
     months = []
     for mid, ml, weeks in sections:
-        wlis = ''.join(f'<li><a href="#{wid}">{esc(wl)}</a></li>' for wid, wl in weeks)
+        wlis = ''.join(f'<li><a href="#{wid}">{esc(wl)}</a></li>' for wid, wl, _counts in weeks)
         months.append(f'<li><a href="#{mid}">{esc(ml)}</a><ul>{wlis}</ul></li>')
     return '<aside class="toc"><div class="toc-title">Содержание</div><nav><ul>' + ''.join(months) + '</ul></nav></aside>'
+
+def week_is_done(ws):
+    """Неделя «окончилась», если её воскресенье уже прошло (данные обещают
+    только предстоящие события, значит такие недели показывать незачем)."""
+    return ws + datetime.timedelta(days=6) < datetime.date.today()
+
+def week_counts_line(days):
+    """Строка «17.09: 4. 18.09: —. …» по дням недели (в границах месяца)."""
+    counts = {}
+    for e in evs:
+        d = datetime.date(*map(int, e['date_iso'].split('-')))
+        if week_start(d) == week_start(days[0]):
+            counts[d] = counts.get(d, 0) + 1
+    parts = []
+    for d in days:
+        c = counts.get(d, 0)
+        parts.append('%s: %d' % (fmt_date_short(d.isoformat()), c) if c else
+                     '%s: —' % fmt_date_short(d.isoformat()))
+    return '. '.join(parts) + '.'
 
 def build_index():
     head = ['<h1>Календарь событий</h1>',
@@ -296,21 +322,23 @@ def build_index():
     main = []
     for (y, m), evlist in sorted(by_month.items()):
         mid = month_id(datetime.date(y, m, 1))
+        month_weeks_lst = [w for w in month_weeks(y, m) if not week_is_done(w[0])]
+        if not month_weeks_lst:
+            continue
         main.append(f'<h2 class="month" id="{mid}">{esc(month_label_ym(y, m))}</h2>')
         weeks = []
-        for ws, wl, _days in month_weeks(y, m):
-            wid = week_id(y, m, ws)
-            weeks.append((wid, wl))
-        sections.append((mid, month_label_ym(y, m), weeks))
         by_week = {}
         for e in evlist:
             d = datetime.date(*map(int, e['date_iso'].split('-')))
             by_week.setdefault(week_start(d), []).append(e)
-        for ws, wl, _days in month_weeks(y, m):
+        for ws, wl, days in month_weeks_lst:
             wid = week_id(y, m, ws)
+            weeks.append((wid, wl, ''))
             main.append(f'<h3 class="week" id="{wid}">{esc(wl)}</h3>')
+            main.append('<div class="weekcount">%s</div>' % esc(week_counts_line(days)))
             for e in by_week.get(ws, []):
                 main.append(card(e))
+        sections.append((mid, month_label_ym(y, m), weeks))
     body_parts = [*head,
                   '<div class="idxbody">',
                   build_toc(sections),
@@ -424,8 +452,9 @@ a:hover { color: #02334d; }
 .idxmain { flex: 1 1 auto; min-width: 0; }
 
 /* week header */
-.week { font: normal 15px/1.2 Georgia, serif; color: #8a7040; margin: 4px 0 8px; }
-.month + .week { margin-top: -4px; }
+.week { font: normal 19px/1.2 Georgia, serif; color: #8a7040; margin: 8px 0 2px; }
+.month + .week { margin-top: -2px; }
+.weekcount { font-size: 13px; color: #8a8270; margin: 0 0 8px; }
 
 /* mobile: hide toc sidebar */
 @media (max-width: 860px) {
@@ -448,7 +477,7 @@ a:hover { color: #02334d; }
 h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .intro { color: #555; margin: 0 0 18px; max-width: 720px; }
 
-.month { font: normal 22px/1.2 Georgia, serif; color: #8a7040; border-bottom: 1px solid #ddd5c3; padding-bottom: 6px; margin: 26px 0 14px; }
+.month { font: normal 26px/1.2 Georgia, serif; color: #8a7040; border-bottom: 1px solid #ddd5c3; padding-bottom: 6px; margin: 26px 0 14px; }
 
 /* event card (list, as on Elementy) */
 .event { display: flex; padding: 12px 0; border-bottom: 1px solid #e3dccb; }
@@ -537,9 +566,8 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .modal-post { max-width: 720px; }
 .post-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
 .post-controls label { font-size: 13px; color: #444; }
-.post-controls input[type="date"] { font: 13px/1.3 Arial, Helvetica, sans-serif; padding: 4px 8px; border: 1px solid #ccc3aa; border-radius: 3px; color: #4a3b1f; }
+.post-controls select { font: 13px/1.3 Arial, Helvetica, sans-serif; padding: 4px 8px; border: 1px solid #ccc3aa; border-radius: 3px; color: #4a3b1f; background: #fffdf5; }
 .post-controls .tbtn { padding: 5px 12px; }
-.post-hint { font-size: 12.5px; color: #8a8270; margin-bottom: 8px; }
 .post-preview { background: #fffdf5; border: 1px solid #ddd5c3; border-radius: 4px; padding: 14px 16px; font: 14px/1.55 Arial, Helvetica, sans-serif; color: #333; white-space: pre-line; overflow-wrap: anywhere; word-break: break-word; max-height: 56vh; overflow: auto; }
 
 .update-panel { margin: -6px 0 18px; background: #fff; border: 1px solid #ddd5c3; border-radius: 6px; padding: 14px 16px; }
@@ -555,6 +583,8 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .footer { background: #efe9da; border-top: 1px solid #d8d2c4; margin-top: 30px; padding: 18px 0 26px; font-size: 12.5px; color: #6a643f; }
 .footer .source a { color: #4a3b1f; }
 .footer .note { margin-top: 4px; color: #999; }
+.footer .docs { margin-top: 6px; }
+.footer .docs a { color: #005e8a; }
 '''
 
 def build_calendar_js():
@@ -674,7 +704,9 @@ def build_calendar_js():
     open(os.path.join(JS_DIR, 'calendar.js'), 'w', encoding='utf-8').write(js)
 
 def build_toolbar_js():
-    js = r'''/* Кнопка «Обновить данные»: вопрос «Да/Нет», прогресс и результат — в панели под кнопкой */
+    snap = snapshot_str()
+    js = r'''/* Кнопка «Обновить данные»: вопрос «Да/Нет», прогресс и результат — в панели под кнопкой.
+   После успешного обновления страница перечитывается целиком (location.reload). */
 (function () {
   var btn = document.getElementById('btn-update');
   var modal = document.getElementById('modal-update');
@@ -688,6 +720,7 @@ def build_toolbar_js():
   var status = document.getElementById('up-status');
   var actions = document.getElementById('up-actions');
   var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  var SNAPSHOT = '/*SNAPSHOT*/';
   var timer = null;
 
   modal.hidden = true; // страховка: окно всегда закрыто при загрузке
@@ -713,6 +746,10 @@ def build_toolbar_js():
     status.style.color = isErr ? '#8c2f2f' : '#2e5d2e';
     status.hidden = false;
     actions.hidden = false;
+    if (!isErr) {
+      // Обновление удалось — перечитываем страницу целиком, чтобы новые данные отобразились.
+      setTimeout(function () { location.reload(); }, 1200);
+    }
   }
   function hidePanel() {
     panel.hidden = true;
@@ -746,7 +783,11 @@ def build_toolbar_js():
           showResult('Ошибка:\n' + s.error, true);
         } else {
           var extra = s.commit ? '\nКоммит: ' + s.commit : '';
-          showResult(s.message + '\n\n' + reportText(s.report) + extra, false);
+          if ((s.report && (s.report.added.length || s.report.changed.length || s.report.removed.length)) || s.commit) {
+            showResult(s.message + '\n\n' + reportText(s.report) + extra, false);
+          } else {
+            showResult(s.message, false);
+          }
         }
       }
     }).catch(function () {});
@@ -758,20 +799,23 @@ def build_toolbar_js():
     progress.hidden = true;
     actions.hidden = false;
     status.style.color = '#444';
-    status.textContent = 'Обновление работает только на локальном сервере.\nЗапустите в терминале: python serve.py\nи откройте http://localhost:8000';
+    status.textContent = 'Обновление работает только на локальном сервере.\n'
+      + 'Запустите в терминале: python serve.py\n'
+      + 'и откройте http://localhost:8000\n'
+      + '\nПоследнее обновление данных: ' + SNAPSHOT;
     status.hidden = false;
   });
   ok.addEventListener('click', startUpdate);
   cancel.addEventListener('click', hideModal);
   document.getElementById('up-close').addEventListener('click', hidePanel);
 })();
-'''
+'''.replace('/*SNAPSHOT*/', snap)
     open(os.path.join(JS_DIR, 'toolbar.js'), 'w', encoding='utf-8').write(js)
 
-POST_JS = r'''/* Кнопка «Пост в Телеграм»: диапазон дат и формирование поста.
+POST_JS = r'''/* Кнопка «Пост в Телеграм»: выбор дат выпадающими списками (по 7 дней,
+   от первой актуальной даты) и формирование поста.
    Правила — .opencode/skills/telegram-post/SKILL.md; поля событий подготовлены
-   сборщиком (место без инициалов, цена, подзаголовок). Текст не режется
-   вручную — в CSS настроен перенос длинных строк (white-space: pre-line). */
+   сборщиком (место без инициалов, цена, подзаголовок). */
 (function () {
   var POST_EVENTS = /*POST_EVENTS*/;
   var btn = document.getElementById('btn-post');
@@ -784,7 +828,7 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: диапазон
   var btnCopy = document.getElementById('pp-copy');
   var cur = { text: '' };
 
-  /* --- даты по умолчанию (Москва, UTC+3) --- */
+  /* --- даты (Москва, UTC+3) --- */
   function mskNow() {
     var now = new Date();
     var utc = now.getTime() + now.getTimezoneOffset() * 60000;
@@ -804,17 +848,82 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: диапазон
     var p = isoStr.split('-');
     return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay();
   }
-  function defaultRange() {
-    var m = mskNow();
-    var from = iso(m);
-    if (m.getUTCHours() >= 18) from = addDays(from, 1);
+  function ddmm(isoStr) {
+    var p = isoStr.split('-');
+    return p[2] + '.' + p[1];
+  }
+
+  /* --- актуальные даты: от первой даты с событиями, окно 7 дней --- */
+  var dates = POST_EVENTS.map(function (e) { return e.date; })
+    .filter(function (d, i, a) { return a.indexOf(d) === i; })
+    .sort();
+  var firstDate = dates[0];
+  var lastDate = dates[dates.length - 1];
+
+  function countOn(d) {
+    var n = 0;
+    POST_EVENTS.forEach(function (e) { if (e.date === d) n++; });
+    return n;
+  }
+
+  /* список дат длиной win дней начиная с from; +n опций, если их меньше win */
+  function rangeDates(from, win) {
+    var out = [];
+    for (var i = 0; i < win; i++) {
+      var d = addDays(from, i);
+      if (d > lastDate) break;
+      out.push(d);
+    }
+    return out;
+  }
+
+  function firstEventOnOrAfter(isoStr) {
+    var p = POST_EVENTS.filter(function (e) { return e.date >= isoStr; });
+    return p.length ? p[0].date : lastDate;
+  }
+  function lastEventOnOrBefore(isoStr) {
+    var p = POST_EVENTS.filter(function (e) { return e.date <= isoStr; });
+    return p.length ? p[p.length - 1].date : firstDate;
+  }
+
+  function defaultToFor(from) {
+    // правило «до» для выбранной начальной даты (как раньше)
     var wd = wdNum(from);
     var target = 2;            // Вс -> Вт
     if (wd === 5 || wd === 6) target = 0;  // Пт/Сб -> Вс
     else if (wd === 3 || wd === 4) target = 5;  // Ср/Чт -> Пт
     else if (wd === 1 || wd === 2) target = 3;  // Пн/Вт -> Ср
-    var to = addDays(from, (target - wd + 7) % 7);
-    return { from: from, to: to };
+    return addDays(from, (target - wd + 7) % 7);
+  }
+
+  function fillFrom() {
+    // от первой актуальной даты — все даты до последнего события
+    fFrom.innerHTML = '';
+    var list = rangeDates(firstDate, 9999);
+    list.forEach(function (d) {
+      var opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = ddmm(d) + ' (' + countOn(d) + ')';
+      fFrom.appendChild(opt);
+    });
+  }
+
+  function fillTo() {
+    var from = fFrom.value || firstDate;
+    var old = fTo.value;
+    fTo.innerHTML = '';
+    var list = rangeDates(from, 7);
+    list.forEach(function (d) {
+      var opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = ddmm(d) + ' (' + countOn(d) + ')';
+      fTo.appendChild(opt);
+    });
+    // если прежняя конечная дата есть в новом диапазоне — оставляем её,
+    // иначе ставим дату по умолчанию для выбранной начальной (не позже последней)
+    var def = defaultToFor(from);
+    if (def > lastDate) def = lastDate;
+    fTo.value = (old && list.indexOf(old) !== -1) ? old : def;
   }
 
   /* --- имена дней недели в винительном падеже после «в» --- */
@@ -871,15 +980,15 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: диапазон
   function render() {
     var from = fFrom.value || '';
     var to = fTo.value || '';
-    if (!from || !to || from > to) return;
+    if (from > to) return;
     cur.text = buildPost(from, to);
     preview.textContent = cur.text;
   }
 
   function open() {
-    var d = defaultRange();
-    fFrom.value = d.from;
-    fTo.value = d.to;
+    fillFrom();
+    fFrom.value = firstEventOnOrAfter(iso(mskNow()));
+    fillTo();
     render();
     modal.hidden = false;
   }
@@ -906,6 +1015,12 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: диапазон
     }
   }
 
+  fFrom.addEventListener('change', function () {
+    if (fTo.value < fFrom.value) fTo.value = defaultToFor(fFrom.value);
+    fillTo();
+    render();
+  });
+  fTo.addEventListener('change', render);
   btn.addEventListener('click', open);
   btnGen.addEventListener('click', render);
   btnCopy.addEventListener('click', copyText);
@@ -960,9 +1075,9 @@ def verify_calendar():
     }
     for ym, expected in ref.items():
         y, m = divmod(ym, 100) if ym >= 202600 else (ym // 100, ym % 100)
-        labels = [wl for _ws, wl, _n in month_weeks(y, m)]
+        labels = [wl for _ws, wl, _days in month_weeks(y, m)]
         assert labels == expected, 'Сетка недель %d-%02d не совпала: %s (ожидалось %s)' % (y, m, labels, expected)
-    assert sum(n for _ws, _l, n in month_weeks(2026, 2)) == 28  # високосных проверок не трогаем, но февраль 2026 простой
+    assert sum(len(days) for _ws, _l, days in month_weeks(2026, 2)) == 28  # февраль 2026 простой
     print('Календарная сетка недель: OK (неделя Пн–Вс, все недели месяца показаны)')
 
 def main():
