@@ -296,18 +296,17 @@ def week_is_done(ws):
     return ws + datetime.timedelta(days=6) < datetime.date.today()
 
 def week_counts_line(days):
-    """Строка «17.09: 4. 18.09: —. …» по дням недели (в границах месяца)."""
+    """Строка «17.09: 4. 18.09: 2. …» — только по дням недели, на которые есть
+    события (прошедшие и пустые дни не выводятся)."""
     counts = {}
     for e in evs:
         d = datetime.date(*map(int, e['date_iso'].split('-')))
         if week_start(d) == week_start(days[0]):
             counts[d] = counts.get(d, 0) + 1
     parts = []
-    for d in days:
-        c = counts.get(d, 0)
-        parts.append('%s: %d' % (fmt_date_short(d.isoformat()), c) if c else
-                     '%s: —' % fmt_date_short(d.isoformat()))
-    return '. '.join(parts) + '.'
+    for d in sorted(counts):
+        parts.append('%s: %d' % (fmt_date_short(d.isoformat()), counts[d]))
+    return '. '.join(parts) + ('.' if parts else '')
 
 def build_index():
     head = ['<h1>Календарь событий</h1>',
@@ -335,7 +334,9 @@ def build_index():
             wid = week_id(y, m, ws)
             weeks.append((wid, wl, ''))
             main.append(f'<h3 class="week" id="{wid}">{esc(wl)}</h3>')
-            main.append('<div class="weekcount">%s</div>' % esc(week_counts_line(days)))
+            wc = week_counts_line(days)
+            if wc:
+                main.append('<div class="weekcount">%s</div>' % esc(wc))
             for e in by_week.get(ws, []):
                 main.append(card(e))
         sections.append((mid, month_label_ym(y, m), weeks))
