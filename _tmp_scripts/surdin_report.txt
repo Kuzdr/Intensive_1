@@ -1,0 +1,10 @@
+og:title        = Марс: зона возможной жизни. Владимир Сурдин
+og:url          = ?
+og:description  = 14 октября. Что мешает человеку ступить на Красную планету. На лекции вас ждут истории первых марсианских исследований, редкие снимки Красной планеты, научные загадки, актуальная и проверенная информация.
+startDate = 2026-10-14T19:30  ???? ??????: Wednesday (14.10.2026)
+
+--- JSON-LD ---
+{"@context":"https://schema.org","@type":"BroadcastEvent","name":"Марс: зона возможной жизни","image":"https://www.pryamaya.ru/image-crop?path=img%2Flectures%2F8863%2FqsoGpgj5fGPVQm4qisFXpwGT3Nyc4uYK.webp&w=768&h=548&fit=cover","startDate":"2026-10-14T19:30","endDate":"2026-10-15T01:30","url":"https://www.pryamaya.ru/vladimir_surdin_mars_zona_vozmoznoj_zizni_14_10_2026","description":"14 октября. Что мешает человеку ступить на Красную планету. На лекции вас ждут истории первых марсианских исследований, редкие снимки Красной планеты, научные загадки, актуальная и проверенная информация.","isLiveBroadcast":"true","offers":{"@type":"Offer","price":"1500.00","priceCurrency":"RUB"},"performer":{"@type":"Person","name":"Владимир Сурдин"}}
+
+=== ???? ? ????? (??????? ?????) ===
+
