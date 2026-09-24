@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "skills": {
+    "sources": [
+	{"path": "C:/_PROJ/Zerocoder/Intensiv_1/.opencode/skills", "recursive": "true"}
+    ],
+    "enable": ["event-description", "post-check", "proofreading", "telegram-post"]
+  },
+  "permission": {
+    "skill": {
+      "*": "allow"
+    }
+  }
+}

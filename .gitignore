@@ -9,3 +9,4 @@ data/update_state.json
 .vscode/
 .idea/
 Thumbs.db
+_tmp/
