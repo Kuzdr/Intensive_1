@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 """Проверка валидности скиллов «Научного календаря».
 
-Запускается из-под PowerShell ПЕРЕД КАЖДЫМ КОММИТОМ (обязательное правило
-проекта, см. AGENTS.md). Проверяет детерминированно:
+Запускается из-под PowerShell ПЕРЕД КАЖДЫМ КОММИТОМ и после запуска
+проекта/новой сессии (обязательное правило проекта, см. AGENTS.md).
+Проверяет детерминированно:
 
 1. в каждом каталоге `.opencode/skills/*` есть файл `SKILL.md`;
-2. frontmatter корректен: есть `name:` и `description:`, и `name`
-   совпадает с именем каталога скилла;
+2. YAML-frontmatter (`name:`, `description:` между строками `---`) валиден
+   (парсится штатным YAML-парсером, без ошибок синтаксиса); есть
+   `name:` и `description:`, и `name` совпадает с именем каталога скилла;
 3. все упоминаемые в `SKILL.md` локальные пути (`tools/…`,
    `reference/…`, `data/…`, `.opencode/…`) указывают на существующие
    файлы (сначала относительно папки скилла, затем корня проекта);
 4. YAML-файлы упомянутых путей читаются (нет поломанной структуры).
+
+Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
 Использование:
 
@@ -21,6 +25,11 @@
 import os
 import re
 import sys
+
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILLS_DIR = os.path.join(ROOT, ".opencode", "skills")
@@ -39,21 +48,24 @@ def norm(p: str) -> str:
     return p.rstrip(TRAIL)
 
 
-def parse_frontmatter(text: str) -> dict:
-    """Достаёт name/description из YAML-шапки между первыми `---`/`---`."""
+def parse_frontmatter(text: str):
+    """Возвращает (meta, error). meta — dict из YAML-шапки между первыми
+    `---`/`---`, error — текст ошибки YAML-парсинга или None."""
     if not text.startswith("---"):
-        return {}
+        return {}, "нет YAML-frontmatter (файл не начинается с `---`)"
     end = text.find("\n---", 4)
     if end == -1:
-        return {}
+        return {}, "не найдена закрывающая строка `---`"
     body = text[4:end]
-    meta = {}
-    for line in body.splitlines():
-        if line.startswith("name:"):
-            meta["name"] = line.split(":", 1)[1].strip().strip("\"'")
-        elif line.startswith("description:"):
-            meta["description"] = line.split(":", 1)[1].strip().strip("\"'")
-    return meta
+    if yaml is None:
+        return {}, "не установлен PyYAML (`python -X utf8 -m pip install pyyaml`)"
+    try:
+        meta = yaml.safe_load(body)
+    except yaml.YAMLError as e:
+        return {}, "YAML невалиден: %s" % e
+    if not isinstance(meta, dict):
+        return {}, "YAML-frontmatter должен быть словарём (получено %s)" % type(meta).__name__
+    return meta, None
 
 
 def check_skill(dir_path: str) -> list:
@@ -66,14 +78,19 @@ def check_skill(dir_path: str) -> list:
 
     with open(md, encoding="utf-8") as f:
         text = f.read()
+    if text.startswith("\ufeff"):
+        text = text[1:]  # снимаем BOM (некоторые редакторы его дописывают)
 
-    meta = parse_frontmatter(text)
-    if not meta.get("name"):
-        problems.append("в frontmatter нет `name`")
-    elif meta["name"] != name:
-        problems.append("`name` (%s) != имя каталога (%s)" % (meta["name"], name))
-    if not meta.get("description"):
-        problems.append("в frontmatter нет `description`")
+    meta, yerr = parse_frontmatter(text)
+    if yerr:
+        problems.append(yerr)
+    else:
+        if not meta.get("name"):
+            problems.append("в frontmatter нет `name`")
+        elif meta["name"] != name:
+            problems.append("`name` (%s) != имя каталога (%s)" % (meta["name"], name))
+        if not meta.get("description"):
+            problems.append("в frontmatter нет `description`")
 
     for raw in PATH_TOKEN.findall(text):
         p = norm(raw)
