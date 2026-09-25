@@ -15,6 +15,7 @@
 описания — как он отправляется пользователю. Правила не живут здесь: при
 изменении правила правим скилл, а этот файл — только зеркало механики.
 """
+import os
 import re
 import sys
 
@@ -39,6 +40,81 @@ YO_INVARIANTS = (
     "учёный", "Учёный", "учёные", "Учёные",
     "идёт", "Идёт", "вперёд", "Вперёд",
 )
+
+# Слова для проверки «ё» — из tools/yo_words.txt (пополняемый список).
+# Категории файла (заголовки «# -- N -- …»):
+#   1 — проверить ТОЛЬКО эту конкретную форму (не нужна ли «ё»);
+#   2 — проверить во всех формах (механически — по начальной форме);
+#   3 — всегда писать с «ё» в ЭТОЙ форме (без «ё» — ошибка);
+#   4 — всегда писать с «ё» во всех формах (по основе слова, ошибка).
+# Слово с ЗАГЛАВНОЙ буквы в файле — проверять, только если в тексте оно
+# написано с заглавной.
+
+
+def load_yo_list(path: str) -> dict:
+    """Читает tools/yo_words.txt → {номер_категории: [слова]}."""
+    cats = {1: [], 2: [], 3: [], 4: []}
+    head_re = re.compile(r"^#\s*--\s*(\d)\s*--")
+    cur = None
+    with open(path, encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line:
+                continue
+            m = head_re.match(line)
+            if m:
+                cur = int(m.group(1))
+                continue
+            if line.startswith("#") or cur not in cats:
+                continue
+            cats[cur].append(line)
+    return cats
+
+
+_YO_LESS = str.maketrans("ёЁ", "еЕ")
+_YO_VOWELS = "аеиоуыэюяАЕИОУЫЭЮЯ"
+# Типичные падежные/родовые окончания для поиска «во всех формах» (первый
+# вариант — само слово без окончания). Ограниченный набор — чтобы «небо» не
+# ловило «небосклон»/«небесный».
+_YO_ENDINGS = (
+    "", "а", "о", "я", "е", "ь", "у", "ю", "ы", "и",
+    "ом", "ем", "ам", "ям", "ах", "ях", "ов", "ев",
+    "ой", "ей", "ий", "ая", "ое", "ые", "ых", "ую", "юю",
+    "ами", "ями", "ого", "ему",
+)
+
+
+def _find_yo_forms(t: str, words, all_forms=False, allow_suffix=False):
+    """Ищет формы слов из списка без «ё». Возвращает [(match, слово_из_списка)].
+    Слово с ЗАГЛАВНОЙ буквы в списке — находим, только если в тексте оно
+    написано с заглавной (правило файла yo_words.txt).
+    all_forms — «во всех формах»: основа без конечной гласной + типичные
+    окончания. allow_suffix — разрешить произвольное окончание (не используем,
+    оставлено запасным)."""
+    hits = []
+    CYR_LOW = "а-яё"
+    for w in words:
+        base = w.translate(_YO_LESS)
+        if all_forms:
+            core = base[:-1] if base[-1] in _YO_VOWELS else base
+            tail = "(?:%s)" % "|".join(re.escape(e) for e in _YO_ENDINGS)
+        else:
+            core = base
+            tail = re.escape("")
+        if w[0].isupper():
+            pat = re.compile(
+                r"(?<![%s])(%s%s)(?![%s])" % (CYR, re.escape(core), tail, CYR),
+                re.UNICODE,
+            )
+        else:
+            pat = re.compile(
+                r"(?<![%s])(%s%s)(?![%s])" % (CYR, re.escape(core), tail, CYR),
+                re.IGNORECASE | re.UNICODE,
+            )
+        for m in pat.finditer(t):
+            hits.append((m, w))
+    hits.sort(key=lambda hm: hm[0].start())
+    return hits
 
 
 def load(path: str) -> str:
@@ -197,6 +273,25 @@ def main() -> None:
         emit("8", "nbsp между обычными словами (название организации?)", m, is_warn=True)
     for m in p_straight_quotes(t):
         emit("9", 'прямые кавычки " — заменить на «»/„“', m, is_warn=True)
+
+    # Слова для проверки «ё» из tools/yo_words.txt (пополняемый список)
+    try:
+        yo_list = load_yo_list(os.path.join(os.path.dirname(os.path.abspath(__file__)), "yo_words.txt"))
+    except FileNotFoundError:
+        yo_list = {}
+
+    # категория 1 — проверить конкретную форму, не нужна ли «ё» (наводка)
+    for m, w in _find_yo_forms(t, yo_list.get(1, [])):
+        emit("6a", "по списку yo_words: «%s» — проверить, не нужна ли „ё“" % m.group(0), m, is_warn=True)
+    # категория 2 — проверить во всех формах (наводка)
+    for m, w in _find_yo_forms(t, yo_list.get(2, []), all_forms=True):
+        emit("6b", "по списку yo_words: «%s» — проверить во всех формах, не нужна ли „ё“" % m.group(0), m, is_warn=True)
+    # категория 3 — всегда с «ё» в этой форме (ошибка)
+    for m, w in _find_yo_forms(t, yo_list.get(3, [])):
+        emit("6c", "по списку yo_words: «%s» — здесь всегда нужна „ё“" % m.group(0), m)
+    # категория 4 — всегда с «ё» во всех формах (ошибка, по основе слова)
+    for m, w in _find_yo_forms(t, yo_list.get(4, []), all_forms=True):
+        emit("6d", "по списку yo_words: «%s» — всегда нужна „ё“ (во всех формах)" % m.group(0), m)
 
     print("=== ОШИБКИ (исправить обязательно) ===")
     if not hard:
