@@ -149,15 +149,52 @@ def p_nbsp_after_two_letter(t: str):
 
 
 def p_nbsp_missing_after_number(t: str):
-    """Число + ОБЫЧНЫЙ пробел + слово — должен быть nbsp («10 октября»)."""
+    """Число + ОБЫЧНЫЙ пробел + слово — должен быть nbsp («10 октября»).
+
+    ИСКЛЮЧЕНИЕ: число уже привязано nbsp к слову ДО него («Лекция&nbsp;1
+    курса…») — тогда к слову ПОСЛЕ число не относится, и nbsp после числа
+    НЕ нужен. Число принадлежит одному соседнему слову: либо «после»
+    («1&nbsp;миллион»), либо «до» («Лекция&nbsp;1»); к обоим сразу —
+    запрещено. Записано пользователем 26.09.2026 (прототип Усанова,
+    TP-4206645).
+    """
     pat = re.compile(r"\d +(?=[А-Яа-яЁё])", re.UNICODE)
-    return [m for m in pat.finditer(t)]
+    return [
+        m
+        for m in pat.finditer(t)
+        if not (m.start() > 0 and t[m.start() - 1] == SENT)
+    ]
+
+
+def p_nbsp_double_number(t: str):
+    """Число между двумя nbsp — запрещено: число не может относиться сразу
+    к обоим соседним словам. Правильно с одной стороны обычный пробел:
+    «Лекция&nbsp;1 курса…» (число привязано к «Лекция»).
+
+    ИСКЛЮЧЕНИЕ: левый nbsp после ОДНОБУКВЕННОГО предлога/союза
+    («В&nbsp;2025&nbsp;году») — это обязательный nbsp после предлога (п. 1),
+    он не привязывает число к левому слову; число относится только к слову
+    справа, двойной привязки нет.
+    """
+    out = []
+    for m in re.finditer(r"%s\d+%s" % (SENT, SENT), t):
+        left = t[m.start() - 1] if m.start() > 0 else ""
+        if left.lower() in ONE_LETTER:
+            continue
+        out.append(m)
+    return out
 
 
 def p_nbsp_missing_initials(t: str):
-    """Инициалы + ОБЫЧНЫЙ пробел + (инициал|фамилия) — должен быть nbsp."""
-    pat_ii = re.compile(r"[А-ЯЁ]\. +[А-ЯЁ]\.", re.UNICODE)  # М. В.
-    pat_is = re.compile(r"[А-ЯЁ]\. +[А-ЯЁ][а-яё]{2,}", re.UNICODE)  # М. Ломоносов
+    """Инициалы + ОБЫЧНЫЙ пробел + (инициал|фамилия) — должен быть nbsp.
+
+    Тут инициалы: заглавная + точка, перед которой НЕ соседняя заглавная
+    (иначе это последняя буква аббревиатуры: «США. Как…» — не инициалы).
+    """
+    pat_ii = re.compile(r"(?<![А-ЯЁ])[А-ЯЁ]\. +[А-ЯЁ]\.", re.UNICODE)  # М. В.
+    pat_is = re.compile(
+        r"(?<![А-ЯЁ])[А-ЯЁ]\. +[А-ЯЁ][а-яё]{2,}", re.UNICODE
+    )  # М. Ломоносов
     hits = [m for m in pat_ii.finditer(t)] + [m for m in pat_is.finditer(t)]
     hits.sort(key=lambda m: m.start())
     return hits
@@ -255,6 +292,8 @@ def main() -> None:
         emit("2", "nbsp после «%s» — нельзя" % m.group(1), m)
     for m in p_nbsp_missing_after_number(t):
         emit("1a", "нет nbsp между числом и словом", m)
+    for m in p_nbsp_double_number(t):
+        emit("1d", "nbsp с обеих сторон числа — число привязано к обоим соседним словам, запрещено", m)
     for m in p_nbsp_missing_initials(t):
         emit("1b", "нет nbsp между инициалами/инициалом и фамилией", m)
     for m in p_nbsp_missing_nauka(t):
