@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Сборка статического сайта из data/events.json -> site/"""
 import os, re, json, datetime, html as H, shutil
+from urllib.parse import urlparse
+import protolib as PL
 
 if hasattr(__import__('sys').stdout, 'reconfigure'):
     import sys
@@ -22,6 +24,9 @@ def progress(pct, msg):
 
 evs = json.load(open(DATA, encoding='utf-8'))
 evs.sort(key=lambda e: (e['date_iso'], e['time_start'] or '99:99'))
+for e in evs:
+    e['kind'] = 'el'
+    e['hidden'] = False
 
 MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
 MONTHS_NOM = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
@@ -37,6 +42,10 @@ def fmt_date_ru(iso):
 def fmt_date_short(iso):
     y, m, d = map(int, iso.split('-'))
     return '%02d.%02d' % (d, m)
+
+def fmt_date_num(iso):
+    y, m, d = map(int, iso.split('-'))
+    return '%02d.%02d.%d' % (d, m, y)
 
 def fmt_time(e):
     t = e.get('time_start') or ''
@@ -140,7 +149,7 @@ def week_id(y, m, ws):
     return 'w-%04d-%02d-%s' % (y, m, ws.isoformat())
 
 def url_detail(e, prefix=''):
-    return prefix + 'event/%s.html' % e['id']
+    return prefix + 'event/%s.html' % (e.get('slug') or e['id'])
 
 def annot_snippet(e, limit=260):
     a = re.sub(r'\s+', ' ', (e.get('annot') or '')).strip()
@@ -150,7 +159,104 @@ def annot_snippet(e, limit=260):
         a = a[:limit].rstrip(' ,;:') + '…'
     return a
 
+# ------------------------------------------------------------------ прототипы
+
+items = list(evs)          # события «Элементов» + прототипы (для списка и страниц)
+PROTO_SUMMARY = {'shown': 0, 'hidden': 0, 'archived': 0, 'dup': 0, 'total': 0}
+
+def proto_item(p, st):
+    """Данные прототипа -> то же, что у события «Элементов» (для карточки)."""
+    return {
+        'id': p['id'],
+        'kind': 'proto',
+        'slug': PL.slugify(p['id']),
+        'date_iso': p['date_iso'],
+        'weekday': WEEKDAYS[datetime.date(*map(int, p['date_iso'].split('-'))).weekday()],
+        'time_start': p.get('time_start') or '',
+        'time_end': p.get('time_end') or '',
+        'date_dot': fmt_date_short(p['date_iso']),
+        'city': p.get('city') or '',
+        'place': p.get('place') or '',
+        'lecturer': p.get('lecturer') or '',
+        'title': p.get('title') or '',
+        'lectory': p.get('lectory') or '',
+        'types': p.get('types') or [],
+        'topics': p.get('topics') or [],
+        'price_short': p.get('price_short') or '',
+        'annot': p.get('annot') or '',
+        'url': p.get('url') or '',
+        'proto': p,
+        'st': st,
+        'hidden': st['hidden'],
+        'dup': st['dup'],
+        'dup_of': st['dup_of'],
+        'dup_hits': st['dup_hits'],
+        'comment': st['comment'],
+        'feedback': st['feedback'],
+        'rebuild': st['rebuild'],
+    }
+
+def load_prototypes():
+    """Читает data/prototypes/*/prototype.json, применяет состояние пользователя,
+    прячет прошедшие (в архив) и дубли «Элементов»."""
+    global items
+    items = list(evs)
+    state = PL.load_state()
+    notes = []
+    for pid in PL.list_ids():
+        try:
+            p = PL.load(pid)
+        except Exception as e:
+            print('ПРОТОТИП %s: не читается (%s)' % (pid, e))
+            continue
+        PROTO_SUMMARY['total'] += 1
+        if PL.is_past(p.get('date_iso')):
+            PL.archive(pid)
+            PROTO_SUMMARY['archived'] += 1
+            notes.append('%s — событие уже прошло, перенесён в архив' % pid)
+            continue
+        st = PL.state_of(state, pid)
+        hits, dup = PL.find_duplicate(p, evs)
+        st['dup'] = bool(hits)
+        st['dup_of'] = dup['id'] if dup else ''
+        st['dup_hits'] = hits or []
+        st['dup_url'] = dup['url'] if dup else ''
+        it = proto_item(p, st)
+        if hits:
+            PROTO_SUMMARY['dup'] += 1
+            notes.append('%s — дубль на «Элементах» (ID %s: %s), скрыт автоматически'
+                         % (pid, dup['id'], ', '.join(hits)))
+        if st['hidden'] or hits:
+            PROTO_SUMMARY['hidden'] += 1
+            it['hidden'] = True
+        else:
+            PROTO_SUMMARY['shown'] += 1
+        items.append(it)
+    items.sort(key=lambda e: (e['date_iso'], e.get('time_start') or '99:99'))
+    return notes
+
+def proto_lectorium(p):
+    """Название лектория (канала) прототипа: поле 6.3, иначе подзаголовок.
+
+    &nbsp; из поля 6.3 превращаем в настоящий неразбиваемый пробел (U+00A0):
+    иначе в подписи флажка и в подписи карточки видно «&nbsp;» текстом.
+    """
+    v = (PL.field(p, '6.3') or PL.field(p, '6') or p.get('lectory') or '—').strip()
+    return v.replace('&nbsp;', '\u00A0').replace('&#160;', '\u00A0')
+
+
+def lectories_of_prototypes():
+    cnt = {}
+    for it in items:
+        if it.get('kind') != 'proto':
+            continue
+        name = proto_lectorium(it['proto'])
+        cnt[name] = cnt.get(name, 0) + 1
+    return sorted(cnt.items())
+
 def card(e, prefix=''):
+    if e.get('kind') == 'proto':
+        return proto_card(e, prefix)
     dt = datetime.date(*map(int, e['date_iso'].split('-')))
     wd = WEEKDAYS[dt.weekday()]
     supl = []
@@ -162,7 +268,7 @@ def card(e, prefix=''):
     upd = ''
     if e.get('updated'):
         upd = f'<div class="badge-upd">обновлено {esc(e.get("updated_at", ""))}</div>'
-    return f'''<div class="event">
+    return f'''<div class="event" data-kind="el" data-id="{esc(e['id'])}" data-date="{esc(e['date_iso'])}">
   <div class="edate">
     <div class="hday">{esc(fmt_date_short(e['date_iso']))}</div>
     <div class="hmeta">{esc(wd)}</div>
@@ -182,6 +288,91 @@ def card(e, prefix=''):
     <div class="annot">{esc(annot_snippet(e))}</div>
   </div>
 </div>'''
+
+def proto_actions(e, where='card'):
+    """Кнопки действий с прототипом. На не-локальном сайте (GitHub Pages) кнопки
+    правки скрывает prototypes.js — здесь только разметка и текущие значения."""
+    st = e.get('st') or {}
+    hid = '1' if e.get('hidden') else '0'
+    return ('<div class="pbtns" data-for="%s" data-id="%s" data-hidden="%s"'
+            ' data-comment="%s" data-feedback="%s" data-rebuild="%s">'
+            '<button type="button" class="pb" data-act="hide" title="%s">%s</button>'
+            '<button type="button" class="pb" data-act="comment" title="Комментарий: ваша заметка к прототипу, сохраняется в файле состояния">Комментарий</button>'
+            '<button type="button" class="pb" data-act="feedback" title="Обратная связь: задача агенту, что нужно переделать в прототипе">Обратная связь</button>'
+            '<button type="button" class="pb del" data-act="delete" title="Удалить прототип: папка переедет в архив, её можно вернуть">Удалить</button>'
+            '</div>') % (esc(where), esc(e['id']), hid,
+                         esc(e.get('comment') or ''), esc(e.get('feedback') or ''),
+                         '1' if st.get('rebuild') else '0',
+                         'Показать прототип в списке' if e.get('hidden')
+                         else 'Скрыть прототип в списке (файл останется на месте)',
+                         'Восстановить' if e.get('hidden') else 'Скрыть')
+
+def note_del_btn(kind):
+    """Кнопка-иконка удаления для выведенного комментария или обратной связи."""
+    what = 'комментарий' if kind == 'comment' else 'обратную связь'
+    return ('<button type="button" class="un-del" data-act="del-%s"'
+            ' title="Удалить %s (с подтверждением)"'
+            ' aria-label="Удалить %s">✕</button>' % (kind, what, what))
+
+
+def user_notes_html(e, where, in_card=False):
+    """Комментарий и обратная связь. in_card=True — компактно, для карточки списка."""
+    out = []
+    if e.get('comment'):
+        out.append('<div class="usernote comment"><div class="un-h"><span class="un-t">Комментарий</span>'
+                   '%s</div>%s</div>' % (note_del_btn('comment'), nl2br(H.escape(e['comment']))))
+    if e.get('feedback'):
+        out.append('<div class="usernote feedback"><div class="un-h"><span class="un-t">'
+                   'Обратная связь (задача агенту)</span>%s</div>%s</div>'
+                   % (note_del_btn('feedback'), nl2br(H.escape(e['feedback']))))
+    if not out:
+        return ''
+    return '<div class="usernotes%s" data-where="%s" data-id="%s" data-comment="%s" data-feedback="%s" data-rebuild="%s">%s</div>' % (
+        ' in-card' if in_card else '', esc(where), esc(e['id']),
+        esc(e.get('comment') or ''), esc(e.get('feedback') or ''),
+        '1' if (e.get('st') or {}).get('rebuild') else '0', ''.join(out))
+
+
+def proto_card(e, prefix=''):
+    p = e['proto']
+    sup = []
+    if e.get('types'):
+        sup.append(', '.join(e['types']))
+    if e.get('topics'):
+        sup.append(', '.join(e['topics']))
+    marks = []
+    if e.get('dup'):
+        marks.append('<span class="pmark dup">дубль на «Элементах»</span>')
+    if e.get('st', {}).get('rebuild'):
+        marks.append('<span class="pmark rebuild">переделать</span>')
+    mark_html = ('<div class="pmarks">' + ''.join(marks) + '</div>') if marks else ''
+    hidden_attr = ' hidden' if e.get('hidden') else ''
+    lectory = proto_lectorium(p)
+    eurl = url_detail(e, prefix)
+    return f'''<div class="event proto{hidden_attr}" data-kind="proto" data-id="{esc(e['id'])}" data-lectory="{esc(lectory)}" data-date="{esc(e['date_iso'])}" data-lecturer="{esc(e.get('lecturer') or '')}" data-title="{esc(e.get('title') or '')}" data-where="{esc(fmt_date_ru(e['date_iso']))}">
+  <div class="edate">
+    <div class="hday">{esc(fmt_date_short(e['date_iso']))}</div>
+    <div class="hmeta">{esc(e['weekday'])}</div>
+    <div class="hmeta">{esc(fmt_time(e))}</div>
+    <div class="hcity">{esc(e['city'] or '')}</div>
+    <div class="hlink"><a href="{esc(e['url'])}" target="_blank" rel="noopener">{esc(e['id'])}</a></div>
+    {proto_actions(e, 'card')}
+  </div>
+  <div class="edesc">
+    <div class="suplink">{esc(' • '.join(sup))}</div>
+    <a class="nohover" href="{eurl}">
+      <div class="pretitle">{esc(e['lecturer'] or '')}</div>
+      <div class="title">{esc(e['title'] or '')}</div>
+    </a>
+    <div class="sublink">{esc(e['place'] or '')}</div>
+    <div class="price">{esc(e['price_short'] or '')}</div>
+    <div class="lectory plectory">{esc(lectory)}</div>
+    {mark_html}
+    <div class="annot">{esc(annot_snippet(e))}</div>
+  </div>
+  {user_notes_html(e, 'card', in_card=True)}
+</div>'''
+
 
 def header(title, active, prefix=''):
     nav = []
@@ -236,21 +427,51 @@ def page(title, body, active, prefix=''):
 </html>'''
 
 TOOLBAR = '''<div class="toolbar">
-  <button type="button" class="tbtn" id="btn-update">Обновить данные</button>
-  <button type="button" class="tbtn" id="btn-post">Пост в Телеграм</button>
-  <div class="toolbar-more" title="Место для будущих кнопок (обход источников, фильтры показа)"></div>
+  <button type="button" class="tbtn js-update" data-panel="update-panel-top" title="Пересобрать данные с сайта «Элементов» и опубликовать изменения">Обновить данные</button>
+  <button type="button" class="tbtn js-post" title="Составить пост в Телеграм по событиям календаря">Пост в Телеграм</button>
+  <div class="toolbar-view" id="view-switch">
+    <label><input type="radio" name="vmode" value="all" checked> всё</label>
+    <label><input type="radio" name="vmode" value="el"> «Элементы»</label>
+    <label><input type="radio" name="vmode" value="proto"> прототипы</label>
+    <label class="vhidden"><input type="checkbox" id="v-showhidden"> скрытые</label>
+    <button type="button" class="tbtn mini" id="btn-lectories">Лектории</button>
+  </div>
 </div>'''
 
-PANEL = '''<div class="update-panel" id="update-panel" hidden>
-  <div class="update-progress" id="up-progress" hidden>
+# Панель кнопок страницы прототипа: та же, что сверху, и её копия снизу.
+# У каждой копии своя панель прогресса (data-panel), поэтому работают обе.
+TOOLBAR_PAGE = '''<div class="toolbar toolbar-page">
+  <button type="button" class="tbtn js-update" data-panel="update-panel-%s" title="Пересобрать данные с сайта «Элементов» и опубликовать изменения">Обновить данные</button>
+  <button type="button" class="tbtn js-post" title="Составить пост в Телеграм по событиям календаря">Пост в Телеграм</button>
+  <div class="toolbar-more"></div>
+</div>
+%s'''
+
+PANEL = '''<div class="update-panel" id="update-panel-top" hidden>
+  <div class="update-progress" hidden>
     <div class="bar"><div class="bar-fill" id="up-bar"></div></div>
     <div class="bar-msg" id="up-msg"></div>
   </div>
-  <div class="update-status" id="up-status"></div>
-  <div class="update-actions" id="up-actions" hidden>
+  <div class="update-status"></div>
+  <div class="update-actions" hidden>
     <button type="button" class="tbtn sec" id="up-close">Закрыть</button>
   </div>
 </div>'''
+
+PANEL_PAGE = '''<div class="update-panel" id="update-panel-%s" hidden>
+  <div class="update-progress" hidden>
+    <div class="bar"><div class="bar-fill"></div></div>
+    <div class="bar-msg"></div>
+  </div>
+  <div class="update-status"></div>
+  <div class="update-actions" hidden>
+    <button type="button" class="tbtn sec">Закрыть</button>
+  </div>
+</div>'''
+def toolbar_page(tag):
+    """Панель кнопок для страницы прототипа + своя панель прогресса."""
+    return TOOLBAR_PAGE % (tag, PANEL_PAGE % tag)
+
 
 MODAL = '''<div class="modal-overlay" id="modal-update" hidden>
   <div class="modal">
@@ -264,6 +485,20 @@ MODAL = '''<div class="modal-overlay" id="modal-update" hidden>
     </div>
   </div>
 </div>'''
+
+MODAL = '''<div class="modal-overlay" id="modal-update" hidden>
+  <div class="modal">
+    <div class="modal-title">Обновить данные?</div>
+    <div class="modal-body">
+      <p class="modal-hint">Будут удалены прошедшие события, добавлены новые, а события, у которых изменились название, авторы, дата, лекторий, место или цена, будут обновлены и помечены.</p>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="tbtn" data-mp="ok">Да</button>
+      <button type="button" class="tbtn sec" data-mp="cancel">Нет</button>
+    </div>
+  </div>
+</div>'''
+
 
 MODAL_POST = '''<div class="modal-overlay" id="modal-post" hidden>
   <div class="modal modal-post">
@@ -279,6 +514,23 @@ MODAL_POST = '''<div class="modal-overlay" id="modal-post" hidden>
     <div class="modal-actions">
       <button type="button" class="tbtn" id="pp-copy">Копировать</button>
       <button type="button" class="tbtn sec" id="pp-close">Закрыть</button>
+    </div>
+  </div>
+</div>'''
+
+
+MODAL_LECTORIES = '''<div class="modal-overlay" id="modal-lectories" hidden>
+  <div class="modal modal-lec">
+    <div class="modal-title">Лектории (каналы) прототипов</div>
+    <div class="modal-body">
+      <div class="modal-hint">Отметьте лектории, прототипы которых нужно показывать. Настройка действует в режимах «всё» и «только прототипы».</div>
+      <div class="lec-list" id="lec-list"><!--LEC--></div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="tbtn sec" id="lec-all">Отметить все</button>
+      <button type="button" class="tbtn sec" id="lec-none">Убрать все</button>
+      <button type="button" class="tbtn sec" id="lec-inv">Инвертировать</button>
+      <button type="button" class="tbtn" id="lec-ok">Готово</button>
     </div>
   </div>
 </div>'''
@@ -299,7 +551,7 @@ def week_counts_line(days):
     """Строка «17.09: 4. 18.09: 2. …» — только по дням недели, на которые есть
     события (прошедшие и пустые дни не выводятся)."""
     counts = {}
-    for e in evs:
+    for e in items:
         d = datetime.date(*map(int, e['date_iso'].split('-')))
         if week_start(d) == week_start(days[0]):
             counts[d] = counts.get(d, 0) + 1
@@ -314,7 +566,7 @@ def build_index():
             TOOLBAR,
             PANEL]
     by_month = {}
-    for e in evs:
+    for e in items:
         d = datetime.date(*map(int, e['date_iso'].split('-')))
         by_month.setdefault((d.year, d.month), []).append(e)
     sections = []
@@ -336,20 +588,30 @@ def build_index():
             main.append(f'<h3 class="week" id="{wid}">{esc(wl)}</h3>')
             wc = week_counts_line(days)
             if wc:
-                main.append('<div class="weekcount">%s</div>' % esc(wc))
+                main.append('<div class="weekcount" data-week="%s">%s</div>' % (wid, esc(wc)))
             for e in by_week.get(ws, []):
                 main.append(card(e))
         sections.append((mid, month_label_ym(y, m), weeks))
+    lec = ''.join(
+        '<label class="lec-item"><input type="checkbox" value="%s"%s> %s <span class="lec-n">(%d)</span></label>'
+        % (esc(name), ' checked' if cnt else '', esc(name), cnt)
+        for name, cnt in lectories_of_prototypes())
+    if not lec:
+        lec = '<div class="modal-hint">Прототипов пока нет.</div>'
     body_parts = [*head,
                   '<div class="idxbody">',
                   build_toc(sections),
                   '<div class="idxmain">',
                   '\n'.join(main),
                   '</div>',
+                  '<div class="v-empty" id="v-empty" hidden>По этим условиям ничего не нашлось. '
+                  'Попробуйте включить «показать скрытые» или выбрать другие лектории.</div>',
                   '</div>',
                   MODAL,
                   MODAL_POST,
+                  MODAL_LECTORIES.replace('<!--LEC-->', lec),
                   '<script src="js/post.js"></script>',
+                  '<script src="js/prototypes.js"></script>',
                   '<script src="js/toolbar.js"></script>']
     body = '\n'.join(body_parts)
     open(os.path.join(SITE, 'index.html'), 'w', encoding='utf-8').write(page('Календарь событий', body, 'events'))
@@ -361,24 +623,36 @@ def render_memo(e, prefix):
     return m
 
 def build_event_pages():
-    n = len(evs)
-    for i, e in enumerate(evs):
-        nav_prev = nav_next = ''
-        if i > 0:
-            p = evs[i - 1]
-            nav_prev = f'<a class="pagenav prev" href="{p["id"]}.html"><span>Предыдущее</span><b>{esc(p["title"])}</b><i>{esc(fmt_date_short(p["date_iso"]))} · {esc(p["lecturer"] or "")}</i></a>'
-        if i < n - 1:
-            nxt = evs[i + 1]
-            nav_next = f'<a class="pagenav next" href="{nxt["id"]}.html"><span>Следующее</span><b>{esc(nxt["title"])}</b><i>{esc(fmt_date_short(nxt["date_iso"]))} · {esc(nxt["lecturer"] or "")}</i></a>'
-        reg = ''
-        if e.get('reg_links'):
-            links = ' · '.join(
-                f'<a href="{esc(l["href"])}" target="_blank" rel="noopener">{esc(l["text"])}</a>' for l in e['reg_links'])
-            reg = f'<div class="reglinks"><span class="lbl">Регистрация:</span> {links}</div>'
-        upd_src = ''
-        if e.get('updated'):
-            upd_src = f'<div class="upd-src">Обновлено: {esc(e.get("updated_at", ""))}</div>'
-        body = f'''<div class="crumb"><a href="../index.html">Календарь событий</a> » <span>{esc(e['title'] or '')}</span></div>
+    n = len(items)
+    for i, e in enumerate(items):
+        if e.get('kind') == 'proto':
+            body = proto_page(e, '../')
+        else:
+            body = event_page(e, i, n, '../')
+        name = (e.get('slug') or e['id']) + '.html'
+        doc = e['title'] or ('Событие ' + e['id'])
+        if e.get('lecturer'):
+            doc += ' — ' + e['lecturer']
+        open(os.path.join(EVENT_DIR, name), 'w', encoding='utf-8').write(
+            page(doc, body, 'events', '../'))
+
+def event_page(e, i, n, prefix):
+    nav_prev = nav_next = ''
+    if i > 0:
+        p = items[i - 1]
+        nav_prev = f'<a class="pagenav prev" href="{url_detail(p, prefix)}"><span>Предыдущее</span><b>{esc(p["title"])}</b><i>{esc(fmt_date_short(p["date_iso"]))} · {esc(p["lecturer"] or "")}</i></a>'
+    if i < n - 1:
+        nxt = items[i + 1]
+        nav_next = f'<a class="pagenav next" href="{url_detail(nxt, prefix)}"><span>Следующее</span><b>{esc(nxt["title"])}</b><i>{esc(fmt_date_short(nxt["date_iso"]))} · {esc(nxt["lecturer"] or "")}</i></a>'
+    reg = ''
+    if e.get('reg_links'):
+        links = ' · '.join(
+            f'<a href="{esc(l["href"])}" target="_blank" rel="noopener">{esc(l["text"])}</a>' for l in e['reg_links'])
+        reg = f'<div class="reglinks"><span class="lbl">Регистрация:</span> {links}</div>'
+    upd_src = ''
+    if e.get('updated'):
+        upd_src = f'<div class="upd-src">Обновлено: {esc(e.get("updated_at", ""))}</div>'
+    return f'''<div class="crumb"><a href="../index.html">Календарь событий</a> » <span>{esc(e['title'] or '')}</span></div>
   <div class="detailblk">
     {render_memo(e, '../')}
   </div>
@@ -391,8 +665,221 @@ def build_event_pages():
   <div class="pagenavs">
     {nav_prev}{nav_next}
   </div>'''
-        open(os.path.join(EVENT_DIR, e['id'] + '.html'), 'w', encoding='utf-8').write(
-            page(e['title'] or ('Событие ' + e['id']), body, 'events', '../'))
+
+# ------------------------------------------------------- страница прототипа
+
+def klblock_to_text(html_txt):
+    """Тег блока об авторе показываем как есть, в угловых скобках."""
+    def rep(m):
+        return '<span class="klblock">' + H.escape(m.group(0)) + '</span>'
+    return re.sub(r'</?KLBLOCK[^>]*>', rep, html_txt, flags=re.I)
+
+def proto_photo(p, prefix):
+    a = p.get('author') or {}
+    src = (a.get('photo') or '').strip()
+    if not src:
+        return ''
+    if not re.match(r'^(https?:)?//', src):
+        src = prefix + src
+    return ('<div class="pphoto"><img src="%s" alt="%s" style="max-width:600px;height:auto">'
+            '<div class="phint">Фото автора (оригинал источника; на сайте показываем'
+            ' со стороной не больше 600&nbsp;пикселей)</div></div>') % (
+                esc(src), esc(a.get('name') or p.get('lecturer') or 'автор'))
+
+def author_block_full(a, p, prefix):
+    """Полноценный блок об авторе для автора, который уже есть на «Элементах»:
+    фото, имя и описание (исходное ТЗ). Без кнопок правки — копировать нечего,
+    автор уже в базе «Элементов»."""
+    name = (a.get('name') or p.get('lecturer') or '').strip()
+    photo = proto_photo(p, prefix)
+    desc = (a.get('block_html') or '').strip()
+    if not desc:
+        # описание берём из поля 7.4, если готовый блок не заполнен
+        for f in a.get('fields') or []:
+            if str(f.get('n')) == '7.4':
+                desc = str(f.get('value') or '').strip()
+    parts = ['<div class="fblock"><div class="fb-t">Об авторе</div>',
+             '<div class="itemblock memo author-full">']
+    if photo:
+        parts.append(photo)
+    if name:
+        parts.append('<p class="aname"><b>%s</b></p>' % esc(name))
+    if desc:
+        parts.append(desc)
+    parts.append('</div></div>')
+    return ''.join(parts)
+
+def edit_btns(area, key, name, value=''):
+    return ('<span class="fbtns" data-area="%s" data-key="%s" data-name="%s" data-text="%s">'
+            '<button type="button" class="fb" data-act="edit" title="Редактировать %s">&#9998;</button>'
+            '<button type="button" class="fb" data-act="copy" title="Скопировать %s">&#128203;</button>'
+            '</span>') % (esc(area), esc(key), esc(name), esc(value or ''),
+                          esc(name.lower()), esc(name.lower()))
+
+# --------------------------------------------------------- источники прототипа
+
+# Числовой ID в адресе источника: Timepad (/event/12345/), Архэ, Timepad-Donational
+# и подобные. Возвращаем (id, подпись источника) или (None, имя хоста).
+def source_num_id(u):
+    m = re.search(r'/event/(\d+)', u or '')
+    if m:
+        return m.group(1), 'Timepad'
+    m = re.search(r'arche\.ru/events/(\d+)', u or '')
+    if m:
+        return m.group(1), 'Архэ'
+    m = re.search(r'timepad\.ru/(\d{5,})', u or '')
+    if m:
+        return m.group(1), 'Timepad'
+    return None, ''
+
+
+def source_label(u):
+    """Короткое имя источника: «Timepad», «Архэ», «Сайт Фестиваля» и т. п."""
+    host = re.sub(r'^www\.', '', (urlparse(u).netloc if '//' in (u or '') else u or ''))
+    num, kind = source_num_id(u)
+    if kind:
+        return '%s, ID %s' % (kind, num)
+    m = re.match(r'^(.*?)\.timepad\.ru', host)
+    if m:
+        return 'Timepad, %s' % m.group(1)
+    m = re.match(r'^(.*?)\.arche\.ru', host)
+    if m:
+        return 'Архэ, %s' % m.group(1)
+    return host or u
+
+
+def source_btns(area, key, name, value=''):
+    """Свой набор кнопок для источника: правка HTML, копирование HTML и ID."""
+    num, kind = source_num_id(value if value.startswith('http') else '')
+    out = edit_btns(area, key, name, value)
+    if num:
+        out = out.replace('</span>',
+                          '<button type="button" class="fb" data-act="copyid" data-text="%s"'
+                          ' title="Скопировать ID источника: %s (%s)">ID</button></span>'
+                          % (esc(num), esc(num), esc(kind)))
+    return out
+
+
+def source_add_row(n):
+    """Пустая строка для добавления нового источника (правьте и сохраняйте)."""
+    return ('<tr class="src-add"><td class="fname">новый источник</td>'
+            '<td class="fval src-url">—</td>'
+            '<td class="fbtns-cell">%s</td></tr>'
+            % edit_btns('source', str(n), 'ссылку на новый источник', ''))
+
+def cell_btns(area, f, name, no_edit=False):
+    """Ячейка с кнопками правки/копирования для поля в таблице."""
+    if no_edit:
+        return ''
+    return edit_btns(area, f.get('n'), name, f.get('value') or '')
+
+def proto_page(e, prefix):
+    p = e['proto']
+    st = e.get('st') or {}
+    lectory = proto_lectorium(p)
+    # --- шапка и кнопки
+    flags = []
+    if e.get('dup'):
+        flags.append('<div class="pflag dup">Такая же лекция уже есть на «Элементах»'
+                     ' (ID %s) — прототип скрыт автоматически%s.</div>'
+                     % (esc(e.get('dup_of') or ''),
+                        ('; совпало: ' + esc(', '.join(e.get('dup_hits') or []))) if e.get('dup_hits') else ''))
+    if e.get('hidden') and not e.get('dup'):
+        flags.append('<div class="pflag">Прототип скрыт — показывается только в режиме «показать скрытые».</div>')
+    if e.get('rebuild'):
+        flags.append('<div class="pflag rebuild">По обратной связи: событие нужно пересоздать заново и заменить этот прототип.</div>')
+    notes = (p.get('notes') or '').strip()
+    # --- описание
+    desc = klblock_to_text(p.get('desc_html') or '')
+    desc = desc.replace('\\', '/').replace('assets/img/', prefix + 'assets/img/')
+    desc_blk = ('<div class="fblock"><div class="fbar">%s</div>'
+                '<div class="itemblock memo pdesc">%s</div></div>') % (
+                    edit_btns('desc', 'desc', 'Описание лекции', p.get('desc_html') or ''), desc)
+    # --- автор: блок с «Элементов» показываем целиком (имя, фото, описание),
+    #     без кнопок правки; для нового автора — поля 7.1–7.4.
+    #     Решает флаг author.on_elementy: он ставится ТОЛЬКО если автор реально
+    #     найден на «Элементах». По умолчанию False — новый автор, поля 7.1–7.4.
+    #     (Раньше решение принималось по наличию block_html, из-за чего новые
+    #     авторы показывались как «уже в базе», а стандартные поля были скрыты.)
+    a = p.get('author') or {}
+    if a.get('on_elementy'):
+        author = author_block_full(a, p, prefix)
+    else:
+        rows = []
+        for f in a.get('fields') or []:
+            nm = f['name']
+            rows.append('<tr><td class="fname">%s</td><td class="fval">%s</td>'
+                        '<td class="fbtns-cell">%s</td></tr>'
+                        % (esc(nm), f.get('value') or '—',
+                           cell_btns('author_fields', f, nm)))
+        author = ('<div class="fblock"><div class="fb-t">Об авторе</div>%s'
+                  '<table class="ftable">%s</table></div>') % (proto_photo(p, prefix), ''.join(rows))
+    # --- дополнительная информация
+    extras = p.get('extra_html') or []
+    ex_rows = []
+    for i, x in enumerate(extras):
+        xh = x.replace('\\', '/')
+        ex_rows.append('<div class="exrow"><div class="exbar">%s</div><div class="exview">%s</div></div>'
+                       % (edit_btns('extra', str(i), 'Дополнительная информация, абзац %d' % (i + 1), x), xh))
+    extra_blk = ''
+    if extras:
+        extra_blk = '<div class="fblock">%s</div>' % ''.join(ex_rows)
+    # --- формальные поля: компактная таблица без заголовка, номеров и
+    #     пометок «только для справки»; значение показываем как есть (без тегов),
+    #     HTML-код остаётся в кнопках.
+    #     Поле «0. ID события» не показываем: ID и так виден в шапке страницы
+    #     («прототип: <ID>»). В JSON и в памятке паспорта оно остаётся.
+    frows = []
+    for f in PL.fields(p):
+        if f['n'] == '0':
+            continue
+        no_edit = f['n'] in PL.NO_EDIT
+        frows.append('<tr class="%s"><td class="fname">%s</td><td class="fval">%s</td>'
+                    '<td class="fbtns-cell">%s</td></tr>' % (
+                        'ro' if no_edit else '',
+                        esc(f['name']),
+                        f.get('value') or '—',
+                        cell_btns('fields', f, f['name'], no_edit)))
+    fields_blk = '<table class="ftable ftable-fields">%s</table>' % ''.join(frows)
+    # --- замечания при подготовке
+    notes_blk = ''
+    if notes:
+        notes_blk = '<div class="fblock"><div class="pnotes">%s</div></div>' % nl2br(H.escape(notes))
+    srcs = p.get('sources') or ([p['url']] if p.get('url') else [])
+    src_rows = []
+    for u in srcs:
+        src_rows.append('<tr><td class="fname">%s</td><td class="fval src-url">'
+                        '<a href="%s" target="_blank" rel="noopener">%s</a></td>'
+                        '<td class="fbtns-cell">%s</td></tr>'
+                        % (esc(source_label(u)), esc(u), esc(u),
+                           source_btns('source', str(srcs.index(u)), 'ссылку на источник', u)))
+    src_rows.append(source_add_row(len(srcs)))
+    src_html = ('<div class="fblock"><table class="ftable ftable-src">%s</table></div>'
+                % ''.join(src_rows)) if srcs else ''
+    return f'''<div class="crumb"><a href="../index.html">Календарь событий</a> » <span>прототип: {esc(e['id'])}</span></div>
+<div class="ptop" data-id="{esc(e['id'])}">
+  <div class="ptitle"><span class="ptag">прототип</span> {esc(e['title'] or '')}<div class="psub">{esc(fmt_date_num(e['date_iso']))} · {esc(e['weekday'])} · {esc(fmt_time(e) or '')} · {esc(e['city'] or '')}</div></div>
+  {toolbar_page('top') + proto_actions(e, 'page')}
+</div>
+{''.join(flags)}
+{user_notes_html(e, 'top')}
+{fields_blk}
+{desc_blk}
+{author}
+{extra_blk + notes_blk}
+<div class="psrc">Источники: {src_html}</div>
+{user_notes_html(e, 'bottom')}
+{toolbar_page('bottom')}
+<div class="pagenavs"><a class="pagenav prev" href="../index.html"><span>К списку</span><b>Календарь событий</b></a></div>
+{MODAL}
+{MODAL_POST}
+<script src="{prefix}js/prototypes.js"></script>
+<script src="{prefix}js/post.js"></script>
+<script src="{prefix}js/toolbar.js"></script>'''
+
+def nl2br(s):
+    return re.sub(r'\n', '<br>\n', s)
+
 
 def build_calendar():
     js_events = []
@@ -433,6 +920,7 @@ def build_calendar():
         page('Календарь', body, 'calendar'))
 
 CSS = r'''/* base */
+[hidden] { display: none !important; }
 * { box-sizing: border-box; }
 body { margin: 0; background: #f4f1ea; color: #222; font: 14px/1.5 Arial, Helvetica, sans-serif; }
 a { color: #005e8a; text-decoration: none; }
@@ -505,11 +993,19 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 /* detail page */
 .crumb { font-size: 13px; color: #6a643f; margin: 6px 0 14px; }
 .crumb a { color: #005e8a; }
+/* Оформление текста — как на «Элементах»: три разных размера шрифта.
+   Обычный абзац — 16px, строка class="small" (дата, ссылки) — 13.5px,
+   аннотация в <blockquote class="small"> — 15px с рамкой слева. */
 .itemblock.memo { background: #fff; border: 1px solid #ddd5c3; padding: 18px 22px; }
-.itemblock.memo p { margin: 10px 0; }
-.itemblock.memo .small { font-size: 12.5px; color: #333; }
-.itemblock.memo blockquote { background: #f3efdc; border-left: 3px solid #c8bb8f; margin: 12px 0; padding: 10px 14px; }
-.itemblock.memo blockquote p { margin: 6px 0; }
+.itemblock.memo p { margin: 0 0 12px; font: 16px/1.55 Georgia, "PT Serif", "Times New Roman", serif; color: #2b2b2b; }
+.itemblock.memo p:last-child { margin-bottom: 0; }
+.itemblock.memo p.small,
+.itemblock.memo p.Small { margin: 0 0 12px; font: 13.5px/1.5 Arial, Helvetica, sans-serif; color: #4a4438; }
+.itemblock.memo blockquote { background: #f3efdc; border-left: 3px solid #c8bb8f; margin: 0 0 12px; padding: 12px 16px; }
+.itemblock.memo blockquote.small,
+.itemblock.memo blockquote.Small { font: 15px/1.6 Georgia, "PT Serif", "Times New Roman", serif; color: #2b2b2b; }
+.itemblock.memo blockquote p { margin: 0 0 10px; font: inherit; line-height: inherit; color: inherit; }
+.itemblock.memo blockquote p:last-child { margin-bottom: 0; }
 .itemblock.memo b { font-weight: bold; }
 .about { display: flex; gap: 12px; margin: 12px 0; padding: 10px; background: #f3efdc; border: 1px solid #e0d6b8; align-items: flex-start; }
 .about .img { width: 72px; flex: none; }
@@ -550,18 +1046,142 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .calperiod { margin-top: 16px; border-top: 1px solid #e3dccb; padding-top: 6px; }
 
 /* toolbar + modal */
-.toolbar { display: flex; gap: 10px; align-items: stretch; margin: 0 0 18px; flex-wrap: wrap; }
+.toolbar { display: flex; gap: 10px; align-items: stretch; margin: 0 0 18px; flex-wrap: nowrap; overflow-x: auto; }
 .tbtn { border: 1px solid #b9a878; background: #fffdf5; color: #4a3b1f; font-size: 14px; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
 .tbtn:hover { background: #e9e2cf; }
 .tbtn.sec { color: #6a643f; }
+.tbtn.mini { padding: 5px 12px; font-size: 13px; }
 .toolbar-more { flex: 1 1 auto; min-width: 120px; border: 1px dashed #cfc4a6; border-radius: 4px; min-height: 36px; }
+
+/* переключатель показа: режим / скрытые / лектории */
+.toolbar-view { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; margin-left: auto;
+  border: 1px solid #ddd5c3; background: #fff; border-radius: 4px; padding: 5px 12px; }
+.toolbar-view label { font-size: 13px; color: #333; white-space: nowrap; cursor: pointer; }
+.toolbar-view input[type=radio], .toolbar-view input[type=checkbox] { margin-right: 3px; vertical-align: middle; }
+.toolbar-view .vhidden { color: #8c2f2f; }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
 .modal-overlay[hidden] { display: none; }
 .modal { background: #fff; max-width: 560px; width: 92%; border-radius: 8px; padding: 22px 24px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
 .modal-title { font: bold 20px/1.3 Georgia, serif; color: #3a2f16; margin-bottom: 10px; }
+.modal-sub { font-size: 13px; color: #6a643f; margin: -4px 0 10px; line-height: 1.45; }
 .modal-hint { font-size: 14px; color: #444; line-height: 1.5; }
 .modal-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+/* окна заметок: поле ввода во всю ширину, кнопки прижаты к низу,
+   размер окна меняется целиком (у textarea resize отключён) */
+.modal-note-win { display: flex; flex-direction: column; min-height: 0; }
+.modal-note-win .modal-body { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.modal-note-win textarea { width: 100%; box-sizing: border-box; resize: none; min-height: 120px;
+  font: 14px/1.5 Arial, Helvetica, sans-serif; border: 1px solid #ccc3aa; border-radius: 4px;
+  padding: 8px 10px; color: #2d2a16; background: #fffdf5; }
+.modal-note-win .pj-cb { margin-top: 10px; font-size: 14px; color: #333; }
+.modal-resize { resize: both; overflow: auto; }
+
+/* модальное окно выбора лекториев */
+.modal-lec { max-width: 460px; }
+.lec-list { margin-top: 12px; max-height: 50vh; overflow: auto; border: 1px solid #e3dccb; border-radius: 4px; padding: 8px 10px; background: #fffdf5; }
+.lec-item { display: block; font-size: 14px; color: #333; padding: 3px 0; }
+.lec-item .lec-n { color: #8a7040; }
+
+/* прототипы в списке */
+.event.proto .hday, .event.proto .title { color: #a3311f; }
+.event.proto a.nohover:hover .title { color: #7d2415; }
+.event.proto .plectory { font-weight: bold; color: #4a3b1f; margin-top: 4px; }
+.event.proto .pmarks { margin-top: 4px; }
+.pmark { display: inline-block; background: #f6e3e0; border: 1px solid #e0bdb7; border-radius: 3px; padding: 0 6px; font-size: 12px; color: #8c2f2f; margin-right: 5px; }
+.pmark.rebuild { background: #fdeeda; border-color: #e0c9a2; color: #8a5a12; }
+.event.proto.hidden .hday, .event.proto.hidden .title, .event.proto.hidden .pretitle,
+.event.proto.hidden .plectory, .event.proto.hidden .sublink, .event.proto.hidden .annot { color: #9a958a; }
+.event.proto.hidden { background: #f0eee9; }
+
+/* кнопки действий с прототипом */
+.pbtns { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.pbtns .pb { font: 11px/1.3 Arial, Helvetica, sans-serif; padding: 3px 7px; border: 1px solid #c3b48c; border-radius: 3px; background: #fffdf5; color: #4a3b1f; cursor: pointer; }
+.pbtns .pb:hover { background: #e9e2cf; }
+.pbtns .pb.del { border-color: #d8b0a8; color: #8c2f2f; }
+.pbtns .pb.del:hover { background: #f6e3e0; }
+.pbtns[hidden] { display: none; }
+
+/* страница прототипа */
+.ptop { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 14px; }
+.ptitle { font: bold 20px/1.3 Georgia, serif; color: #3a2f16; }
+.ptitle .ptag { display: inline-block; background: #a3311f; color: #fff; border-radius: 3px; font: bold 12px/1.4 Arial, sans-serif; padding: 1px 7px; vertical-align: 3px; margin-right: 6px; }
+.ptitle .psub { font: 13px/1.4 Arial, sans-serif; color: #6f6a52; margin-top: 3px; }
+.ptop .pbtns { flex-direction: row; margin-top: 0; }
+.pflag { flex: 1 1 100%; background: #fdf3e3; border: 1px solid #e0c9a2; border-radius: 4px; padding: 7px 10px; font-size: 13px; color: #6b4c14; margin-top: 8px; }
+.pflag.dup { background: #f6e3e0; border-color: #e0bdb7; color: #8c2f2f; }
+.pflag.rebuild { background: #fdeeda; }
+.usernotes { margin: 0 0 14px; }
+.usernote { border-left: 3px solid #b07a2f; background: #fffdf5; padding: 8px 12px; font-size: 13.5px; color: #333; margin-bottom: 8px; }
+.usernote .un-t { font-size: 12px; text-transform: uppercase; letter-spacing: .3px; color: #8a7040; }
+.usernote.feedback { border-left-color: #8c2f2f; }
+.usernote.feedback .un-t { color: #8c2f2f; }
+/* шапка заметки: подпись + иконка удаления справа */
+.usernote .un-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 3px; }
+.usernote .un-del { flex: none; width: 20px; height: 20px; padding: 0; border: 1px solid transparent;
+  border-radius: 3px; background: transparent; color: #a09684; font: 13px/1 "Segoe UI", Arial, sans-serif;
+  cursor: pointer; }
+.usernote .un-del:hover { border-color: #d8c9b4; background: #fff; color: #8c2f2f; }
+/* в карточке списка заметки компактнее */
+.usernotes.in-card { margin: 8px 0 0; }
+.usernotes.in-card .usernote { font-size: 13px; padding: 6px 10px; margin-bottom: 6px; }
+.fblock { background: #fff; border: 1px solid #ddd5c3; border-radius: 4px; padding: 12px 16px; margin-bottom: 14px; }
+.fb-t { font: bold 15px/1.3 Georgia, serif; color: #4a3b1f; margin-bottom: 8px; }
+/* полоса кнопок блока: прижата вправо, без заголовка */
+.fbar, .exbar { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-bottom: 6px; }
+.fbar:empty, .exbar:empty { display: none; }
+.itemblock.memo.pdesc { border: none; padding: 0; background: transparent; }
+/* полный блок об авторе (автор уже есть на «Элементах»): фото, имя, описание */
+.author-full .aname { margin: 0 0 10px; font: 700 17px/1.4 Georgia, "Times New Roman", serif; }
+.author-full p:last-child { margin-bottom: 0; }
+.klblock { font: 12px/1.4 Consolas, "Courier New", monospace; color: #8a7040; background: #f3efdc; border: 1px dashed #c8bb8f; border-radius: 3px; padding: 0 4px; }
+.pphoto { margin: 0 0 10px; }
+.pphoto img { display: block; border: 1px solid #ddd5c3; }
+.pphoto .phint { font-size: 12px; color: #8a8270; margin-top: 3px; }
+.exrow { border-top: 1px solid #eee7d8; padding: 8px 0; }
+.exrow:first-of-type { border-top: none; }
+.exview p { margin: 6px 0; }
+.pnotes { font-size: 13.5px; color: #333; }
+.psrc { font-size: 12.5px; color: #6a643f; margin: 4px 0 14px; }
+.psrc a { overflow-wrap: anywhere; }
+.ftable { width: 100%; border-collapse: collapse; }
+.ftable td { border-top: 1px solid #eee7d8; padding: 6px 8px 6px 0; vertical-align: top; font-size: 13px; }
+.ftable tr:first-child td { border-top: none; }
+.ftable .fname { width: 250px; color: #6a643f; }
+.ftable .fval code { font: 12.5px/1.5 Consolas, "Courier New", monospace; color: #2d2a16; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ftable .fbtns-cell { width: 54px; text-align: right; white-space: nowrap; }
+.ftable-src .fname { width: auto; min-width: 190px; color: #4a3b1f; font-weight: bold; }
+.ftable-src .src-url a { overflow-wrap: anywhere; }
+.ftable-src tr.src-add .fname, .ftable-src tr.src-add .fval { color: #a09a8c; font-weight: normal; font-style: italic; }
+.fb[data-act="copyid"] { font: bold 11px/1 Arial, sans-serif; letter-spacing: .3px; }
+.ftable tr.ro .fval code { color: #6a643f; }
+.ftable .htmlrow td { padding: 0 0 8px; }
+.fref { font-size: 11.5px; color: #a09a8c; }
+.fbtns { display: inline-flex; gap: 3px; vertical-align: middle; justify-content: flex-end; width: 100%; }
+.fb { font-size: 13px; line-height: 1; padding: 3px 5px; border: 1px solid #c3b48c; border-radius: 3px; background: #fffdf5; color: #4a3b1f; cursor: pointer; }
+.fb:hover { background: #e9e2cf; }
+.fbtns[hidden], .fbtns.off { display: none; }
+
+/* окно правки HTML */
+.modal-edit { max-width: 780px; width: 94%; display: flex; flex-direction: column; }
+.modal-edit .modal-body { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.modal-edit textarea { width: 100%; height: 46vh; box-sizing: border-box; resize: none; min-height: 240px;
+  font: 12.5px/1.5 Consolas, "Courier New", monospace;
+  border: 1px solid #ccc3aa; border-radius: 4px; padding: 8px 10px; color: #2d2a16; background: #fffdf5; }
+.modal-drag .modal-title { cursor: move; user-select: none; }
+.modal-note { font-size: 12.5px; color: #6a643f; margin-top: 6px; }
+.modal-note.err { color: #8c2f2f; }
+.tbtn.del { border-color: #c99a90; color: #8c2f2f; }
+.tbtn.del:hover { background: #f6e3e0; }
+.pj-cb { display: block; margin-top: 10px; font-size: 14px; color: #333; }
+.pj-cb input { margin-right: 6px; vertical-align: middle; }
+.v-empty { margin: 24px 0; padding: 14px 16px; border: 1px dashed #cfc4a6; border-radius: 4px;
+  background: #fffdf5; color: #6a643f; font-size: 14px; }
+.v-empty[hidden] { display: none; }
+.pj-toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 200;
+  background: #3a2f16; color: #fff; border-radius: 4px; padding: 9px 18px; font-size: 14px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.3); }
+.pj-toast.err { background: #8c2f2f; }
 
 /* post modal */
 .modal-post { max-width: 720px; }
@@ -709,20 +1329,31 @@ def build_toolbar_js():
     js = r'''/* Кнопка «Обновить данные»: вопрос «Да/Нет», прогресс и результат — в панели под кнопкой.
    После успешного обновления страница перечитывается целиком (location.reload). */
 (function () {
-  var btn = document.getElementById('btn-update');
+  var btns = [].slice.call(document.querySelectorAll('.js-update'));
   var modal = document.getElementById('modal-update');
-  if (!btn || !modal) return;
-  var ok = document.getElementById('mp-ok');
-  var cancel = document.getElementById('mp-cancel');
-  var panel = document.getElementById('update-panel');
-  var progress = document.getElementById('up-progress');
-  var bar = document.getElementById('up-bar');
-  var msg = document.getElementById('up-msg');
-  var status = document.getElementById('up-status');
-  var actions = document.getElementById('up-actions');
+  if (!btns.length || !modal) return;
+  var ok = modal.querySelector('[data-mp="ok"]');
+  var cancel = modal.querySelector('[data-mp="cancel"]');
   var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
   var SNAPSHOT = '/*SNAPSHOT*/';
   var timer = null;
+  // активная панель — та, что под нажатой кнопкой (кнопок может быть две)
+  var cur = null;
+  var panel = null, progress = null, bar = null, msg = null, status = null, actions = null;
+
+  function usePanel(btn) {
+    cur = btn;
+    var box = document.getElementById(btn.getAttribute('data-panel') || '');
+    if (!box) return;
+    panel = box;
+    progress = box.querySelector('.update-progress');
+    bar = box.querySelector('.bar-fill');
+    msg = box.querySelector('.bar-msg');
+    status = box.querySelector('.update-status');
+    actions = box.querySelector('.update-actions');
+    var cl = box.querySelector('.update-actions .tbtn');
+    if (cl && !cl.dataset.wired) { cl.dataset.wired = '1'; cl.addEventListener('click', hidePanel); }
+  }
 
   modal.hidden = true; // страховка: окно всегда закрыто при загрузке
 
@@ -794,21 +1425,23 @@ def build_toolbar_js():
     }).catch(function () {});
   }
 
-  btn.addEventListener('click', function () {
-    if (isLocal) { showConfirm(); return; }
-    panel.hidden = false;
-    progress.hidden = true;
-    actions.hidden = false;
-    status.style.color = '#444';
-    status.textContent = 'Обновление работает только на локальном сервере.\n'
-      + 'Запустите в терминале: python serve.py\n'
-      + 'и откройте http://localhost:8000\n'
-      + '\nПоследнее обновление данных: ' + SNAPSHOT;
-    status.hidden = false;
+  btns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      usePanel(btn);
+      if (isLocal) { showConfirm(); return; }
+      panel.hidden = false;
+      progress.hidden = true;
+      actions.hidden = false;
+      status.style.color = '#444';
+      status.textContent = 'Обновление работает только на локальном сервере.\n'
+        + 'Запустите в терминале: python serve.py\n'
+        + 'и откройте http://localhost:8000\n'
+        + '\nПоследнее обновление данных: ' + SNAPSHOT;
+      status.hidden = false;
+    });
   });
   ok.addEventListener('click', startUpdate);
   cancel.addEventListener('click', hideModal);
-  document.getElementById('up-close').addEventListener('click', hidePanel);
 })();
 '''.replace('/*SNAPSHOT*/', snap)
     open(os.path.join(JS_DIR, 'toolbar.js'), 'w', encoding='utf-8').write(js)
@@ -819,9 +1452,9 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: выбор да�
    сборщиком (место без инициалов, цена, подзаголовок). */
 (function () {
   var POST_EVENTS = /*POST_EVENTS*/;
-  var btn = document.getElementById('btn-post');
+  var btns = [].slice.call(document.querySelectorAll('.js-post'));
   var modal = document.getElementById('modal-post');
-  if (!btn || !modal) return;
+  if (!btns.length || !modal) return;
   var fFrom = document.getElementById('pp-from');
   var fTo = document.getElementById('pp-to');
   var preview = document.getElementById('pp-preview');
@@ -1022,13 +1655,574 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: выбор да�
     render();
   });
   fTo.addEventListener('change', render);
-  btn.addEventListener('click', open);
-  btnGen.addEventListener('click', render);
+  btns.forEach(function (b) { b.addEventListener('click', open); });
+btnGen.addEventListener('click', render);
   btnCopy.addEventListener('click', copyText);
   document.getElementById('pp-close').addEventListener('click', function () { modal.hidden = true; });
   modal.addEventListener('click', function (ev) {
     if (ev.target === modal) modal.hidden = true;
   });
+})();
+'''
+
+def build_prototypes_js():
+    open(os.path.join(JS_DIR, 'prototypes.js'), 'w', encoding='utf-8').write(PROTOTYPES_JS)
+
+PROTOTYPES_JS = r'''
+/* Прототипы лекций: показ и скрытие, фильтры, комментарии, обратная связь,
+   правка HTML. Работает на всех страницах сайта. Действия и правка — только
+   на локальном сервере (localhost); на GitHub Pages кнопки скрываются. */
+(function () {
+  'use strict';
+
+  var IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname);
+  var K_MODE = 'nk_mode', K_HIDDEN = 'nk_hidden', K_LEC = 'nk_lectories';
+
+  // ------------------------------------------------------------------ утилиты
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  function kids(el) { return Array.prototype.slice.call(el.children); }
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function copyText(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  }
+  function copyWith(text) {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      return Promise.resolve(copyText(text));
+    }
+    // Современный буфер обмена может «зависнуть» (нет фокуса, запрет,
+    // старое разрешение) — тогда не показываем отклик очень долго:
+    // через 700 мс пробуем старый способ, чтобы пользователь всегда
+    // увидел результат.
+    return Promise.race([
+      navigator.clipboard.writeText(text).then(function () { return true; },
+        function () { return copyText(text); }),
+      new Promise(function (res) {
+        setTimeout(function () { res(copyText(text)); }, 700);
+      })
+    ]);
+  }
+  /* Копирование с понятным откликом: если браузер не дал доступ к буферу,
+     сообщаем об этом, а не делаем вид, что всё получилось. */
+  function copyReport(text) {
+    if (!text) { toast('Нечего копировать: значение пустое', true); return; }
+    copyWith(text).then(function (ok) {
+      if (ok) toast('Код скопирован в буфер обмена');
+      else toast('Браузер не дал доступ к буферу — выделите код и нажмите Ctrl+C', true);
+    });
+  }
+
+  function toast(msg, err) {
+    var old = $('.pj-toast');
+    if (old) old.parentNode.removeChild(old);
+    var d = document.createElement('div');
+    d.className = 'pj-toast' + (err ? ' err' : '');
+    d.textContent = msg;
+    document.body.appendChild(d);
+    setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, err ? 7000 : 2500);
+  }
+
+  // ------------------------------------------------ перетаскивание модальных окон
+  document.addEventListener('mousedown', function (e) {
+    var t = e.target;
+    if (!t || !t.classList || !t.classList.contains('modal-title')) return;
+    var m = t.parentNode;
+    if (!m || !m.classList || !m.classList.contains('modal')) return;
+    var r = m.getBoundingClientRect();
+    var dx = e.clientX - r.left, dy = e.clientY - r.top;
+    m.style.position = 'fixed';
+    m.style.margin = '0';
+    function mv(ev) {
+      m.style.left = Math.min(Math.max(2, ev.clientX - dx), window.innerWidth - 60) + 'px';
+      m.style.top = Math.min(Math.max(2, ev.clientY - dy), window.innerHeight - 30) + 'px';
+    }
+    function up() {
+      document.removeEventListener('mousemove', mv);
+      document.removeEventListener('mouseup', up);
+    }
+    document.addEventListener('mousemove', mv);
+    document.addEventListener('mouseup', up);
+    e.preventDefault();
+  });
+
+  // ---------------------------------------------------------- диалог правки/заметки
+  var ov = null, box = null;
+  function ensureOverlay() {
+    if (ov) return;
+    ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+    ov.hidden = true;
+    ov.style.alignItems = 'flex-start';
+    ov.style.justifyContent = 'flex-start';
+    box = document.createElement('div');
+    box.className = 'modal';
+    ov.appendChild(box);
+    document.body.appendChild(ov);
+    ov.addEventListener('mousedown', function (e) { if (e.target === ov) closeModal(); });
+  }
+  /* Окно ставим рядом с полем (по возможности не перекрывая его): справа, если
+     помещается, иначе слева, иначе по центру экрана. */
+  function openModal(html, near) {
+    ensureOverlay();
+    box.className = 'modal';
+    box.innerHTML = html;
+    ov.hidden = false;
+    box.style.left = '';
+    box.style.top = '';
+    if (near && near.getBoundingClientRect) {
+      var r = near.getBoundingClientRect();
+      box.style.position = 'fixed';
+      var w = box.offsetWidth, h = box.offsetHeight;
+      var left = r.right + 16;
+      if (left + w > window.innerWidth - 8) left = r.left - w - 16;
+      if (left < 8) left = Math.max(8, (window.innerWidth - w) / 2);
+      var top = r.top - 10;
+      if (top + h > window.innerHeight - 8) top = Math.max(8, window.innerHeight - h - 8);
+      box.style.left = left + 'px';
+      box.style.top = top + 'px';
+    } else {
+      box.style.position = '';
+      ov.style.alignItems = '';
+      ov.style.justifyContent = '';
+    }
+    return box;
+  }
+  function closeModal() {
+    if (!ov) return;
+    ov.hidden = true;
+    box.innerHTML = '';
+    modalDirty = null;
+  }
+  function wireModal(b, onBtn) {
+    b.addEventListener('click', function (e) {
+      var x = e.target.getAttribute && e.target.getAttribute('data-x');
+      if (x) onBtn(x, e.target);
+    });
+  }
+
+  /* Отслеживаем, менял ли пользователь содержимое окна. modalDirty — функция,
+     возвращающая true, если содержимое отличается от исходного. */
+  var modalDirty = null;
+  function trackDirty(get) { modalDirty = get; }
+  function isDirty() { return !!(modalDirty && modalDirty()); }
+  function hasText(get) { return !!(get() || '').replace(/[ \\t\\r\\n]+/g, ''); }
+
+  /* Окно подтверждения поверх текущего: спрашиваем, нельзя ли закрыть/удалить.
+     Возвращает промис, который resolves в true (да) или false (нет). */
+  var ov2 = null, box2 = null;
+  function askConfirm(title, text, okLabel, okClass) {
+    return new Promise(function (res) {
+      if (!ov2) {
+        ov2 = document.createElement('div');
+        ov2.className = 'modal-overlay';
+        ov2.hidden = true;
+        box2 = document.createElement('div');
+        box2.className = 'modal modal-confirm';
+        ov2.appendChild(box2);
+        document.body.appendChild(ov2);
+      }
+      box2.innerHTML = '<div class="modal-title">' + esc(title) + '</div>'
+        + '<div class="modal-body"><p class="modal-hint">' + esc(text) + '</p></div>'
+        + '<div class="modal-actions">'
+        + '<button type="button" class="tbtn sec" data-c="no">Отмена</button>'
+        + '<button type="button" class="tbtn ' + (okClass || 'del') + '" data-c="yes">'
+        + esc(okLabel) + '</button></div>';
+      ov2.hidden = false;
+      ov2.style.alignItems = '';
+      ov2.style.justifyContent = '';
+      function done(v) { ov2.hidden = true; box2.innerHTML = ''; res(v); }
+      ov2.onclick = function (e) {
+        var c = e.target.getAttribute && e.target.getAttribute('data-c');
+        if (c === 'yes') return done(true);
+        if (c === 'no' || e.target === ov2) return done(false);
+      };
+      box2.querySelector('[data-c="no"]').focus();
+    });
+  }
+  /* ESC закрывает окно. Если в нём были несохранённые изменения, нужно нажать
+     ESC дважды (второе нажатие показывает подсказку и закрывает без сохранения)
+     — иначе несохранённый текст пропал бы случайно. */
+  var escArmed = false;
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') { escArmed = false; return; }
+    if (ov2 && !ov2.hidden) { e.preventDefault(); ov2.hidden = true; box2.innerHTML = ''; return; }
+    if (!ov || ov.hidden) { escArmed = false; return; }
+    e.preventDefault();
+    if (isDirty() && !escArmed) {
+      escArmed = true;
+      toast('В окне несохранённые изменения: ESC ещё раз — закрыть без сохранения');
+      return;
+    }
+    escArmed = false;
+    closeModal();
+  });
+
+  // ------------------------------------------------------------------ сервер
+  function api(payload) {
+    return fetch('/api/proto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) {
+      return r.json().catch(function () { return { ok: false, error: 'сервер не ответил' }; })
+        .then(function (j) {
+          if (r.status === 404 || (j && j.error === 'not found')) {
+            throw new Error('сервер запущен старой версией — закройте его и снова '
+              + 'запустите «python serve.py»');
+          }
+          if (!r.ok || !j.ok) throw new Error(j.error || ('ошибка ' + r.status));
+          return j;
+        });
+    });
+  }
+  function reload() {
+    if (/\/event\//.test(location.pathname)) location.href = '../index.html';
+    else location.reload();
+  }
+  /* run(): сохранить на сервере и перезагрузить. reload() со страницы прототипа
+     уводит в список — этим и пользуется сохранение обратной связи. */
+  function run(payload, okMsg) {
+    toast('Сохраняю…');
+    return api(payload).then(function () {
+      toast(okMsg);
+      setTimeout(reload, 400);
+    }).catch(function (e) { toast('Не получилось: ' + e.message, true); });
+  }
+  function pageId() {
+    var el = $('.ptop[data-id]');
+    return el ? el.getAttribute('data-id') : null;
+  }
+
+  // ------------------------------------------- шапка окна: к какому событию
+  /* При открытии из списка показываем дату, автора и название события. */
+  function subLine(box) {
+    var card = box.closest ? box.closest('.event.proto') : null;
+    if (!card) return '';
+    var when = card.getAttribute('data-where') || card.getAttribute('data-date') || '';
+    var who = card.getAttribute('data-lecturer') || '';
+    var what = card.getAttribute('data-title') || '';
+    if (!when && !who && !what) return '';
+    return '<div class="modal-sub">' + esc([when, who, what].filter(Boolean).join(' · ')) + '</div>';
+  }
+
+  // ---------------------------------------------------------------- комментарий
+  function openComment(box) {
+    var id = box.getAttribute('data-id');
+    var b = openModal(
+      '<div class="modal-title">Комментарий</div>'
+      + subLine(box)
+      + '<div class="modal-hint">Виден вам и агентам, на сайте «Элементов» его не будет. '
+      + 'Пустой комментарий удаляется.</div>'
+      + '<div class="modal-body"><textarea id="pj-ta" spellcheck="false"'
+      + ' placeholder="Например: проверить дату на сайте организатора"></textarea></div>'
+      + '<div class="modal-actions"><button type="button" class="tbtn sec" data-x="cancel">Закрыть</button>'
+      + '<button type="button" class="tbtn" data-x="save">Сохранить</button></div>',
+      null);
+    b.classList.add('modal-note-win', 'modal-drag', 'modal-resize');
+    var ta = $('#pj-ta', b);
+    var orig = (box.getAttribute('data-comment') || '');
+    ta.value = orig;
+    ta.focus();
+    trackDirty(function () { return ta.value.trim() !== orig.trim(); });
+    wireModal(b, function (x) {
+      if (x === 'cancel') {
+        /* непустой комментарий (пробелы не считаем) — спрашиваем подтверждение */
+        if (!hasText(function () { return ta.value; })) return closeModal();
+        return askConfirm('Закрыть без сохранения?',
+          'Комментарий не будет сохранён — текст пропадёт.', 'Закрыть без сохранения')
+          .then(function (yes) { if (yes) closeModal(); });
+      }
+      if (x === 'save') {
+        var v = ta.value;
+        closeModal();
+        run({ action: 'comment', id: id, value: v },
+          v.replace(/[ \\t\\r\\n]+/g, '') ? 'Комментарий сохранён' : 'Комментарий удалён');
+      }
+    });
+  }
+
+  // ----------------------------------------------------------- обратная связь
+  function openFeedback(box) {
+    var id = box.getAttribute('data-id');
+    var b = openModal(
+      '<div class="modal-title">Обратная связь</div>'
+      + subLine(box)
+      + '<div class="modal-hint">Что нужно поменять в прототипе. Это задача агенту: исправьте '
+      + 'описание, потом вернитесь и снимите галочку «Переделать».</div>'
+      + '<div class="modal-body"><textarea id="pj-ta" spellcheck="false"'
+      + ' placeholder="Что исправить в описании прототипа"></textarea>'
+      + '<label class="pj-cb"><input type="checkbox" id="pj-rb"'
+      + (box.getAttribute('data-rebuild') === '1' ? ' checked' : '')
+      + '> Переделать (событие нужно создать заново)</label></div>'
+      + '<div class="modal-actions"><button type="button" class="tbtn sec" data-x="cancel">Закрыть</button>'
+      + '<button type="button" class="tbtn" data-x="save">Сохранить</button></div>',
+      null);
+    b.classList.add('modal-note-win', 'modal-drag', 'modal-resize');
+    var ta = $('#pj-ta', b), cb = $('#pj-rb', b);
+    var orig = (box.getAttribute('data-feedback') || '');
+    var origRb = box.getAttribute('data-rebuild') === '1';
+    ta.value = orig;
+    ta.focus();
+    trackDirty(function () { return ta.value.trim() !== orig.trim() || cb.checked !== origRb; });
+    wireModal(b, function (x) {
+      if (x === 'cancel') {
+        if (!hasText(function () { return ta.value; }) && cb.checked === origRb) return closeModal();
+        return askConfirm('Закрыть без сохранения?',
+          'Обратная связь не будет сохранена — текст пропадёт.', 'Закрыть без сохранения')
+          .then(function (yes) { if (yes) closeModal(); });
+      }
+      if (x === 'save') {
+        var v = ta.value, rb = cb.checked;
+        closeModal();
+        /* после сохранения обратной связи — сразу в список: задача уже передана агенту */
+        run({ action: 'feedback', id: id, value: v, rebuild: rb },
+          (v.replace(/[ \\t\\r\\n]+/g, '') || rb) ? 'Обратная связь сохранена' : 'Обратная связь удалена');
+      }
+    });
+  }
+
+  // --------------------------------------------------------------------- правка
+  function openEdit(fb, area, key, name, value) {
+    var b = openModal(
+      '<div class="modal-title">Правка: ' + esc(name) + '</div>'
+      + '<div class="modal-hint">Правится HTML-код. «Сохранить» перезапишет значение и пересоберёт '
+      + 'сайт; правка работает только на локальном сервере.</div>'
+      + '<div class="modal-body"><textarea id="pj-ta" spellcheck="false"></textarea></div>'
+      + '<div class="modal-actions">'
+      + '<button type="button" class="tbtn sec" data-x="cancel">Закрыть</button>'
+      + '<button type="button" class="tbtn sec" data-x="copy">Скопировать</button>'
+      + '<button type="button" class="tbtn" data-x="save">Сохранить</button></div>',
+      null);
+    b.classList.add('modal-edit', 'modal-drag', 'modal-resize');
+    $('#pj-ta', b).value = value || '';
+    $('#pj-ta', b).focus();
+    wireModal(b, function (x) {
+      if (x === 'cancel') return closeModal();
+      if (x === 'copy') { copyReport($('#pj-ta', b).value); return; }
+      if (x === 'save') {
+        var v = $('#pj-ta', b).value;
+        closeModal();
+        run({ action: 'field', id: pageId(), area: area, key: key, value: v },
+          'Сохранено, сайт пересобран');
+      }
+    });
+  }
+
+  // ------------------------------------------------------------------ удаление
+  function openDelete(box) {
+    var id = box.getAttribute('data-id');
+    var b = openModal(
+      '<div class="modal-title">Удалить прототип?</div>'
+      + subLine(box)
+      + '<div class="modal-hint">Прототип <b>' + esc(id) + '</b> уберётся с сайта, а его папка '
+      + 'перенесётся в <code>data/prototypes/_archive/</code> — безвозвратно ничего не пропадёт. '
+      + 'Понадобится снова — вернём папку на место.</div>'
+      + '<div class="modal-actions"><button type="button" class="tbtn sec" data-x="cancel">Закрыть</button>'
+      + '<button type="button" class="tbtn del" data-x="del">Удалить</button></div>', null);
+    b.classList.add('modal-note-win', 'modal-drag');
+    wireModal(b, function (x) {
+      if (x === 'cancel') return closeModal();
+      if (x === 'del') { closeModal(); run({ action: 'delete', id: id }, 'Прототип удалён (в архиве)'); }
+    });
+  }
+
+  // -------------------------------------------------------------- обработчики
+  document.addEventListener('click', function (e) {
+    /* иконка удаления у выведенного комментария / обратной связи */
+    var un = e.target.closest ? e.target.closest('.usernotes .un-del') : null;
+    if (un && IS_LOCAL) {
+      var ubox = un.closest('.usernotes');
+      var uact = un.getAttribute('data-act');
+      var uid = ubox.getAttribute('data-id');
+      var what = uact === 'del-feedback' ? 'обратную связь' : 'комментарий';
+      e.stopPropagation();
+      return askConfirm('Удалить ' + what + '?',
+        'Текст будет удалён из файла состояния. Отменить это будет нельзя.',
+        'Удалить', 'del').then(function (yes) {
+          if (!yes) return;
+          run({ action: uact === 'del-feedback' ? 'feedback' : 'comment',
+                id: uid, value: '', rebuild: false },
+            what === 'обратная связь' ? 'Обратная связь удалена' : 'Комментарий удалён');
+        });
+    }
+    var pb = e.target.closest ? e.target.closest('.pbtns .pb') : null;
+    if (pb && IS_LOCAL) {
+      var pbox = pb.closest('.pbtns');
+      var act = pb.getAttribute('data-act');
+      var id = pbox.getAttribute('data-id');
+      if (act === 'comment') return openComment(pbox);
+      if (act === 'feedback') return openFeedback(pbox);
+      if (act === 'delete') return openDelete(pbox);
+      if (act === 'hide') {
+        var hidden = pbox.getAttribute('data-hidden') === '1';
+        run({ action: 'hide', id: id, hidden: !hidden },
+          hidden ? 'Прототип показан' : 'Прототип скрыт');
+      }
+      return;
+    }
+    var fb = e.target.closest ? e.target.closest('.fbtns .fb') : null;
+    if (!fb) return;
+    var wrap = fb.closest('.fbtns');
+    var val = wrap.getAttribute('data-text');
+    if (val == null) val = '';
+    if (fb.getAttribute('data-act') === 'copy') { copyReport(val); return; }
+    if (fb.getAttribute('data-act') === 'copyid') {
+      copyReport(fb.getAttribute('data-text') || '');
+      return;
+    }
+    if (IS_LOCAL) openEdit(fb, wrap.getAttribute('data-area'), wrap.getAttribute('data-key'),
+      wrap.getAttribute('data-name'), val);
+  });
+
+  // на не-локальном сайте (GitHub Pages) кнопки правки и действия не показываем
+  if (!IS_LOCAL) {
+    $$('.pbtns').forEach(function (b) { b.hidden = true; });
+    $$('.fbtns .fb[data-act=edit]').forEach(function (b) { b.style.display = 'none'; });
+  }
+
+  // ========================================================= главная: фильтры
+  var main = $('.idxmain');
+  if (!main) return;
+
+  var radios = $$('input[name=vmode]');
+  var cbHidden = $('#v-showhidden');
+  var btnLec = $('#btn-lectories');
+  var lecBoxes = function () { return $$('#lec-list input[type=checkbox]'); };
+  var mode = load(K_MODE) || 'all';
+  var showHidden = load(K_HIDDEN) === '1';
+
+  function chosenLec() {
+    try { return JSON.parse(load(K_LEC) || 'null'); } catch (e) { return null; }
+  }
+  function curLec() {
+    var b = lecBoxes();
+    return b.length ? b.filter(function (x) { return x.checked; }).map(function (x) { return x.value; }) : null;
+  }
+  function isVisible(ev) {
+    var kind = ev.getAttribute('data-kind');
+    var m = radios.filter(function (r) { return r.checked; })[0];
+    var md = m ? m.value : 'all';
+    if (md === 'el' && kind !== 'el') return false;
+    if (md === 'proto' && kind !== 'proto') return false;
+    if (kind !== 'proto') return true;
+    if ((' ' + ev.className + ' ').indexOf(' hidden ') >= 0 && !(cbHidden && cbHidden.checked)) return false;
+    var c = curLec();
+    return !c || c.indexOf(ev.getAttribute('data-lectory') || '') >= 0;
+  }
+  function countsLine(cnt) {
+    var ds = Object.keys(cnt).sort();
+    if (!ds.length) return '';
+    return ds.map(function (d) {
+      var p = d.split('-');
+      return p[2] + '.' + p[1] + ': ' + cnt[d];
+    }).join('. ') + '.';
+  }
+  /* Прячет невидимые события, пересчитывает счётчики дней в неделях, прячет
+     пустые недели и месяцы и правит оглавление. */
+  function applyFilter() {
+    var els = kids(main), any = false, i = 0;
+    while (i < els.length) {
+      var el = els[i];
+      if (el.tagName !== 'H2') { i++; continue; }
+      var monthVisible = false, j = i + 1;
+      while (j < els.length && els[j].tagName !== 'H2') {
+        if (els[j].tagName === 'H3') {
+          var counts = {}, cnt = null, wvis = false, k = j + 1;
+          while (k < els.length && els[k].tagName !== 'H2' && els[k].tagName !== 'H3') {
+            var it = els[k];
+            if (it.classList.contains('event')) {
+              var vis = isVisible(it);
+              it.hidden = !vis;
+              if (vis) {
+                wvis = true;
+                var d = it.getAttribute('data-date') || '';
+                counts[d] = (counts[d] || 0) + 1;
+              }
+            } else if (it.classList.contains('weekcount')) { cnt = it; }
+            k++;
+          }
+          els[j].hidden = !wvis;
+          if (cnt) { cnt.hidden = !wvis; cnt.textContent = countsLine(counts); }
+          if (wvis) monthVisible = true;
+          j = k;
+        } else { j++; }
+      }
+      el.hidden = !monthVisible;
+      if (monthVisible) any = true;
+      i = j;
+    }
+    var toc = $('.toc');
+    if (toc) {
+      $$('a[href^="#"]', toc).forEach(function (a) {
+        var t = document.getElementById(a.getAttribute('href').slice(1));
+        var li = a.parentNode;
+        if (li && li.tagName === 'LI') li.hidden = !t || t.hidden;
+      });
+    }
+    var none = $('#v-empty');
+    if (none) none.hidden = any;
+  }
+
+  // лектории: восстанавливаем сохранённый выбор до первого расчёта
+  var savedLec = chosenLec();
+  if (savedLec) lecBoxes().forEach(function (b) { b.checked = savedLec.indexOf(b.value) >= 0; });
+
+  radios.forEach(function (r) {
+    if (r.value === mode) r.checked = true;
+    r.addEventListener('change', function () { store(K_MODE, r.value); applyFilter(); });
+  });
+  if (cbHidden) {
+    cbHidden.checked = showHidden;
+    cbHidden.addEventListener('change', function () {
+      store(K_HIDDEN, cbHidden.checked ? '1' : '0');
+      applyFilter();
+    });
+  }
+  if (btnLec) {
+    btnLec.addEventListener('click', function () {
+      var chosen = chosenLec();
+      if (chosen) lecBoxes().forEach(function (b) { b.checked = chosen.indexOf(b.value) >= 0; });
+      $('#modal-lectories').hidden = false;
+    });
+  }
+  ['all', 'none', 'inv'].forEach(function (what) {
+    var b = $('#lec-' + what);
+    if (!b) return;
+    b.addEventListener('click', function () {
+      lecBoxes().forEach(function (x) {
+        if (what === 'all') x.checked = true;
+        else if (what === 'none') x.checked = false;
+        else x.checked = !x.checked;
+      });
+    });
+  });
+  var lecOk = $('#lec-ok');
+  if (lecOk) {
+    lecOk.addEventListener('click', function () {
+      store(K_LEC, JSON.stringify(curLec()));
+      $('#modal-lectories').hidden = true;
+      applyFilter();
+    });
+  }
+  var lecOv = $('#modal-lectories');
+  if (lecOv) {
+    lecOv.addEventListener('click', function (e) { if (e.target === lecOv) lecOv.hidden = true; });
+  }
+  applyFilter();
 })();
 '''
 
@@ -1083,6 +2277,13 @@ def verify_calendar():
 
 def main():
     verify_calendar()
+    progress(20, 'Прототипы…')
+    notes = load_prototypes()
+    for n in notes:
+        print('  прототип: ' + n)
+    print('Прототипы: всего %d, показано %d, скрыто %d (из них дублей «Элементов»: %d), в архив: %d'
+          % (PROTO_SUMMARY['total'], PROTO_SUMMARY['shown'], PROTO_SUMMARY['hidden'],
+             PROTO_SUMMARY['dup'], PROTO_SUMMARY['archived']))
     progress(30, 'Страница событий…')
     build_index()
     progress(55, 'Страницы событий…')
@@ -1092,12 +2293,13 @@ def main():
     build_calendar_js()
     build_toolbar_js()
     build_post_js()
+    build_prototypes_js()
     with open(os.path.join(CSS_DIR, 'style.css'), 'w', encoding='utf-8') as f:
         f.write(CSS)
     copy_favicon()
     write_robots()
     progress(100, 'Сайт собран.')
-    print('Done. Pages:', len(evs) + 3)
+    print('Done. Pages:', len(items) + 3)
 
 if __name__ == '__main__':
     main()

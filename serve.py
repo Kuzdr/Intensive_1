@@ -8,10 +8,15 @@
 Сервер раздаёт папку site/ и отвечает на:
   POST /api/update          — запустить обновление (одновременно в 2 раза нельзя)
   GET  /api/update/status   — текущий статус обновления (для прогресс-бара)
+  POST /api/proto           — действие с прототипом: скрыть/показать, комментарий,
+                              обратная связь, удаление, правка HTML-поля. Каждое
+                              действие пересобирает сайт (build.py).
 """
 import os, re, json, threading, subprocess, sys, webbrowser
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
+
+import protolib
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(ROOT, 'site')
@@ -105,6 +110,50 @@ def run_pipeline():
     finally:
         state['running'] = False
 
+def rebuild_site():
+    """Пересборка сайта после действия с прототипом."""
+    p = subprocess.run([PY, os.path.join('build.py')], cwd=ROOT, capture_output=True,
+                       text=True, encoding='utf-8', errors='replace')
+    if p.returncode != 0:
+        return False, ((p.stdout or '') + (p.stderr or ''))[-900:]
+    return True, p.stdout or ''
+
+
+def proto_action(data):
+    """Действие с прототипом из prototypes.js. Возвращает (ok, сообщение)."""
+    pid = (data.get('id') or '').strip()
+    action = (data.get('action') or '').strip()
+    if not pid or '/' in pid or '\\' in pid or pid.startswith('.'):
+        return False, 'неверный ID прототипа'
+    if pid not in protolib.list_ids():
+        return False, 'прототип %s не найден' % pid
+    try:
+        if action == 'hide':
+            protolib.set_state(pid, hidden=bool(data.get('hidden')))
+        elif action == 'comment':
+            protolib.set_state(pid, comment=(data.get('value') or '').strip())
+        elif action == 'feedback':
+            protolib.set_state(pid, feedback=(data.get('value') or '').strip(),
+                              rebuild=bool(data.get('rebuild')))
+        elif action == 'field':
+            # area: fields | desc | extra | author_fields | author_block | source
+            protolib.set_value(pid, data.get('area') or '', str(data.get('key') or ''),
+                               data.get('value') or '')
+        elif action == 'delete':
+            if not protolib.archive(pid, 'удалён с сайта'):
+                return False, 'не удалось убрать прототип в архив'
+        else:
+            return False, 'неизвестное действие %s' % action
+    except KeyError as e:
+        return False, str(e).strip("'")
+    except Exception as e:
+        return False, 'ошибка: %s' % e
+    ok, out = rebuild_site()
+    if not ok:
+        return False, 'сайт не пересобрался: %s' % out
+    return True, 'готово'
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=SITE, **kwargs)
@@ -114,19 +163,44 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(code)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.send_header('Content-Length', str(len(data)))
-        self.send_header('Cache-Control', 'no-store')
         self.end_headers()
         self.wfile.write(data)
 
     def do_POST(self):
-        if urlparse(self.path).path == '/api/update':
+        path = urlparse(self.path).path
+        if path == '/api/update':
             if state['running']:
                 self._json({'started': False, 'running': True}, 409)
                 return
             threading.Thread(target=run_pipeline, daemon=True).start()
             self._json({'started': True})
             return
+        if path == '/api/proto':
+            n = int(self.headers.get('Content-Length') or 0)
+            if n > 4 * 1024 * 1024:
+                self._json({'ok': False, 'error': 'слишком большой запрос'}, 413)
+                return
+            try:
+                data = json.loads(self.rfile.read(n).decode('utf-8') or '{}')
+            except Exception as e:
+                self._json({'ok': False, 'error': 'не разобрался запрос: %s' % e}, 400)
+                return
+            ok, msg = proto_action(data)
+            body = {'ok': ok, 'message': msg}
+            if not ok:
+                body['error'] = msg
+            self._json(body, 200 if ok else 400)
+            return
         self._json({'error': 'not found'}, 404)
+
+    def end_headers(self):
+        # Локальный сервер отдаёт файлы без кэша: иначе браузер после
+        # пересборки сайта продолжает показывать старые HTML/JS/CSS
+        # («кнопки не работают», «страница выглядит по-старому»).
+        self.send_header('Cache-Control', 'no-store, must-revalidate')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Expires', '0')
+        super().end_headers()
 
     def do_GET(self):
         path = urlparse(self.path).path

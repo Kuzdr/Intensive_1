@@ -173,12 +173,21 @@ def p_nbsp_missing_after_number(t: str):
     if bound < 0:
         bound = len(t)
     adm = _admin_date_only_spans(t, bound)
-    return [
-        m
-        for m in pat.finditer(t)
-        if not (m.start() > 0 and t[m.start() - 1] == SENT)
-        and not any(s <= m.start() < e for s, e in adm)
-    ]
+    out = []
+    for m in pat.finditer(t):
+        # Ищем начало ВСЕЙ последовательности цифр, а не последней цифры:
+        # для многозначных чисел («из&nbsp;11 знаков», «Лекция&nbsp;12 курса»)
+        # совпадение начинается с последней цифры, и проверка «перед числом»
+        # сдвинулась бы на цифру. Исправлено 26.09.2026.
+        i = m.start()
+        while i > 0 and t[i - 1].isdigit():
+            i -= 1
+        if i > 0 and t[i - 1] == SENT:
+            continue
+        if any(s <= m.start() < e for s, e in adm):
+            continue
+        out.append(m)
+    return out
 
 
 _ADMIN_DATE_LINE = re.compile(
@@ -291,6 +300,32 @@ def p_straight_quotes(t: str):
     return [m for m in re.finditer(r'"', masked)]
 
 
+def p_lapki_without_outer(t: str):
+    """Лапки „…“ без внешних ёлочек — ошибка (правило скилла post-check п. 9a).
+
+    Лапки допустимы ТОЛЬКО как вложенные кавычки внутри «…». Если вокруг
+    «…» нет, единственные кавычки должны быть ёлочками.
+    Из реальной обратной связи (26.09.2026, Gerasimov): в формальном поле
+    5 «Название лекции» стояло „всечеловеческий“ без внешних кавычек.
+    """
+    masked = re.sub(r"<[^>]+>", lambda m: " " * len(m.group(0)), t)
+    hits = []
+    for m in re.finditer("“", masked):
+        open_idx = masked.rfind("„", 0, m.start())
+        if open_idx < 0:
+            hits.append(m)          # закрывающая без открывающей
+            continue
+        before, after = masked[:open_idx], masked[m.end():]
+        inside = before.rfind("«") > before.rfind("»") and after.find("»") > -1
+        if not inside:
+            hits.append(m)
+    for m in re.finditer("„", masked):          # одиночная открывающая
+        if masked.find("“", m.end()) == -1:
+            hits.append(m)
+    hits.sort(key=lambda m: m.start())
+    return hits
+
+
 def p_entities_typo(t: str):
     return list(
         re.finditer(r"&(?:mdash|ndash|#8212|#8211|#151|#150);", t)
@@ -347,6 +382,8 @@ def main() -> None:
         emit("8", "nbsp между обычными словами (название организации?)", m, is_warn=True)
     for m in p_straight_quotes(t):
         emit("9", 'прямые кавычки " — заменить на «»/„“', m, is_warn=True)
+    for m in p_lapki_without_outer(t):
+        emit("9a", "лапки „…“ без внешних ёлочек — заменить на «…»", m)
 
     # Слова для проверки «ё» из tools/yo_words.txt (пополняемый список)
     try:
