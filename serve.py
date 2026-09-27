@@ -119,12 +119,51 @@ def rebuild_site():
     return True, p.stdout or ''
 
 
+def reload_event(eid):
+    """Перезагрузить одно событие с elementy.ru и пересобрать сайт.
+
+    Кнопка «Перезагрузить с «Элементов»» на странице события: подходит, когда
+    на «Элементах» что-то исправили, а ждать полного обновления не хочется.
+    """
+    fp = os.path.join(ROOT, 'data', 'events.json')
+    try:
+        evs = json.load(open(fp, encoding='utf-8'))
+    except Exception as e:
+        return False, 'не прочитался data/events.json: %s' % e
+    ev = next((x for x in evs if str(x.get('id')) == str(eid)), None)
+    if ev is None:
+        return False, 'событие %s не найдено в data/events.json' % eid
+    p = subprocess.run([PY, os.path.join(ROOT, 'scrape.py'), '--ids', str(eid)],
+                       cwd=ROOT, capture_output=True, text=True,
+                       encoding='utf-8', errors='replace')
+    if p.returncode != 0:
+        return False, 'не удалось скачать событие: %s' % ((p.stderr or '')[-300:])
+    try:
+        rep = json.load(open(os.path.join(ROOT, 'data', 'update_report.json'),
+                             encoding='utf-8'))
+    except Exception:
+        rep = {}
+    changed = rep.get('changed') or []
+    if not changed:
+        return True, 'Изменений нет — данные на «Элементах» такие же.'
+    fields = ', '.join(changed[0].get('fields') or [])
+    return True, 'Обновлено (%s).' % (fields or 'данные')
+
+
 def proto_action(data):
     """Действие с прототипом из prototypes.js. Возвращает (ok, сообщение)."""
     pid = (data.get('id') or '').strip()
     action = (data.get('action') or '').strip()
     if not pid or '/' in pid or '\\' in pid or pid.startswith('.'):
-        return False, 'неверный ID прототипа'
+        return False, 'неверный ID'
+    if action == 'reload':
+        ok, msg = reload_event(pid)
+        if not ok:
+            return False, msg
+        ok2, out = rebuild_site()
+        if not ok2:
+            return False, 'сайт не пересобрался: %s' % out
+        return True, msg
     if pid not in protolib.list_ids():
         return False, 'прототип %s не найден' % pid
     try:

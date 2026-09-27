@@ -302,6 +302,40 @@ def norm_url(u):
 
 # ---------------------------------------------------------------- правка
 
+def authors_list(p):
+    """Список авторов прототипа. Старые прототипы: один автор в ключе author;
+    новые (встреча с двумя лекторами): список authors."""
+    lst = p.get('authors')
+    if isinstance(lst, list) and lst:
+        return [a for a in lst if isinstance(a, dict)]
+    a = p.get('author')
+    return [a] if isinstance(a, dict) else []
+
+
+def set_authors_list(p, aus):
+    """Кладём список авторов обратно, не размножая ключи: один автор —
+    в author (как раньше), несколько — в authors."""
+    if len(aus) == 1:
+        p['author'] = aus[0]
+        p.pop('authors', None)
+    else:
+        p['authors'] = aus
+        p.pop('author', None)
+
+
+def parse_author_key(key):
+    """Ключ правки описания автора: 'i:номер поля' (i — индекс автора,
+    начиная с 0) или просто 'номер поля' — для одиночного автора."""
+    s = str(key)
+    if ':' in s:
+        i, _, sub = s.partition(':')
+        try:
+            return int(i), sub
+        except ValueError:
+            return 0, s
+    return 0, s
+
+
 def set_value(pid, area, key, value):
     """Меняет одно значение в prototype.json.
 
@@ -347,15 +381,19 @@ def set_value(pid, area, key, value):
                     break
         p['sources'] = lst
     elif area in ('author_fields', 'author_block'):
-        a = p.get('author') or {}
+        aus = authors_list(p)
+        i, sub = parse_author_key(key)
+        if not (0 <= i < len(aus)):
+            raise KeyError('нет автора %s' % i)
+        a = aus[i]
         if area == 'author_block':
             a['block_html'] = value
         else:
-            hit = [f for f in a.get('fields') or [] if f.get('n') == key]
+            hit = [f for f in a.get('fields') or [] if f.get('n') == sub]
             if not hit:
-                raise KeyError('нет поля автора %s' % key)
+                raise KeyError('нет поля автора %s' % sub)
             hit[0]['value'] = value
-        p['author'] = a
+        set_authors_list(p, aus)
     else:
         raise KeyError('неизвестный раздел %s' % area)
     save(pid, p)

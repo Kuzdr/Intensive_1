@@ -230,6 +230,18 @@ def parse_detail(event):
 def clean_amt(a):
     return re.sub(r'\s+', ' ', a).strip()
 
+def amount_value(a):
+    """Числовое значение суммы для сравнения цен (900, 2 900, 1.5 тыс → 1500)."""
+    s = clean_amt(a).replace('\u00a0', ' ').replace(' ', '')
+    s = s.replace(',', '.').replace('\u00a0', '')
+    m = re.match(r'^(\d+(?:\.\d+)?)', s)
+    if not m:
+        return None
+    v = float(m.group(1))
+    if re.search(r'тыс', clean_amt(a), re.I):
+        v *= 1000
+    return int(round(v))
+
 def short_price(text):
     low = text.lower()
     # убедиться, что «бесплатно/вход свободный» — без денежной суммы
@@ -249,30 +261,38 @@ def short_price(text):
     base = ('От ' if off_pref else '') + clean_amt(off_amt)
     if off_to:
         base += ' до ' + clean_amt(off_to)
-    parts.append(base + ' ₽')
+    parts.append(base + ' руб.')
+    # числовое значение главной цены — чтобы не повторять её же в других вариантах
+    base_num = amount_value(off_amt)
 
     # скидка студентам/школьникам
     if re.search(r'студент\S*|школьник\S*', low):
-        m_st = re.search(r'(?:студентам|школьникам)\s*:?\s*(от\s*)?(\d[\d\s\u00a0.,]*?)\s*руб', text, re.I)
+        m_st = re.search(r'(?:студентам|школьникам)\s*:?\s*(от\s*)?(\d[\d\s .,]*?)\s*руб', text, re.I)
         if m_st:
-            parts.append('студентам/школьникам ' + ('От ' if m_st.group(1) else '') + clean_amt(m_st.group(2)) + ' ₽')
+            parts.append('студентам/школьникам ' + ('От ' if m_st.group(1) else '') + clean_amt(m_st.group(2)) + ' руб.')
 
     # дороже на входе
-    m_door = re.search(r'(?:(?:билеты|билет)\s+)?(?:на\xa0входе|на входе|при входе)(.{0,90}?)(\d[\d\s\u00a0.,]*?)\s*руб', text, re.I)
-    if m_door and m_door.group(2) and not any('на входе' in p for p in parts):
-        parts = [parts[0] + ' (на входе ' + clean_amt(m_door.group(2)) + ' ₽)']
+    m_door = re.search(r'(?:(?:билеты|билет)\s+)?(?:на входе|на входе|при входе)(.{0,90}?)(\d[\d\s .,]*?)\s*руб', text, re.I)
+    if m_door and m_door.group(2) and not any('на входе' in p for p in parts) \
+            and amount_value(m_door.group(2)) != base_num:
+        parts = [parts[0] + ' (на входе ' + clean_amt(m_door.group(2)) + ' руб.)']
 
-    # онлайн
+    # онлайн: ищем цену рядом со словом «трансляция» (там она обычно и стоит),
+    # иначе — рядом со словом «онлайн»
+    m_on = None
     loc = low.find('трансляц')
     if loc != -1:
         window = text[max(0, loc - 150):loc + 240]
-        m_on = re.search(r'(?:трансляци\S*|стоимость)\s*:?\s*(от\s*)?(\d[\d\s\u00a0.,]*?)\s*руб', window, re.I)
-        if not m_on:
-            nxt = re.search(r'трансляция\.?\s*(?:Стоимость|стоимость)\s*:?\s*(от\s*)?(\d[\d\s\u00a0.,]*?)\s*руб', text, re.I)
-            if nxt:
-                m_on = nxt
-        if m_on:
-            parts.append('онлайн ' + ('От ' if m_on.group(1) else '') + clean_amt(m_on.group(2)) + ' ₽')
+        m_on = re.search(r'(?:трансляци\S*|стоимость)\s*:?\s*(от\s*)?(\d[\d\s .,]*?)\s*руб', window, re.I)
+    if not m_on:
+        m_on = re.search(r'трансляция\.?\s*(?:Стоимость|стоимость)\s*:?\s*(от\s*)?(\d[\d\s .,]*?)\s*руб', text, re.I)
+    if not m_on:
+        m_on = re.search(r'(?:онлайн|online)\s*:?\s*(от\s*)?(\d[\d\s .,]*?)\s*руб', text, re.I)
+    # отдельная цена «онлайн» нужна, только если она действительно другая:
+    # у событий «только онлайн» цена трансляции и есть основная цена,
+    # и повторять её вторым числом нельзя («900 руб., онлайн 900 руб.»)
+    if m_on and amount_value(m_on.group(2)) != base_num:
+        parts.append('онлайн ' + ('От ' if m_on.group(1) else '') + clean_amt(m_on.group(2)) + ' руб.')
 
     return ', '.join(parts)
 
@@ -290,12 +310,11 @@ def describe_change(old, fresh):
     for k in ('title', 'lecturer', 'date_iso', 'lectory', 'city', 'place'):
         if norm_key(old.get(k)) != norm_key(fresh.get(k)):
             keys.append(k)
-    # цена: сравнение по исходному тексту; если сырой текст изменился,
-    # дополнительно сверяем итоговую (адаптированную) цену, чтобы смена
-    # формулировки без смены цены не перепорождала анонс
-    if norm_key(old.get('price_raw')) != norm_key(fresh.get('price_raw')):
-        if norm_key(old.get('price_short')) != norm_key(fresh.get('price_short')):
-            keys.append('price')
+    # цена: сверяем итоговую цену (её показывает сайт). Смена только формулировки
+    # в исходном тексте без смены самой цены перепорождать анонс не должна —
+    # для этого сравниваем price_short, а не price_raw.
+    if norm_key(old.get('price_short')) != norm_key(fresh.get('price_short')):
+        keys.append('price')
     return keys
 
 def progress(pct, msg):
@@ -314,26 +333,80 @@ def write_report(report):
     with open(os.path.join(DATA_DIR, 'update_report.json'), 'w', encoding='utf-8') as f:
         json.dump(report, f, ensure_ascii=False, indent=1)
 
+def enrich(ev, sleep=0.4):
+    """Скачать страницу события и разобрать её (общие поля + год по дню недели)."""
+    print('Fetching', ev.get('id'), (ev.get('title') or '')[:60], flush=True)
+    try:
+        det = parse_detail(ev)
+    except Exception as e:
+        print('  ERROR', e, flush=True)
+        return None
+    ev.update(det)
+    # год по дню недели
+    if ev.get('date_iso'):
+        y, m, d = map(int, ev['date_iso'].split('-'))
+    else:
+        dt = pick_year(ev.get('date_dot'), ev.get('weekday'))
+        y, m, d = dt.year, dt.month, dt.day
+    ev['date_iso'] = '%04d-%02d-%02d' % (y, m, d)
+    if sleep:
+        time.sleep(sleep)
+    return ev
+
+def reload_ids(ids):
+    """Перезагрузить со страницы «Элементов» только перечисленные события.
+
+    Используется кнопкой «Перезагрузить» на странице события: остальные
+    события не трогаем, обновляем лишь те, что перечислены в ids.
+    """
+    today = datetime.date.today().isoformat()
+    old = load_old_events()
+    by_id = {e['id']: e for e in old}
+    changed, missing = [], []
+    n = len(ids)
+    for i, eid in enumerate(ids):
+        eid = str(eid).strip()
+        o = by_id.get(eid)
+        if o is None:
+            missing.append(eid)
+            continue
+        progress(10 + int(70 * (i + 1) / max(n, 1)),
+                 'Событие %d из %d: %s' % (i + 1, n, (o.get('title') or '')[:40]))
+        f = enrich(dict(o), sleep=0.2)
+        if f is None or not f.get('detail_html'):
+            continue
+        keys = describe_change(o, f)
+        if not keys:
+            progress(85, 'Без изменений: %s' % (o.get('title') or '')[:40])
+            continue
+        f['updated'] = True
+        f['updated_at'] = today
+        by_id[eid] = f
+        changed.append({'id': eid, 'title': f.get('title'), 'fields': keys})
+        progress(85, 'Обновлено: %s' % (f.get('title') or '')[:40])
+
+    new_events = [by_id[e['id']] for e in old if e['id'] in by_id]
+    with open(os.path.join(DATA_DIR, 'events.json'), 'w', encoding='utf-8') as f:
+        json.dump(new_events, f, ensure_ascii=False, indent=1)
+    report = {'date': today, 'added': [], 'changed': changed, 'removed': [],
+              'missing': missing, 'total': len(new_events)}
+    write_report(report)
+    print('REPORT: перезагружено %d, без изменений %d, всего событий %d'
+          % (len(changed), n - len(changed) - len(missing), len(new_events)))
+    progress(100, 'Данные обновлены.')
+    return report
+
 def main():
+    if len(sys.argv) > 2 and sys.argv[1] == '--ids':
+        ids = [x for x in re.split(r'[,\s]+', ' '.join(sys.argv[2:])) if x]
+        reload_ids(ids)
+        return
     progress(2, 'Загрузка списка событий с elementy.ru…')
     events = parse_list_page()
     progress(10, 'Найдено %d событий, скачиваю страницы…' % len(events))
     n = len(events)
     for i, ev in enumerate(events):
-        print('Fetching', ev['id'], ev['title'])
-        try:
-            det = parse_detail(ev)
-        except Exception as e:
-            print('  ERROR', e)
-            det = {}
-        ev.update(det)
-        # год по дню недели
-        if ev['date_iso']:
-            y, m, d = map(int, ev['date_iso'].split('-'))
-        else:
-            dt = pick_year(ev['date_dot'], ev['weekday'])
-            y, m, d = dt.year, dt.month, dt.day
-        ev['date_iso'] = '%04d-%02d-%02d' % (y, m, d)
+        enrich(ev)
         progress(10 + int(60 * (i + 1) / max(n, 1)), 'Событие %d из %d: %s' % (i + 1, n, (ev.get('title') or '')[:40]))
         time.sleep(0.4)
 

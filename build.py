@@ -407,7 +407,7 @@ def footer(prefix=''):
   </div>
 </div>'''
 
-def page(title, body, active, prefix=''):
+def page(title, body, active, prefix='', extra_js=''):
     return f'''<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -423,6 +423,7 @@ def page(title, body, active, prefix=''):
 {body}
 </div>
 {footer(prefix)}
+{extra_js}
 </body>
 </html>'''
 
@@ -435,6 +436,10 @@ TOOLBAR = '''<div class="toolbar">
     <label><input type="radio" name="vmode" value="proto"> прототипы</label>
     <label class="vhidden"><input type="checkbox" id="v-showhidden"> скрытые</label>
     <button type="button" class="tbtn mini" id="btn-lectories">Лектории</button>
+    <button type="button" class="tbtn mini" id="btn-reset-filters" title="Вернуть режим «всё», снять галочку «скрытые» и отметить всех лекториев">Сбросить фильтры</button>
+  </div>
+  <div class="filter-note" id="filter-note" hidden><span id="filter-note-text"></span>
+    <button type="button" class="tbtn mini" id="btn-reset-filters-2">Сбросить фильтры</button>
   </div>
 </div>'''
 
@@ -622,19 +627,81 @@ def render_memo(e, prefix):
     m = m.replace('assets/img/', prefix + 'assets/img/')
     return m
 
+EVENT_JS = '<script src="../js/reload.js"></script>'
+
+# Кнопка «Перезагрузить с «Элементов»» на странице события. Отдельный файл:
+# страница события почти не имеет скриптов, а prototypes.js на ней не нужен.
+RELOAD_JS = r'''/* кнопка «Перезагрузить с «Элементов» на странице события */
+(function () {
+  var btn = document.querySelector('[data-act=reload]');
+  if (!btn) return;
+  var row = btn.parentNode;
+  var note = row.querySelector('.reload-note');
+  var local = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname);
+  if (!local) { row.parentNode.removeChild(row); return; }
+
+  function say(text, kind) {
+    note.className = 'reload-note ' + kind;
+    note.textContent = text;
+  }
+  btn.addEventListener('click', function () {
+    if (!window.confirm('Перезагрузить событие с «Элементов»?\n\n'
+      + 'Страница события будет скачана с elementy.ru заново, сайт пересобран. '
+      + 'Это займёт несколько секунд.')) return;
+    btn.disabled = true;
+    btn.textContent = 'Перезагружаю…';
+    say('Скачиваю страницу с «Элементов»…', 'work');
+    fetch('/api/proto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reload', id: btn.getAttribute('data-id') })
+    }).then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok || !j.ok) throw new Error(j.error || ('ошибка ' + r.status));
+        return j;
+      });
+    }).then(function (j) {
+      say(j.message || 'Готово', 'ok');
+      setTimeout(function () { location.reload(); }, 900);
+    }).catch(function (e) {
+      btn.disabled = false;
+      btn.textContent = 'Перезагрузить с «Элементов»';
+      say('Не получилось: ' + e.message, 'err');
+    });
+  });
+})();
+'''
+
+def build_reload_js():
+    open(os.path.join(JS_DIR, 'reload.js'), 'w', encoding='utf-8').write(RELOAD_JS)
+
 def build_event_pages():
     n = len(items)
+    written = set()
     for i, e in enumerate(items):
         if e.get('kind') == 'proto':
             body = proto_page(e, '../')
         else:
             body = event_page(e, i, n, '../')
         name = (e.get('slug') or e['id']) + '.html'
+        written.add(name)
         doc = e['title'] or ('Событие ' + e['id'])
         if e.get('lecturer'):
             doc += ' — ' + e['lecturer']
         open(os.path.join(EVENT_DIR, name), 'w', encoding='utf-8').write(
-            page(doc, body, 'events', '../'))
+            page(doc, body, 'events', '../', extra_js=EVENT_JS))
+    # Убрать страницы, оставшиеся от прошлых сборок (событие удалено,
+    # переименовано или прошло): иначе в папке годами лежат копии со
+    # старыми данными, на которые ещё можно зайти по старой ссылке.
+    stale = [f for f in os.listdir(EVENT_DIR)
+             if f.endswith('.html') and f not in written]
+    for f in stale:
+        try:
+            os.remove(os.path.join(EVENT_DIR, f))
+        except OSError:
+            pass
+    if stale:
+        print('Удалено устаревших страниц: %d' % len(stale))
 
 def event_page(e, i, n, prefix):
     nav_prev = nav_next = ''
@@ -661,6 +728,11 @@ def event_page(e, i, n, prefix):
     {upd_src}
     {reg}
     <div class="src">Источник: <a href="{esc(e['url'])}" target="_blank" rel="noopener">страница на elementy.ru</a> (ID {esc(e['id'])})</div>
+    <div class="reload-row">
+      <button type="button" class="tbtn mini" data-act="reload" data-id="{esc(e['id'])}"
+        title="Скачать страницу этого события с elementy.ru заново и пересобрать сайт">Перезагрузить с «Элементов»</button>
+      <span class="reload-note">Если на «Элементах» что-то исправили — нажмите, и данные этого события обновятся.</span>
+    </div>
   </div>
   <div class="pagenavs">
     {nav_prev}{nav_next}
@@ -674,8 +746,29 @@ def klblock_to_text(html_txt):
         return '<span class="klblock">' + H.escape(m.group(0)) + '</span>'
     return re.sub(r'</?KLBLOCK[^>]*>', rep, html_txt, flags=re.I)
 
-def proto_photo(p, prefix):
-    a = p.get('author') or {}
+def proto_authors(p):
+    """Список авторов прототипа. У старых прототипов он один и лежит в
+    ключе author; у новых (встреча с двумя лекторами) — в authors."""
+    lst = p.get('authors')
+    if isinstance(lst, list) and lst:
+        return [a for a in lst if isinstance(a, dict)]
+    a = p.get('author')
+    return [a] if isinstance(a, dict) else []
+
+
+def proto_lecturers(p):
+    """Автор(ы) строкой для шапки страницы прототипа."""
+    names = [(a.get('name') or '').strip() for a in proto_authors(p)]
+    names = [n for n in names if n]
+    if not names:
+        return (p.get('lecturer') or '').strip()
+    if len(names) == 1:
+        return names[0]
+    return ', '.join(names[:-1]) + ' и ' + names[-1]
+
+
+def proto_photo(a, p, prefix):
+    """Фото автора из источника (пусто, если фото нет)."""
     src = (a.get('photo') or '').strip()
     if not src:
         return ''
@@ -686,20 +779,23 @@ def proto_photo(p, prefix):
             ' со стороной не больше 600&nbsp;пикселей)</div></div>') % (
                 esc(src), esc(a.get('name') or p.get('lecturer') or 'автор'))
 
-def author_block_full(a, p, prefix):
+
+def author_block_full(a, p, prefix, show_who=False):
     """Полноценный блок об авторе для автора, который уже есть на «Элементах»:
     фото, имя и описание (исходное ТЗ). Без кнопок правки — копировать нечего,
     автор уже в базе «Элементов»."""
     name = (a.get('name') or p.get('lecturer') or '').strip()
-    photo = proto_photo(p, prefix)
+    photo = proto_photo(a, p, prefix)
     desc = (a.get('block_html') or '').strip()
     if not desc:
         # описание берём из поля 7.4, если готовый блок не заполнен
         for f in a.get('fields') or []:
             if str(f.get('n')) == '7.4':
                 desc = str(f.get('value') or '').strip()
-    parts = ['<div class="fblock"><div class="fb-t">Об авторе</div>',
-             '<div class="itemblock memo author-full">']
+    parts = ['<div class="fblock"><div class="fb-t">Об авторе</div>']
+    if show_who and name:
+        parts.append('<div class="fb-who">%s</div>' % esc(name))
+    parts.append('<div class="itemblock memo author-full">')
     if photo:
         parts.append(photo)
     if name:
@@ -708,6 +804,37 @@ def author_block_full(a, p, prefix):
         parts.append(desc)
     parts.append('</div></div>')
     return ''.join(parts)
+
+
+def author_blocks(p, prefix):
+    """Все блоки «Об авторе» прототипа: по одному на автора.
+
+    Решает флаг author.on_elementy: он ставится ТОЛЬКО если автор реально
+    найден на «Элементах». По умолчанию False — новый автор, поля 7.1–7.4.
+    (Раньше решение принималось по наличию block_html, из-за чего новые
+    авторы показывались как «уже в базе», а стандартные поля были скрыты.)
+    Когда авторов несколько, под заголовком блока показываем, о ком он."""
+    aus = proto_authors(p)
+    many = len(aus) > 1
+    out = []
+    for i, a in enumerate(aus):
+        if a.get('on_elementy'):
+            out.append(author_block_full(a, p, prefix, show_who=many))
+            continue
+        name = (a.get('name') or '').strip()
+        rows = []
+        for f in a.get('fields') or []:
+            nm = f['name']
+            rows.append('<tr><td class="fname">%s</td><td class="fval">%s</td>'
+                        '<td class="fbtns-cell">%s</td></tr>'
+                        % (esc(nm), f.get('value') or '—',
+                           cell_btns('author_fields', f, nm, key=str(i) + ':' + str(f['n']))))
+        head = '<div class="fb-t">Об авторе</div>'
+        if many and name:
+            head += '<div class="fb-who">%s</div>' % esc(name)
+        out.append('<div class="fblock">%s%s<table class="ftable">%s</table></div>'
+                   % (head, proto_photo(a, p, prefix), ''.join(rows)))
+    return ''.join(out)
 
 def edit_btns(area, key, name, value=''):
     return ('<span class="fbtns" data-area="%s" data-key="%s" data-name="%s" data-text="%s">'
@@ -721,6 +848,9 @@ def edit_btns(area, key, name, value=''):
 # Числовой ID в адресе источника: Timepad (/event/12345/), Архэ, Timepad-Donational
 # и подобные. Возвращаем (id, подпись источника) или (None, имя хоста).
 def source_num_id(u):
+    m = re.search(r'elementy\.ru/events/(\d+)', u or '')
+    if m:
+        return m.group(1), 'Элементы'
     m = re.search(r'/event/(\d+)', u or '')
     if m:
         return m.group(1), 'Timepad'
@@ -767,11 +897,25 @@ def source_add_row(n):
             '<td class="fbtns-cell">%s</td></tr>'
             % edit_btns('source', str(n), 'ссылку на новый источник', ''))
 
-def cell_btns(area, f, name, no_edit=False):
+def cell_btns(area, f, name, no_edit=False, key=None):
     """Ячейка с кнопками правки/копирования для поля в таблице."""
     if no_edit:
         return ''
-    return edit_btns(area, f.get('n'), name, f.get('value') or '')
+    return edit_btns(area, key if key is not None else f.get('n'), name, f.get('value') or '')
+
+def source_cell_btns(p, f):
+    """Поле 9 «Источники»: свой набор кнопок на КАЖДЫЙ источник
+    (правка, копирование и — если у источника есть числовой ID — копирование ID).
+    Список источников общий с блоком «Источники» внизу страницы, поэтому
+    правка здесь меняет тот же список."""
+    srcs = p.get('sources') or ([p['url']] if p.get('url') else [])
+    lines = []
+    for i, u in enumerate(srcs):
+        lines.append('<div class="src-line"><a href="%s" target="_blank" rel="noopener">%s</a>%s</div>'
+                     % (esc(u), esc(u), source_btns('source', str(i), 'ссылку на источник', u)))
+    if not lines:
+        lines.append('<div class="src-line">—</div>')
+    return ''.join(lines)
 
 def proto_page(e, prefix):
     p = e['proto']
@@ -795,25 +939,9 @@ def proto_page(e, prefix):
     desc_blk = ('<div class="fblock"><div class="fbar">%s</div>'
                 '<div class="itemblock memo pdesc">%s</div></div>') % (
                     edit_btns('desc', 'desc', 'Описание лекции', p.get('desc_html') or ''), desc)
-    # --- автор: блок с «Элементов» показываем целиком (имя, фото, описание),
-    #     без кнопок правки; для нового автора — поля 7.1–7.4.
-    #     Решает флаг author.on_elementy: он ставится ТОЛЬКО если автор реально
-    #     найден на «Элементах». По умолчанию False — новый автор, поля 7.1–7.4.
-    #     (Раньше решение принималось по наличию block_html, из-за чего новые
-    #     авторы показывались как «уже в базе», а стандартные поля были скрыты.)
-    a = p.get('author') or {}
-    if a.get('on_elementy'):
-        author = author_block_full(a, p, prefix)
-    else:
-        rows = []
-        for f in a.get('fields') or []:
-            nm = f['name']
-            rows.append('<tr><td class="fname">%s</td><td class="fval">%s</td>'
-                        '<td class="fbtns-cell">%s</td></tr>'
-                        % (esc(nm), f.get('value') or '—',
-                           cell_btns('author_fields', f, nm)))
-        author = ('<div class="fblock"><div class="fb-t">Об авторе</div>%s'
-                  '<table class="ftable">%s</table></div>') % (proto_photo(p, prefix), ''.join(rows))
+    # --- автор(ы): блок с «Элементов» показываем целиком (имя, фото, описание),
+    #     без кнопок правки; для нового автора — поля 7.1–7.4. См. author_blocks.
+    author = author_blocks(p, prefix)
     # --- дополнительная информация
     extras = p.get('extra_html') or []
     ex_rows = []
@@ -834,6 +962,12 @@ def proto_page(e, prefix):
         if f['n'] == '0':
             continue
         no_edit = f['n'] in PL.NO_EDIT
+        if f['n'] == '9':
+            # у поля «Источники» кнопки свои — по одному набору на источник
+            frows.append('<tr class="ftable-src-row"><td class="fname">%s</td>'
+                         '<td class="fval" colspan="2">%s</td></tr>'
+                         % (esc(f['name']), source_cell_btns(p, f)))
+            continue
         frows.append('<tr class="%s"><td class="fname">%s</td><td class="fval">%s</td>'
                     '<td class="fbtns-cell">%s</td></tr>' % (
                         'ro' if no_edit else '',
@@ -847,19 +981,23 @@ def proto_page(e, prefix):
         notes_blk = '<div class="fblock"><div class="pnotes">%s</div></div>' % nl2br(H.escape(notes))
     srcs = p.get('sources') or ([p['url']] if p.get('url') else [])
     src_rows = []
-    for u in srcs:
+    for i, u in enumerate(srcs):
         src_rows.append('<tr><td class="fname">%s</td><td class="fval src-url">'
                         '<a href="%s" target="_blank" rel="noopener">%s</a></td>'
                         '<td class="fbtns-cell">%s</td></tr>'
                         % (esc(source_label(u)), esc(u), esc(u),
-                           source_btns('source', str(srcs.index(u)), 'ссылку на источник', u)))
+                           source_btns('source', str(i), 'ссылку на источник', u)))
     src_rows.append(source_add_row(len(srcs)))
     src_html = ('<div class="fblock"><table class="ftable ftable-src">%s</table></div>'
                 % ''.join(src_rows)) if srcs else ''
+    # --- автор(ы) в шапке страницы: без них непонятно, чья это лекция
+    who = proto_lecturers(p)
+    who_html = ('<div class="pwho">%s: %s</div>'
+                % ('Авторы' if len(proto_authors(p)) > 1 else 'Автор', esc(who))) if who else ''
     return f'''<div class="crumb"><a href="../index.html">Календарь событий</a> » <span>прототип: {esc(e['id'])}</span></div>
 <div class="ptop" data-id="{esc(e['id'])}">
-  <div class="ptitle"><span class="ptag">прототип</span> {esc(e['title'] or '')}<div class="psub">{esc(fmt_date_num(e['date_iso']))} · {esc(e['weekday'])} · {esc(fmt_time(e) or '')} · {esc(e['city'] or '')}</div></div>
-  {toolbar_page('top') + proto_actions(e, 'page')}
+  <div class="ptitle"><span class="ptag">прототип</span> {esc(e['title'] or '')}<div class="psub">{esc(fmt_date_num(e['date_iso']))} · {esc(e['weekday'])} · {esc(fmt_time(e) or '')} · {esc(e['city'] or '')}</div>{who_html}</div>
+  {proto_actions(e, 'page')}
 </div>
 {''.join(flags)}
 {user_notes_html(e, 'top')}
@@ -869,12 +1007,9 @@ def proto_page(e, prefix):
 {extra_blk + notes_blk}
 <div class="psrc">Источники: {src_html}</div>
 {user_notes_html(e, 'bottom')}
-{toolbar_page('bottom')}
 <div class="pagenavs"><a class="pagenav prev" href="../index.html"><span>К списку</span><b>Календарь событий</b></a></div>
 {MODAL}
-{MODAL_POST}
 <script src="{prefix}js/prototypes.js"></script>
-<script src="{prefix}js/post.js"></script>
 <script src="{prefix}js/toolbar.js"></script>'''
 
 def nl2br(s):
@@ -1016,6 +1151,11 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .price-short { margin-bottom: 4px; }
 .reglinks { margin-bottom: 4px; }
 .sourcebox .src { color: #777; font-size: 12px; margin-top: 6px; }
+.reload-row { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2dccd; }
+.reload-note { display: block; margin-top: 5px; font-size: 12px; color: #777; }
+.reload-note.work { color: #8a6d1f; }
+.reload-note.ok { color: #2e5d2e; font-weight: bold; }
+.reload-note.err { color: #a33; font-weight: bold; }
 
 .pagenavs { display: flex; gap: 12px; margin-top: 18px; }
 .pagenav { flex: 1 1 50%; display: block; background: #fff; border: 1px solid #ddd5c3; padding: 10px 14px; }
@@ -1046,11 +1186,16 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .calperiod { margin-top: 16px; border-top: 1px solid #e3dccb; padding-top: 6px; }
 
 /* toolbar + modal */
-.toolbar { display: flex; gap: 10px; align-items: stretch; margin: 0 0 18px; flex-wrap: nowrap; overflow-x: auto; }
-.tbtn { border: 1px solid #b9a878; background: #fffdf5; color: #4a3b1f; font-size: 14px; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
-.tbtn:hover { background: #e9e2cf; }
-.tbtn.sec { color: #6a643f; }
-.tbtn.mini { padding: 5px 12px; font-size: 13px; }
+.toolbar { display: flex; gap: 10px; align-items: stretch; margin: 0 0 18px; flex-wrap: wrap; }
+      .tbtn { border: 1px solid #b9a878; background: #fffdf5; color: #4a3b1f; font-size: 14px; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+      .tbtn:hover { background: #e9e2cf; }
+      .tbtn.sec { color: #6a643f; }
+      .tbtn.mini { padding: 5px 12px; font-size: 13px; }
+      .filter-note { flex: 1 0 100%; font-size: 13px; color: #8c2f2f; background: #fdf1ef;
+        border: 1px solid #e6c9c4; border-radius: 4px; padding: 7px 12px; }
+      .filter-note[hidden] { display: none; }
+      .filter-note .tbtn.mini { margin-left: 10px; }
+
 .toolbar-more { flex: 1 1 auto; min-width: 120px; border: 1px dashed #cfc4a6; border-radius: 4px; min-height: 36px; }
 
 /* переключатель показа: режим / скрытые / лектории */
@@ -1107,6 +1252,11 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .ptitle { font: bold 20px/1.3 Georgia, serif; color: #3a2f16; }
 .ptitle .ptag { display: inline-block; background: #a3311f; color: #fff; border-radius: 3px; font: bold 12px/1.4 Arial, sans-serif; padding: 1px 7px; vertical-align: 3px; margin-right: 6px; }
 .ptitle .psub { font: 13px/1.4 Arial, sans-serif; color: #6f6a52; margin-top: 3px; }
+.ptitle .pwho { font: italic 15px/1.4 Georgia, serif; color: #4a3f28; margin-top: 6px; }
+.ftable-src-row .fval { line-height: 2.1; }
+.src-line { margin: 0; }
+.src-line .fbtns { margin-left: 8px; }
+.fb-who { font: italic 15px/1.4 Georgia, serif; color: #4a3f28; margin: 0 0 8px; }
 .ptop .pbtns { flex-direction: row; margin-top: 0; }
 .pflag { flex: 1 1 100%; background: #fdf3e3; border: 1px solid #e0c9a2; border-radius: 4px; padding: 7px 10px; font-size: 13px; color: #6b4c14; margin-top: 8px; }
 .pflag.dup { background: #f6e3e0; border-color: #e0bdb7; color: #8c2f2f; }
@@ -1676,7 +1826,8 @@ PROTOTYPES_JS = r'''
   'use strict';
 
   var IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname);
-  var K_MODE = 'nk_mode', K_HIDDEN = 'nk_hidden', K_LEC = 'nk_lectories';
+  var K_MODE = 'nk_mode', K_HIDDEN = 'nk_hidden', K_LEC = 'nk_lectories',
+      K_LEC_ALL = 'nk_lectories_all';
 
   // ------------------------------------------------------------------ утилиты
   function $(s, r) { return (r || document).querySelector(s); }
@@ -1894,12 +2045,15 @@ PROTOTYPES_JS = r'''
     else location.reload();
   }
   /* run(): сохранить на сервере и перезагрузить. reload() со страницы прототипа
-     уводит в список — этим и пользуется сохранение обратной связи. */
-  function run(payload, okMsg) {
+     уводит в список — этим и пользуется сохранение обратной связи и комментария.
+     stay=true — остаться на текущей странице (перечитать её на месте): так
+     работают удаление комментария/обратной связи и кнопка «Скрыть»
+     (замечание пользователя 27.09.2026). */
+  function run(payload, okMsg, stay) {
     toast('Сохраняю…');
     return api(payload).then(function () {
       toast(okMsg);
-      setTimeout(reload, 400);
+      setTimeout(stay ? function () { location.reload(); } : reload, 400);
     }).catch(function (e) { toast('Не получилось: ' + e.message, true); });
   }
   function pageId() {
@@ -2056,7 +2210,8 @@ PROTOTYPES_JS = r'''
           if (!yes) return;
           run({ action: uact === 'del-feedback' ? 'feedback' : 'comment',
                 id: uid, value: '', rebuild: false },
-            what === 'обратная связь' ? 'Обратная связь удалена' : 'Комментарий удалён');
+            what === 'обратная связь' ? 'Обратная связь удалена' : 'Комментарий удалён',
+            true);
         });
     }
     var pb = e.target.closest ? e.target.closest('.pbtns .pb') : null;
@@ -2070,7 +2225,7 @@ PROTOTYPES_JS = r'''
       if (act === 'hide') {
         var hidden = pbox.getAttribute('data-hidden') === '1';
         run({ action: 'hide', id: id, hidden: !hidden },
-          hidden ? 'Прототип показан' : 'Прототип скрыт');
+          hidden ? 'Прототип показан' : 'Прототип скрыт', true);
       }
       return;
     }
@@ -2108,10 +2263,14 @@ PROTOTYPES_JS = r'''
   function chosenLec() {
     try { return JSON.parse(load(K_LEC) || 'null'); } catch (e) { return null; }
   }
+  function knownLec() {
+    try { return JSON.parse(load(K_LEC_ALL) || 'null'); } catch (e) { return null; }
+  }
   function curLec() {
     var b = lecBoxes();
     return b.length ? b.filter(function (x) { return x.checked; }).map(function (x) { return x.value; }) : null;
   }
+  function lecAll() { return lecBoxes().map(function (x) { return x.value; }); }
   function isVisible(ev) {
     var kind = ev.getAttribute('data-kind');
     var m = radios.filter(function (r) { return r.checked; })[0];
@@ -2177,9 +2336,21 @@ PROTOTYPES_JS = r'''
     if (none) none.hidden = any;
   }
 
-  // лектории: восстанавливаем сохранённый выбор до первого расчёта
+  // лектории: восстанавливаем сохранённый выбор до первого расчёта.
+  // Важно: сохранённый список знает только те лектории, которые были на
+  // странице в момент сохранения. Новый лекторий (например, СПбГУ) в нём
+  // отсутствует — раньше он молча снимался, и его прототип не показывался.
+  // Поэтому для знакомых лекториев берём сохранённое состояние, а новые
+  // оставляем включёнными.
   var savedLec = chosenLec();
-  if (savedLec) lecBoxes().forEach(function (b) { b.checked = savedLec.indexOf(b.value) >= 0; });
+  if (savedLec) {
+    var wasKnown = knownLec();
+    lecBoxes().forEach(function (b) {
+      b.checked = wasKnown && wasKnown.indexOf(b.value) < 0
+        ? true
+        : savedLec.indexOf(b.value) >= 0;
+    });
+  }
 
   radios.forEach(function (r) {
     if (r.value === mode) r.checked = true;
@@ -2195,7 +2366,14 @@ PROTOTYPES_JS = r'''
   if (btnLec) {
     btnLec.addEventListener('click', function () {
       var chosen = chosenLec();
-      if (chosen) lecBoxes().forEach(function (b) { b.checked = chosen.indexOf(b.value) >= 0; });
+      if (chosen) {
+        var wasKnown = knownLec();
+        lecBoxes().forEach(function (b) {
+          b.checked = (wasKnown && wasKnown.indexOf(b.value) < 0)
+            ? true
+            : chosen.indexOf(b.value) >= 0;
+        });
+      }
       $('#modal-lectories').hidden = false;
     });
   }
@@ -2214,6 +2392,7 @@ PROTOTYPES_JS = r'''
   if (lecOk) {
     lecOk.addEventListener('click', function () {
       store(K_LEC, JSON.stringify(curLec()));
+      store(K_LEC_ALL, JSON.stringify(lecAll()));
       $('#modal-lectories').hidden = true;
       applyFilter();
     });
@@ -2222,7 +2401,53 @@ PROTOTYPES_JS = r'''
   if (lecOv) {
     lecOv.addEventListener('click', function (e) { if (e.target === lecOv) lecOv.hidden = true; });
   }
+
+  // фильтры — явные: показываем, что именно сейчас включено, и даём сбросить
+  function doResetFilters() {
+    var all = lecAll();
+    store(K_MODE, 'all');
+    store(K_HIDDEN, '0');
+    store(K_LEC, JSON.stringify(all));
+    store(K_LEC_ALL, JSON.stringify(all));
+    mode = 'all';
+    showHidden = false;
+    radios.forEach(function (r) { r.checked = (r.value === 'all'); });
+    lecBoxes().forEach(function (b) { b.checked = true; });
+    if (cbHidden) cbHidden.checked = false;
+    applyFilter();
+    filterNote();
+  }
+  var btnReset = $('#btn-reset-filters');
+  if (btnReset) btnReset.addEventListener('click', doResetFilters);
+  var btnReset2 = $('#btn-reset-filters-2');
+  if (btnReset2) btnReset2.addEventListener('click', doResetFilters);
+
+  function filterNote() {
+    var note = $('#filter-note');
+    if (!note) return;
+    var m = radios.filter(function (r) { return r.checked; })[0];
+    var parts = [];
+    if (m && m.value === 'el') parts.push('только «Элементы»');
+    if (m && m.value === 'proto') parts.push('только прототипы');
+    if (cbHidden && cbHidden.checked) parts.push('показаны скрытые');
+    var c = curLec();
+    if (c) {
+      var all = lecAll();
+      if (c.length === 0) parts.push('лектории: ни одного');
+      else if (c.length < all.length) parts.push('лектории: ' + c.join(', '));
+    }
+    if (!parts.length) { note.hidden = true; return; }
+    note.hidden = false;
+    $('#filter-note-text').textContent = 'Фильтры включены (' + parts.join('; ')
+      + ') — показаны не все события.';
+  }
   applyFilter();
+  filterNote();
+  if (main) {
+    var mo = new MutationObserver(function () { filterNote(); });
+    mo.observe(main, { attributes: true, childList: true, subtree: true,
+                       attributeFilter: ['hidden'] });
+  }
 })();
 '''
 
@@ -2288,6 +2513,7 @@ def main():
     build_index()
     progress(55, 'Страницы событий…')
     build_event_pages()
+    build_reload_js()
     progress(75, 'Календарь…')
     build_calendar()
     build_calendar_js()
