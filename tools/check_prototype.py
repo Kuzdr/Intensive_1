@@ -18,8 +18,41 @@
 блок автора) и дополнительно проверяет поле 1 «Привязка» по формуле.
 Второй — для проверки текста, набранного в чат.
 
-Правила не живут здесь: при изменении правила правим скилл, а этот файл —
-только зеркало механики.
+С ключом --fix скрипт ПЕРЕД проверкой применяет механические автоправки
+nbsp/«ё»-инвариантов и сущностей тире (только однозначную механику, которую
+валидатор помечает ошибкой), записывает файл и затем печатает результат
+проверки исправленного текста:
+
+    python -X utf8 tools\\check_prototype.py --json data\\...\\prototype.json --fix
+
+Автоправки — только механика: nbsp после однобуквенных, удаление nbsp после
+двухбуквенных, nbsp у чисел/тире/инициалов, «пойдёт» → «пойдет», сущности
+тире. Тонкие места (наводка «название организации?», прямые кавычки, лапки,
+римские цифры, «ё» по списку yo_words) остаются человеку — их валидатор
+печатает наводками после правок. Правила не живут здесь: при изменении
+правила правим скилл, а этот файл — только зеркало механики.
+
+ПРАВИЛО ДОСЛОВНЫХ ВСТАВОК (verbatim_fragments): в prototype.json верхнего
+уровня может быть задан массив строк `verbatim_fragments`. Тексты из него
+копируются с «Элементов» дословно («простое правило вырезания кода и вставки
+его в описание»). Валидатор в пределах всех вхождений этих строк ПРОПУСКАЕТ
+правила проверки (nbsp/«ё»/тире/инварианты) — ошибки не выводятся, чтобы не
+ломать готовый блок автора/текста с источника.
+
+ЧАСТИЧНАЯ ПРОВЕРКА (--only): правим конкретное поле прототипа — проверяем
+и пересобираем ТОЛЬКО его, а не весь прототип:
+
+    python -X utf8 tools\\check_prototype.py --json data\\...\\prototype.json --only desc
+    python -X utf8 tools\\check_prototype.py --json data\\...\\prototype.json --only 6.3,7.4
+    python -X utf8 tools\\check_prototype.py --json data\\...\\prototype.json --only extra --fix
+
+Области: fields, title, annot, lecturer, desc, extra, authors (синонимы
+«поля», «заголовок», «описание», «доп», «автор» и т. п. — на русском).
+Номера полей — как в прототипе: 2, 2.1, 6.3, 7.4. Работает и с --fix:
+правятся только выбранные поля. Проверка поля 1 «Привязка» тоже входит в
+выборку только при --only fields или --only 1.
+ПЕРЕД ПОКАЗОМ пользователю прогон всё равно ПОЛНЫЙ: --only — для точечных
+правок в середине работы, чтобы не гонять полный проход ради одного поля.
 """
 import datetime
 import io
@@ -140,6 +173,32 @@ def analyze(text: str) -> str:
         text = text.replace(ent, sym)
     text = text.replace(NBSP_SYM, SENT)
     return text
+
+
+def verbatim_ranges(t: str, fragments) -> list:
+    """Диапазоны [start, end) в анализируемом тексте t, занимаемые ДОСЛОВНЫМИ
+    вставками с «Элементов» (блок автора, подзаголовок и т. п.).
+
+    Такие фрагменты в prototype.json помечаются ключом `verbatim_fragments`
+    (правило: готовый код/текст с «Элементов» копируется в описание как есть,
+    без переоформления типографики). Валидатор пропускает по ним правила
+    nbsp/«ё»/тире — это каноничный текст «Элементов», а не наш набор.
+    """
+    ranges = []
+    for frag in fragments or []:
+        f = analyze(str(frag))
+        start = 0
+        while True:
+            i = t.find(f, start)
+            if i < 0:
+                break
+            ranges.append((i, i + len(f)))
+            start = i + len(f)
+    return ranges
+
+
+def in_verbatim(pos, ranges) -> bool:
+    return any(a <= pos < b for a, b in ranges)
 
 
 def p_nbsp_missing_after_one_letter(t: str):
@@ -446,9 +505,236 @@ def frag(t: str, m) -> str:
     return "…" + t[s : m.end() + 4].replace("\n", " ").strip() + "…"
 
 
+# ------------------------------------------- режим --fix (автоправки механики)
+
+def _spans_fix(t: str):
+    """Собирает список (start, end, replacement) механических правок nbsp/«ё».
+
+    Работаем в sentinel-тексте (t), чтобы использовать те же правила, что и
+    проверка: правки «один в один» совпадают с тем, что валидатор помечает
+    ошибкой. Заменяем ТОЛЬКО однозначную механику, которую человек всё равно
+    правит одинаково:
+      * nbsp после однобуквенных предлогов/союзов — добавить;
+      * nbsp после двухбуквенных («от/на/по/из/за/до/для/но/не») — убрать;
+      * nbsp между числом и словом — добавить (с исключениями валидатора);
+      * «двойной» nbsp вокруг числа — оставить левый, убрать правый;
+      * инициалы и «NAUKA 0+» — добавить nbsp;
+      * nbsp перед «—» — добавить, после «—» и у тире-интервала «–» — убрать;
+      * «ё» в словах-инвариантах («пойдёт» → «пойдет») — убрать;
+      * HTML-сущности тире (&mdash; и т.п.) — заменить символом;
+      * сырой U+00A0 — заменяется на «&nbsp;» при обратной конвертации.
+
+    НЕ авто-правим (нужен человек): наводки «название организации?», прямые
+    кавычки, лапки, римские цифры, добавление «ё» по списку yo_words
+    (категории 1–4 — смысл решает пользователь).
+    """
+    spans = []  # (start, end, replacement)
+
+    def add_remove(a, b, repl):
+        spans.append((a, b, repl))
+
+    # nbsp после однобуквенного: заменить пробел-группу на один sentinel
+    for m in p_nbsp_missing_after_one_letter(t):
+        add_remove(m.end(1), m.end(), SENT)
+    # nbsp после двухбуквенного: вернуть обычный пробел (последний символ m — sentinel)
+    for m in p_nbsp_after_two_letter(t):
+        add_remove(m.end() - 1, m.end(), " ")
+    # число + обычный пробел + слово: добавить nbsp (последний символ m — пробел)
+    for m in p_nbsp_missing_after_number(t):
+        add_remove(m.end() - 1, m.end(), SENT)
+    # двойной nbsp вокруг числа: убрать правый, оставить левый (число к слову ДО)
+    for m in p_nbsp_double_number(t):
+        add_remove(m.end() - 1, m.end(), " ")
+    # инициалы: заменить все обычные пробелы внутри m на nbsp
+    for m in p_nbsp_missing_initials(t):
+        for i, ch in enumerate(m.group(0)):
+            if ch == " ":
+                add_remove(m.start() + i, m.start() + i + 1, SENT)
+    # NAUKA 0+
+    for m in p_nbsp_missing_nauka(t):
+        for i, ch in enumerate(m.group(0)):
+            if ch == " ":
+                add_remove(m.start() + i, m.start() + i + 1, SENT)
+    # nbsp перед «—»: заменить пробелы между словом и тире
+    for m in p_nbsp_before_dash_missing(t):
+        add_remove(m.start() + 1, m.end() - 1, SENT)
+    # nbsp после «—»: убрать
+    for m in p_nbsp_after_dash(t):
+        add_remove(m.end() - 1, m.end(), " ")
+    # nbsp у тире-интервала «–»: убрать со всех сторон
+    for m in p_nbsp_around_en_dash(t):
+        for i, ch in enumerate(m.group(0)):
+            if ch == SENT:
+                add_remove(m.start() + i, m.start() + i + 1, " ")
+    # «ё» в словах-инвариантах — убрать (ё→е)
+    for m in p_invariant_yo(t):
+        add_remove(m.start(), m.end(), m.group(0).replace("ё", "е").replace("Ё", "Е"))
+    # HTML-сущности тире → символ
+    ENT_TYPO = {
+        "&mdash;": "—", "&ndash;": "–",
+        "&#8212;": "—", "&#8211;": "–",
+        "&#151;": "—", "&#150;": "–",
+    }
+    for m in p_entities_typo(t):
+        add_remove(m.start(), m.end(), ENT_TYPO.get(m.group(0).lower(), m.group(0)))
+    # обычные пробелы ВНУТРИ буквенных сокращений («и т. п.» → «и&nbsp;т.&nbsp;п.»)
+    for m in p_abbrev_spacing(t):
+        add_remove(m.start(), m.end(), SENT)
+
+    # убираем вложенные/пересекающиеся правки, применяем «с конца»
+    spans.sort(key=lambda s: s[0])
+    chosen = []
+    used_end = -1
+    for sp in spans:
+        if sp[0] >= used_end:
+            chosen.append(sp)
+            used_end = sp[1]
+    return chosen
+
+
+def apply_fixes(text_orig: str) -> tuple:
+    """Применяет механические правки к ИСХОДНОМУ тексту (с «&nbsp;»).
+
+    Возвращает (исправленный_текст, число_изменённых_фрагментов). Сырой
+    U+00A0 при этом нормализуется к тексту «&nbsp;» (rule проекта).
+    """
+    t = analyze(text_orig)
+    chosen = _spans_fix(t)
+    if not chosen:
+        return text_orig, 0
+    for a, b, repl in sorted(chosen, key=lambda s: s[0], reverse=True):
+        t = t[:a] + repl + t[b:]
+    out = t.replace(SENT, "&nbsp;")
+    return out, len(chosen)
+
+
+def fix_document_text(text: str) -> tuple:
+    return apply_fixes(text)
+
+
+def fix_proto_values(proto: dict, sel=None) -> tuple:
+    """Применяет автоправки к строковым значениям prototype.json.
+
+    Возвращает (новый_дикt, сколько_полей_изменено). Правки применяются к
+    каждому значению ОТДЕЛЬНО (как и проверка по полям), чтобы не задевать
+    границы между полями в склеенном тексте.
+
+    sel — выборка --only: None — правим всё, иначе только выбранные области
+    и номера полей (частичная правка).
+    """
+    changed = 0
+
+    def fix_str(s):
+        nonlocal changed
+        if not isinstance(s, str) or not s.strip():
+            return s
+        fx, n = apply_fixes(s)
+        if n:
+            changed += 1
+            return fx
+        return s
+
+    def want_block(area, key):
+        if sel is None:
+            return True
+        return sel_block(sel, area)
+
+    p2 = dict(proto)
+    for f in p2.get("fields") or []:
+        if "value" in f and (sel is None or sel_field(sel, str(f.get("n")))):
+            f["value"] = fix_str(f["value"])
+    for key, area in (("title", "title"), ("annot", "annot"),
+                      ("lecturer", "lecturer"), ("desc_html", "desc"),
+                      ("photo_file", "authors")):
+        if key in p2 and want_block(area, key):
+            p2[key] = fix_str(p2[key])
+    extra = p2.get("extra_html")
+    if isinstance(extra, list) and want_block("extra", "extra_html"):
+        p2["extra_html"] = [fix_str(x) for x in extra]
+    for a in p2.get("authors") or []:
+        want = sel is None or sel_block(sel, "authors")
+        if want and "name" in a:
+            a["name"] = fix_str(a["name"])
+        for f in a.get("fields") or []:
+            if "value" in f and (want or sel_field(sel, str(f.get("n")))):
+                f["value"] = fix_str(f["value"])
+        if "block_html" in a and (want or sel_field(sel, "7.4")):
+            a["block_html"] = fix_str(a["block_html"])
+    return p2, changed
+
+
 # ------------------------------------------------- режим --json (сам прототип)
 
-def proto_text(p: dict) -> str:
+# Области частичной проверки/правки (--only). Ключ — служебное имя области,
+# значение — синонимы, которые понимает командная строка.
+AREA_ALIASES = {
+    "fields": ("fields", "поля", "формальные"),
+    "title": ("title", "заголовок"),
+    "annot": ("annot", "аннотация"),
+    "lecturer": ("lecturer", "лектор"),
+    "desc": ("desc", "description", "описание", "текст"),
+    "extra": ("extra", "доп", "допинфо", "допинформация"),
+    "authors": ("authors", "author", "автор", "авторы"),
+}
+_AREA_BY_ALIAS = {a: k for k, names in AREA_ALIASES.items() for a in names}
+
+
+def parse_only(spec):
+    """Разбор --only «desc,extra,7.4» -> (areas, nums) либо None.
+
+    В areas — имена ОБЛАСТЕЙ (см. AREA_ALIASES), в nums — номера формальных
+    полей и полей автора («2», «6.3», «7.4»). Пусто — проверяем всё.
+    Неизвестный элемент списка — понятная ошибка, а не молчаливая проверка
+    не того (молча проверять не то опаснее, чем остановиться).
+    """
+    if not spec:
+        return None
+    areas, nums = set(), set()
+    for tok in re.split(r"[,\s]+", str(spec).strip()):
+        if not tok:
+            continue
+        low = tok.lower()
+        if low in _AREA_BY_ALIAS:
+            areas.add(_AREA_BY_ALIAS[low])
+        elif re.fullmatch(r"\d+(?:\.\d+)*", tok):
+            nums.add(tok)
+        else:
+            print("НЕПОНЯТНЫЙ элемент --only: «%s».\nДопустимо: области %s"
+                  " или номера полей (2, 6.3, 7.4)."
+                  % (tok, ", ".join(sorted(AREA_ALIASES))))
+            sys.exit(2)
+    if not areas and not nums:
+        return None
+    return areas, nums
+
+
+def sel_field(sel, n) -> bool:
+    """Входит ли формальное поле с номером n в выборку --only."""
+    areas, nums = sel
+    if nums and n in nums:
+        return True
+    return bool(areas) and "fields" in areas and not nums
+
+
+def sel_block(sel, area) -> bool:
+    """Входит ли текстовый блок (title/annot/lecturer/desc/extra) в выборку.
+
+    Если указаны ТОЛЬКО номера полей (например --only 7.4), блоки не берутся:
+    пользователь просил конкретное поле, а не весь прототип.
+    """
+    areas, nums = sel
+    return bool(areas) and area in areas
+
+
+def sel_authors(sel) -> bool:
+    """Брать ли блок автора (поля 7.1–7.6 и block_html)."""
+    areas, nums = sel
+    if areas and "authors" in areas:
+        return True
+    return bool(nums) and any(n.split(".")[0] == "7" for n in nums)
+
+
+def proto_text(p: dict, sel=None) -> str:
     """Весь текст прототипа, который видит пользователь: формальные поля,
     заголовок, аннотация карточки, описание, доп. информация, авторский блок.
 
@@ -458,6 +744,9 @@ def proto_text(p: dict) -> str:
     Значения полей разделяем строкой «=====» и НЕ подписываем номерами полей:
     иначе номер склеивается со значением и даёт ложные срабатывания правил nbsp
     («2.1 06 октября» превращается в пару «1» + «06»).
+
+    sel = (areas, nums) из --only: None — берём ВСЁ. Иначе берём только
+    выбранные области/поля (частичная проверка и частичный --fix).
     """
     SEP = "====="
     parts = [SEP]
@@ -467,20 +756,38 @@ def proto_text(p: dict) -> str:
             parts.append(str(s).strip())
             parts.append(SEP)
 
+    if sel is None:
+        def field_ok(n):
+            return True
+    else:
+        def field_ok(n):
+            return sel_field(sel, str(n))
     for f in p.get("fields") or []:
-        add(f.get("value"))
-    add(p.get("title"))
-    add(p.get("annot"))
-    add(p.get("lecturer"))
-    add(p.get("desc_html"))
-    for x in p.get("extra_html") or []:
-        add(x)
+        if field_ok(f.get("n")):
+            add(f.get("value"))
+    for area, key in (("title", "title"), ("annot", "annot"),
+                      ("lecturer", "lecturer"), ("desc", "desc_html")):
+        if sel is None or sel_block(sel, area):
+            add(p.get(key))
+    if sel is None or sel_block(sel, "extra"):
+        for x in p.get("extra_html") or []:
+            add(x)
+    if sel is not None and not sel_authors(sel):
+        return "\n".join(parts)
     aus = p.get("authors")
     if not isinstance(aus, list) or not aus:
         aus = [p["author"]] if isinstance(p.get("author"), dict) else []
     for a in aus:
-        add(a.get("name"))
-        add(a.get("block_html"))
+        want_block = sel is None or sel_block(sel, "authors")
+        if want_block:
+            add(a.get("name"))
+        for f in a.get("fields") or []:
+            n = str(f.get("n"))
+            if want_block or sel_field(sel, n):
+                add(f.get("value"))
+        # block_html — это HTML-форма поля 7.4, берём вместе с ним
+        if want_block or sel_field(sel, "7.4"):
+            add(a.get("block_html"))
     return "\n".join(parts)
 
 
@@ -571,6 +878,20 @@ def main() -> None:
     if not args:
         print(__doc__)
         sys.exit(2)
+    fix_mode = False
+    if "--fix" in args:
+        fix_mode = True
+        args = [a for a in args if a != "--fix"]
+    only = None
+    if "--only" in args:
+        i = args.index("--only")
+        if i + 1 >= len(args):
+            print("после --only нужен список: области (desc, extra, authors) "
+                  "и/или номера полей (2, 6.3, 7.4)")
+            sys.exit(2)
+        only = args[i + 1]
+        args = [a for j, a in enumerate(args) if j not in (i, i + 1)]
+    sel = parse_only(only)
     json_mode = False
     proto = None
     if args[0] in ("--json", "-j"):
@@ -580,10 +901,37 @@ def main() -> None:
             sys.exit(2)
         with io.open(args[1], encoding="utf-8") as f:
             proto = json.load(f)
-        orig = proto_text(proto)
+        if sel is not None:
+            print("ЧАСТИЧНАЯ ПРОВЕРКА (--only %s): берём только выбранные поля. "
+                  "Перед показом пользователю нужен ПОЛНЫЙ прогон." % only)
+        orig = proto_text(proto, sel)
+        if fix_mode:
+            proto, n_fields = fix_proto_values(proto, sel)
+            if n_fields:
+                with io.open(args[1], "w", encoding="utf-8") as fw:
+                    json.dump(proto, fw, ensure_ascii=False, indent=2)
+                orig = proto_text(proto, sel)
+                print("--fix: авто-правки в %d полях %s" % (n_fields, args[1]))
+            else:
+                print("--fix: авто-правок не потребовалось: %s" % args[1])
     else:
         orig = load(args[0])
+        if fix_mode:
+            fx, n = apply_fixes(orig)
+            if n:
+                with io.open(args[0], "w", encoding="utf-8") as fw:
+                    fw.write(fx)
+                orig = fx
+                print("--fix: авто-правки в %d фрагментах %s" % (n, args[0]))
+            else:
+                print("--fix: авто-правок не потребовалось: %s" % args[0])
     t = analyze(orig)
+
+    # Дословные вставки с «Элементов» (готовый блок/текст копируется как есть,
+    # без переоформления типографики): правила nbsp/«ё»/тире по ним не выдаём.
+    vrange = []
+    if json_mode and isinstance(proto, dict):
+        vrange = verbatim_ranges(t, proto.get("verbatim_fragments"))
 
     hard = []
     warns = []
@@ -593,6 +941,8 @@ def main() -> None:
         return segment.replace(SENT, "&nbsp;")
 
     def emit(tag, msg, m, *, is_warn=False):
+        if vrange and hasattr(m, "start") and in_verbatim(m.start(), vrange):
+            return
         (warns if is_warn else hard).append(
             (tag, msg, ctx(t, m.start()), frag(t, m), display)
         )
@@ -635,7 +985,7 @@ def main() -> None:
         seg = orig[s: m.end() + 30].replace("\n", " ")
         hard.append(("1h", "настоящий U+00A0 в данных — писать текстом «&nbsp;»",
                      seg, seg, lambda x: x.replace("\u00A0", "<U+00A0>")))
-    if json_mode:
+    if json_mode and (sel is None or sel_field(sel, "1")):
         for level, msg in check_binding(proto):
             (hard if level == "ОШИБКА" else warns).append(
                 ("1e", msg, "", msg, display)

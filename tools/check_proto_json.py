@@ -34,18 +34,32 @@ def list_protos():
 
 
 def main():
-    targets = sys.argv[1:]
+    args = sys.argv[1:]
+    fix_mode = "--fix" in args
+    only = None
+    if "--only" in args:
+        i = args.index("--only")
+        only = args[i + 1] if i + 1 < len(args) else ""
+        args = args[:i] + args[i + 2:]
+    targets = [a for a in args if a != "--fix"]
     if not targets:
         targets = list_protos()
         if not targets:
             print("Прототипов нет: data/prototypes пуста.")
             return 0
         print("Прототипов не указано — проверяю все: %d" % len(targets))
+    if fix_mode:
+        print("ВНИМАНИЕ: --fix применит автоправки и ПЕРЕЗАПИШЕТ prototype.json.")
     rc = 0
     for p in targets:
         print("=" * 70)
         print("ФАЙЛ: %s" % p)
-        r = subprocess.run([sys.executable, "-X", "utf8", CHECKER, "--json", p])
+        cmd = [sys.executable, "-X", "utf8", CHECKER, "--json", p]
+        if fix_mode:
+            cmd.append("--fix")
+        if only is not None:
+            cmd += ["--only", only]
+        r = subprocess.run(cmd)
         if r.returncode:
             rc = 1
     return rc

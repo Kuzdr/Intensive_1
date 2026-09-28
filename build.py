@@ -272,6 +272,8 @@ ORGANIZER_NAMES = {
     'spbu.ru': 'Санкт-Петербургский государственный университет',
     'festivalnauki.ru': 'Фестиваль науки NAUKA 0+',
     'yeltsin.ru': 'Филиал Ельцин Центра в Москве',
+    'your-sector-of-space.timepad.ru': 'Твой сектор космоса',
+    'space-school.org': 'Твой сектор космоса',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')
@@ -1899,8 +1901,9 @@ def build_prototypes_js():
 
 PROTOTYPES_JS = r'''
 /* Прототипы лекций: показ и скрытие, фильтры, комментарии, обратная связь,
-   правка HTML. Работает на всех страницах сайта. Действия и правка — только
-   на локальном сервере (localhost); на GitHub Pages кнопки скрываются. */
+   правка HTML. Работает на всех страницах сайта. Действия с прототипом и
+   сохранение правок — только на локальном сервере (localhost); на GitHub
+   Pages кнопка правки тоже видна и открывает HTML для чтения и копирования. */
 (function () {
   'use strict';
 
@@ -2230,15 +2233,20 @@ PROTOTYPES_JS = r'''
 
   // --------------------------------------------------------------------- правка
   function openEdit(fb, area, key, name, value) {
+    /* На удалённом сайте модалка открывается для чтения HTML и копирования
+       части кода; «Сохранить» и правка — только на локальном сервере. */
+    var actions = '<button type="button" class="tbtn sec" data-x="cancel">Закрыть</button>'
+      + '<button type="button" class="tbtn sec" data-x="copy">Скопировать</button>';
+    if (IS_LOCAL) actions += '<button type="button" class="tbtn" data-x="save">Сохранить</button>';
     var b = openModal(
       '<div class="modal-title">Правка: ' + esc(name) + '</div>'
-      + '<div class="modal-hint">Правится HTML-код. «Сохранить» перезапишет значение и пересоберёт '
-      + 'сайт; правка работает только на локальном сервере.</div>'
-      + '<div class="modal-body"><textarea id="pj-ta" spellcheck="false"></textarea></div>'
-      + '<div class="modal-actions">'
-      + '<button type="button" class="tbtn sec" data-x="cancel">Закрыть</button>'
-      + '<button type="button" class="tbtn sec" data-x="copy">Скопировать</button>'
-      + '<button type="button" class="tbtn" data-x="save">Сохранить</button></div>',
+      + '<div class="modal-hint">' + (IS_LOCAL
+          ? 'Правится HTML-код. «Сохранить» перезапишет значение и пересоберёт сайт.'
+          : 'Просмотр HTML-кода. Правка и сохранение работают только на локальном сервере.')
+      + '</div>'
+      + '<div class="modal-body"><textarea id="pj-ta" spellcheck="false"'
+      + (IS_LOCAL ? '' : ' readonly') + '></textarea></div>'
+      + '<div class="modal-actions">' + actions + '</div>',
       null);
     b.classList.add('modal-edit', 'modal-drag', 'modal-resize');
     $('#pj-ta', b).value = value || '';
@@ -2318,14 +2326,16 @@ PROTOTYPES_JS = r'''
       copyReport(fb.getAttribute('data-text') || '');
       return;
     }
-    if (IS_LOCAL) openEdit(fb, wrap.getAttribute('data-area'), wrap.getAttribute('data-key'),
+    openEdit(fb, wrap.getAttribute('data-area'), wrap.getAttribute('data-key'),
       wrap.getAttribute('data-name'), val);
   });
 
-  // на не-локальном сайте (GitHub Pages) кнопки правки и действия не показываем
+  /* на не-локальном сайте (GitHub Pages) кнопки действий с прототипом
+     (скрыть/удалить/комментарий/обратная связь) не показываем — они требуют
+     локального сервера. Кнопку правки HTML показываем везде: на удалённом
+     сайте она открывает модалку для чтения и копирования кода. */
   if (!IS_LOCAL) {
     $$('.pbtns').forEach(function (b) { b.hidden = true; });
-    $$('.fbtns .fb[data-act=edit]').forEach(function (b) { b.style.display = 'none'; });
   }
 
   // ========================================================= главная: фильтры
