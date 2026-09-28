@@ -58,6 +58,35 @@ def field(p, n):
     return None
 
 
+# --- неразбиваемый пробел в данных -----------------------------------------
+# В prototype.json неразбиваемый пробел ВСЕГДА записан текстом `&nbsp;`
+# (решение пользователя 28.09.2026): его видно глазами, он не теряется при
+# копировании в админку «Элементов» и в чат. Настоящий символ U+00A0 в данных
+# не храним — при записи он превращается в `&nbsp;` автоматически (см. save).
+NBSP_SYMS = ('\u00A0', '&nbsp;', '&#160;', '&#xa0;', '&#XA0;', '&#xA0;')
+NBSP_ENTITY = '&nbsp;'
+
+
+def nb(s):
+    """Приводит любой неразбиваемый пробел к записи `&nbsp;`."""
+    if not isinstance(s, str):
+        return s
+    for sym in NBSP_SYMS:
+        s = s.replace(sym, NBSP_ENTITY)
+    return s
+
+
+def nb_deep(obj):
+    """Рекурсивно приводит к `&nbsp;` все строки объекта (списки и словари)."""
+    if isinstance(obj, str):
+        return nb(obj)
+    if isinstance(obj, list):
+        return [nb_deep(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: nb_deep(v) for k, v in obj.items()}
+    return obj
+
+
 def fields(p):
     return p.get('fields') or []
 
@@ -205,7 +234,7 @@ def load(pid):
 
 def save(pid, data):
     with io.open(proto_path(pid), 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=1)
+        json.dump(nb_deep(data), f, ensure_ascii=False, indent=1)
         f.write('\n')
 
 

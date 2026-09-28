@@ -32,8 +32,24 @@ MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', '�
 MONTHS_NOM = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
 WEEKDAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
 
+NBSP_ENTITIES = ('&nbsp;', '&#160;', '&#xa0;', '&#XA0;', '&#xA0;')
+
+
+def nbsp_to_char(s):
+    """Сущности неразбиваемого пробела → настоящий пробел U+00A0.
+
+    В данных проекта (prototype.json) неразбиваемый пробел ВСЕГДА записан
+    текстом `&nbsp;` — так его видно глазами и он не теряется при копировании
+    (решение пользователя 28.09.2026). А при выводе текста в HTML мы обязаны
+    вернуть настоящий U+00A0, иначе на странице появится слово «&nbsp;».
+    """
+    for e in NBSP_ENTITIES:
+        s = s.replace(e, '\u00A0')
+    return s
+
+
 def esc(s):
-    return H.escape(s or '')
+    return H.escape(nbsp_to_char(s or ''))
 
 def fmt_date_ru(iso):
     y, m, d = map(int, iso.split('-'))
@@ -238,21 +254,79 @@ def load_prototypes():
 def proto_lectorium(p):
     """Название лектория (канала) прототипа: поле 6.3, иначе подзаголовок.
 
-    &nbsp; из поля 6.3 превращаем в настоящий неразбиваемый пробел (U+00A0):
-    иначе в подписи флажка и в подписи карточки видно «&nbsp;» текстом.
+    Если лектория нет (поле 6.3 = «—»), на карточке строка не выводится:
+    лектория у события нет, показывать прочерк незачем.
+
+    Это строка карточки. ФИЛЬТР фильтрует не по ней, а по организатору —
+    см. proto_organizer().
     """
-    v = (PL.field(p, '6.3') or PL.field(p, '6') or p.get('lectory') or '—').strip()
-    return v.replace('&nbsp;', '\u00A0').replace('&#160;', '\u00A0')
+    v = (PL.field(p, '6.3') or PL.field(p, '6') or p.get('lectory') or '').strip()
+    if v in ('', '—', '-', '–'):
+        return ''
+    return nbsp_to_char(v)
 
 
-def lectories_of_prototypes():
+# Организатор = тот, чей это сайт или Timepad (решение пользователя 28.09.2026).
+# Свой домен → понятное название; Timepad → имя аккаунта (поддомен).
+ORGANIZER_NAMES = {
+    'spbu.ru': 'Санкт-Петербургский государственный университет',
+    'festivalnauki.ru': 'Фестиваль науки NAUKA 0+',
+}
+# Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
+NOT_ORGANIZER = ('elementy.ru', 'elementy.com')
+
+
+def _host(url):
+    u = re.sub(r'^\w+://', '', (url or '').strip())
+    return u.split('/')[0].lower().split('@')[-1].split(':')[0]
+
+
+def proto_organizer(p):
+    """Название организатора прототипа — по источникам (сайт или Timepad).
+
+    Порядок выбора источника: сначала сайт организатора (не Timepad), потом
+    аккаунт Timepad, потом — если источников нет вовсе — площадка/город.
+    Например: spbu.ru → «Санкт-Петербургский государственный университет»,
+    filial-eltsin-tsentra-v-m.timepad.ru → «filial-eltsin-tsentra-v-m».
+    """
+    urls = list(p.get('sources') or [])
+    if p.get('url'):
+        urls.append(p['url'])
+    hosts, seen = [], set()
+    for u in urls:
+        h = _host(u)
+        if h and h not in seen:
+            seen.add(h)
+            hosts.append(h)
+    own = [h for h in hosts if h not in NOT_ORGANIZER and not h.endswith('.timepad.ru')]
+    pads = [h for h in hosts if h.endswith('.timepad.ru')]
+    for h in own + pads:
+        if h in ORGANIZER_NAMES:
+            return ORGANIZER_NAMES[h]
+        if h.endswith('.timepad.ru'):
+            return h[:-len('.timepad.ru')]
+        return h
+    city = (p.get('city') or '').strip()
+    place = (p.get('place') or '').strip()
+    if city and place and city.lower() not in place.lower():
+        return city + ', ' + place
+    return place or city or 'ОНЛАЙН'
+
+
+def proto_filter_key(p):
+    """Идентификатор для фильтра «Организаторы» (см. proto_organizer)."""
+    return proto_organizer(p)
+
+
+def organizers_of_prototypes():
     cnt = {}
     for it in items:
         if it.get('kind') != 'proto':
             continue
-        name = proto_lectorium(it['proto'])
+        name = proto_filter_key(it['proto'])
         cnt[name] = cnt.get(name, 0) + 1
     return sorted(cnt.items())
+
 
 def card(e, prefix=''):
     if e.get('kind') == 'proto':
@@ -348,8 +422,9 @@ def proto_card(e, prefix=''):
     mark_html = ('<div class="pmarks">' + ''.join(marks) + '</div>') if marks else ''
     hidden_attr = ' hidden' if e.get('hidden') else ''
     lectory = proto_lectorium(p)
+    filter_key = proto_filter_key(p)
     eurl = url_detail(e, prefix)
-    return f'''<div class="event proto{hidden_attr}" data-kind="proto" data-id="{esc(e['id'])}" data-lectory="{esc(lectory)}" data-date="{esc(e['date_iso'])}" data-lecturer="{esc(e.get('lecturer') or '')}" data-title="{esc(e.get('title') or '')}" data-where="{esc(fmt_date_ru(e['date_iso']))}">
+    return f'''<div class="event proto{hidden_attr}" data-kind="proto" data-id="{esc(e['id'])}" data-organizer="{esc(filter_key)}" data-date="{esc(e['date_iso'])}" data-lecturer="{esc(e.get('lecturer') or '')}" data-title="{esc(e.get('title') or '')}" data-where="{esc(fmt_date_ru(e['date_iso']))}">
   <div class="edate">
     <div class="hday">{esc(fmt_date_short(e['date_iso']))}</div>
     <div class="hmeta">{esc(e['weekday'])}</div>
@@ -366,7 +441,7 @@ def proto_card(e, prefix=''):
     </a>
     <div class="sublink">{esc(e['place'] or '')}</div>
     <div class="price">{esc(e['price_short'] or '')}</div>
-    <div class="lectory plectory">{esc(lectory)}</div>
+    {('<div class="lectory plectory">%s</div>' % esc(lectory)) if lectory else ''}
     {mark_html}
     <div class="annot">{esc(annot_snippet(e))}</div>
   </div>
@@ -435,7 +510,7 @@ TOOLBAR = '''<div class="toolbar">
     <label><input type="radio" name="vmode" value="el"> «Элементы»</label>
     <label><input type="radio" name="vmode" value="proto"> прототипы</label>
     <label class="vhidden"><input type="checkbox" id="v-showhidden"> скрытые</label>
-    <button type="button" class="tbtn mini" id="btn-lectories">Лектории</button>
+    <button type="button" class="tbtn mini" id="btn-organizers">Организаторы</button>
     <button type="button" class="tbtn mini" id="btn-reset-filters" title="Вернуть режим «всё», снять галочку «скрытые» и отметить всех лекториев">Сбросить фильтры</button>
   </div>
   <div class="filter-note" id="filter-note" hidden><span id="filter-note-text"></span>
@@ -524,18 +599,18 @@ MODAL_POST = '''<div class="modal-overlay" id="modal-post" hidden>
 </div>'''
 
 
-MODAL_LECTORIES = '''<div class="modal-overlay" id="modal-lectories" hidden>
-  <div class="modal modal-lec">
-    <div class="modal-title">Лектории (каналы) прототипов</div>
+MODAL_ORGANIZERS = '''<div class="modal-overlay" id="modal-organizers" hidden>
+  <div class="modal modal-org">
+    <div class="modal-title">Организаторы (сайты и Timepad) прототипов</div>
     <div class="modal-body">
-      <div class="modal-hint">Отметьте лектории, прототипы которых нужно показывать. Настройка действует в режимах «всё» и «только прототипы».</div>
-      <div class="lec-list" id="lec-list"><!--LEC--></div>
+      <div class="modal-hint">Отметьте организаторов (сайт или Timepad источника), прототипы которых нужно показывать. Настройка действует в режимах «всё» и «только прототипы».</div>
+      <div class="org-list" id="org-list"><!--LEC--></div>
     </div>
     <div class="modal-actions">
-      <button type="button" class="tbtn sec" id="lec-all">Отметить все</button>
-      <button type="button" class="tbtn sec" id="lec-none">Убрать все</button>
-      <button type="button" class="tbtn sec" id="lec-inv">Инвертировать</button>
-      <button type="button" class="tbtn" id="lec-ok">Готово</button>
+      <button type="button" class="tbtn sec" id="org-all">Отметить все</button>
+      <button type="button" class="tbtn sec" id="org-none">Убрать все</button>
+      <button type="button" class="tbtn sec" id="org-inv">Инвертировать</button>
+      <button type="button" class="tbtn" id="org-ok">Готово</button>
     </div>
   </div>
 </div>'''
@@ -598,9 +673,9 @@ def build_index():
                 main.append(card(e))
         sections.append((mid, month_label_ym(y, m), weeks))
     lec = ''.join(
-        '<label class="lec-item"><input type="checkbox" value="%s"%s> %s <span class="lec-n">(%d)</span></label>'
+        '<label class="org-item"><input type="checkbox" value="%s"%s> %s <span class="org-n">(%d)</span></label>'
         % (esc(name), ' checked' if cnt else '', esc(name), cnt)
-        for name, cnt in lectories_of_prototypes())
+        for name, cnt in organizers_of_prototypes())
     if not lec:
         lec = '<div class="modal-hint">Прототипов пока нет.</div>'
     body_parts = [*head,
@@ -610,11 +685,11 @@ def build_index():
                   '\n'.join(main),
                   '</div>',
                   '<div class="v-empty" id="v-empty" hidden>По этим условиям ничего не нашлось. '
-                  'Попробуйте включить «показать скрытые» или выбрать другие лектории.</div>',
+                  'Попробуйте включить «показать скрытые» или выбрать других организаторов.</div>',
                   '</div>',
                   MODAL,
                   MODAL_POST,
-                  MODAL_LECTORIES.replace('<!--LEC-->', lec),
+                  MODAL_ORGANIZERS.replace('<!--LEC-->', lec),
                   '<script src="js/post.js"></script>',
                   '<script src="js/prototypes.js"></script>',
                   '<script src="js/toolbar.js"></script>']
@@ -768,15 +843,18 @@ def proto_lecturers(p):
 
 
 def proto_photo(a, p, prefix):
-    """Фото автора из источника (пусто, если фото нет)."""
+    """Фото автора из источника (пусто, если фото нет).
+
+    Подписи под фото НЕ выводим: пользователь просил убрать её вообще
+    (решение от 28.09.2026) — ни на странице прототипа, ни в HTML-фрагменте.
+    """
     src = (a.get('photo') or '').strip()
     if not src:
         return ''
     if not re.match(r'^(https?:)?//', src):
         src = prefix + src
     return ('<div class="pphoto"><img src="%s" alt="%s" style="max-width:600px;height:auto">'
-            '<div class="phint">Фото автора (оригинал источника; на сайте показываем'
-            ' со стороной не больше 600&nbsp;пикселей)</div></div>') % (
+            '</div>') % (
                 esc(src), esc(a.get('name') or p.get('lecturer') or 'автор'))
 
 
@@ -1223,10 +1301,10 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .modal-resize { resize: both; overflow: auto; }
 
 /* модальное окно выбора лекториев */
-.modal-lec { max-width: 460px; }
-.lec-list { margin-top: 12px; max-height: 50vh; overflow: auto; border: 1px solid #e3dccb; border-radius: 4px; padding: 8px 10px; background: #fffdf5; }
-.lec-item { display: block; font-size: 14px; color: #333; padding: 3px 0; }
-.lec-item .lec-n { color: #8a7040; }
+.modal-org { max-width: 460px; }
+.org-list { margin-top: 12px; max-height: 50vh; overflow: auto; border: 1px solid #e3dccb; border-radius: 4px; padding: 8px 10px; background: #fffdf5; }
+.org-item { display: block; font-size: 14px; color: #333; padding: 3px 0; }
+.org-item .org-n { color: #8a7040; }
 
 /* прототипы в списке */
 .event.proto .hday, .event.proto .title { color: #a3311f; }
@@ -1826,8 +1904,8 @@ PROTOTYPES_JS = r'''
   'use strict';
 
   var IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname);
-  var K_MODE = 'nk_mode', K_HIDDEN = 'nk_hidden', K_LEC = 'nk_lectories',
-      K_LEC_ALL = 'nk_lectories_all';
+  var K_MODE = 'nk_mode', K_HIDDEN = 'nk_hidden', K_ORG = 'nk_organizers',
+      K_ORG_ALL = 'nk_organizers_all';
 
   // ------------------------------------------------------------------ утилиты
   function $(s, r) { return (r || document).querySelector(s); }
@@ -2255,22 +2333,22 @@ PROTOTYPES_JS = r'''
 
   var radios = $$('input[name=vmode]');
   var cbHidden = $('#v-showhidden');
-  var btnLec = $('#btn-lectories');
-  var lecBoxes = function () { return $$('#lec-list input[type=checkbox]'); };
+  var btnOrg = $('#btn-organizers');
+  var orgBoxes = function () { return $$('#org-list input[type=checkbox]'); };
   var mode = load(K_MODE) || 'all';
   var showHidden = load(K_HIDDEN) === '1';
 
-  function chosenLec() {
-    try { return JSON.parse(load(K_LEC) || 'null'); } catch (e) { return null; }
+  function chosenOrg() {
+    try { return JSON.parse(load(K_ORG) || 'null'); } catch (e) { return null; }
   }
-  function knownLec() {
-    try { return JSON.parse(load(K_LEC_ALL) || 'null'); } catch (e) { return null; }
+  function knownOrg() {
+    try { return JSON.parse(load(K_ORG_ALL) || 'null'); } catch (e) { return null; }
   }
-  function curLec() {
-    var b = lecBoxes();
+  function curOrg() {
+    var b = orgBoxes();
     return b.length ? b.filter(function (x) { return x.checked; }).map(function (x) { return x.value; }) : null;
   }
-  function lecAll() { return lecBoxes().map(function (x) { return x.value; }); }
+  function orgAll() { return orgBoxes().map(function (x) { return x.value; }); }
   function isVisible(ev) {
     var kind = ev.getAttribute('data-kind');
     var m = radios.filter(function (r) { return r.checked; })[0];
@@ -2279,8 +2357,8 @@ PROTOTYPES_JS = r'''
     if (md === 'proto' && kind !== 'proto') return false;
     if (kind !== 'proto') return true;
     if ((' ' + ev.className + ' ').indexOf(' hidden ') >= 0 && !(cbHidden && cbHidden.checked)) return false;
-    var c = curLec();
-    return !c || c.indexOf(ev.getAttribute('data-lectory') || '') >= 0;
+    var c = curOrg();
+    return !c || c.indexOf(ev.getAttribute('data-organizer') || '') >= 0;
   }
   function countsLine(cnt) {
     var ds = Object.keys(cnt).sort();
@@ -2336,19 +2414,19 @@ PROTOTYPES_JS = r'''
     if (none) none.hidden = any;
   }
 
-  // лектории: восстанавливаем сохранённый выбор до первого расчёта.
-  // Важно: сохранённый список знает только те лектории, которые были на
-  // странице в момент сохранения. Новый лекторий (например, СПбГУ) в нём
+  // организаторы: восстанавливаем сохранённый выбор до первого расчёта.
+  // Важно: сохранённый список знает только те организации, которые были на
+  // странице в момент сохранения. Новый организатор (например, СПбГУ) в нём
   // отсутствует — раньше он молча снимался, и его прототип не показывался.
-  // Поэтому для знакомых лекториев берём сохранённое состояние, а новые
+  // Поэтому для знакомых берём сохранённое состояние, а новые
   // оставляем включёнными.
-  var savedLec = chosenLec();
-  if (savedLec) {
-    var wasKnown = knownLec();
-    lecBoxes().forEach(function (b) {
+  var savedOrg = chosenOrg();
+  if (savedOrg) {
+    var wasKnown = knownOrg();
+    orgBoxes().forEach(function (b) {
       b.checked = wasKnown && wasKnown.indexOf(b.value) < 0
         ? true
-        : savedLec.indexOf(b.value) >= 0;
+        : savedOrg.indexOf(b.value) >= 0;
     });
   }
 
@@ -2363,56 +2441,56 @@ PROTOTYPES_JS = r'''
       applyFilter();
     });
   }
-  if (btnLec) {
-    btnLec.addEventListener('click', function () {
-      var chosen = chosenLec();
+  if (btnOrg) {
+    btnOrg.addEventListener('click', function () {
+      var chosen = chosenOrg();
       if (chosen) {
-        var wasKnown = knownLec();
-        lecBoxes().forEach(function (b) {
+        var wasKnown = knownOrg();
+        orgBoxes().forEach(function (b) {
           b.checked = (wasKnown && wasKnown.indexOf(b.value) < 0)
             ? true
             : chosen.indexOf(b.value) >= 0;
         });
       }
-      $('#modal-lectories').hidden = false;
+      $('#modal-organizers').hidden = false;
     });
   }
   ['all', 'none', 'inv'].forEach(function (what) {
-    var b = $('#lec-' + what);
+    var b = $('#org-' + what);
     if (!b) return;
     b.addEventListener('click', function () {
-      lecBoxes().forEach(function (x) {
+      orgBoxes().forEach(function (x) {
         if (what === 'all') x.checked = true;
         else if (what === 'none') x.checked = false;
         else x.checked = !x.checked;
       });
     });
   });
-  var lecOk = $('#lec-ok');
-  if (lecOk) {
-    lecOk.addEventListener('click', function () {
-      store(K_LEC, JSON.stringify(curLec()));
-      store(K_LEC_ALL, JSON.stringify(lecAll()));
-      $('#modal-lectories').hidden = true;
+  var orgOk = $('#org-ok');
+  if (orgOk) {
+    orgOk.addEventListener('click', function () {
+      store(K_ORG, JSON.stringify(curOrg()));
+      store(K_ORG_ALL, JSON.stringify(orgAll()));
+      $('#modal-organizers').hidden = true;
       applyFilter();
     });
   }
-  var lecOv = $('#modal-lectories');
-  if (lecOv) {
-    lecOv.addEventListener('click', function (e) { if (e.target === lecOv) lecOv.hidden = true; });
+  var orgOv = $('#modal-organizers');
+  if (orgOv) {
+    orgOv.addEventListener('click', function (e) { if (e.target === orgOv) orgOv.hidden = true; });
   }
 
   // фильтры — явные: показываем, что именно сейчас включено, и даём сбросить
   function doResetFilters() {
-    var all = lecAll();
+    var all = orgAll();
     store(K_MODE, 'all');
     store(K_HIDDEN, '0');
-    store(K_LEC, JSON.stringify(all));
-    store(K_LEC_ALL, JSON.stringify(all));
+    store(K_ORG, JSON.stringify(all));
+    store(K_ORG_ALL, JSON.stringify(all));
     mode = 'all';
     showHidden = false;
     radios.forEach(function (r) { r.checked = (r.value === 'all'); });
-    lecBoxes().forEach(function (b) { b.checked = true; });
+    orgBoxes().forEach(function (b) { b.checked = true; });
     if (cbHidden) cbHidden.checked = false;
     applyFilter();
     filterNote();
@@ -2430,11 +2508,11 @@ PROTOTYPES_JS = r'''
     if (m && m.value === 'el') parts.push('только «Элементы»');
     if (m && m.value === 'proto') parts.push('только прототипы');
     if (cbHidden && cbHidden.checked) parts.push('показаны скрытые');
-    var c = curLec();
+    var c = curOrg();
     if (c) {
-      var all = lecAll();
-      if (c.length === 0) parts.push('лектории: ни одного');
-      else if (c.length < all.length) parts.push('лектории: ' + c.join(', '));
+      var all = orgAll();
+      if (c.length === 0) parts.push('организаторы: ни одного');
+      else if (c.length < all.length) parts.push('организаторы: ' + c.join(', '));
     }
     if (!parts.length) { note.hidden = true; return; }
     note.hidden = false;
