@@ -1628,6 +1628,13 @@ def build_toolbar_js():
     lines.push('Всего в календаре: ' + (r.total || 0));
     return lines.join('\n');
   }
+  function protoText(p) {
+    if (!p) return '';
+    var t = 'Прототипов: ' + p.total + ', изменено: ' + ((p.changed || []).length);
+    if ((p.changed || []).length) t += ' (' + p.changed.join(', ') + ')';
+    else t += ' — с прошлого обновления не менялись';
+    return t;
+  }
   function startUpdate() {
     hideModal();
     showProgress();
@@ -1647,8 +1654,12 @@ def build_toolbar_js():
           showResult('Ошибка:\n' + s.error, true);
         } else {
           var extra = s.commit ? '\nКоммит: ' + s.commit : '';
-          if ((s.report && (s.report.added.length || s.report.changed.length || s.report.removed.length)) || s.commit) {
-            showResult(s.message + '\n\n' + reportText(s.report) + extra, false);
+          var pr = protoText(s.proto_report);
+          var busy = (s.report && (s.report.added.length || s.report.changed.length
+                                   || s.report.removed.length)) || s.commit || !!pr;
+          if (busy) {
+            showResult(s.message + '\n\n' + (pr ? pr + '\n' : '')
+                       + (s.report ? reportText(s.report) : '') + extra, false);
           } else {
             showResult(s.message, false);
           }

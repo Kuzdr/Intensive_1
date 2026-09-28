@@ -37,7 +37,20 @@ nbsp/«ё»-инвариантов и сущностей тире (только 
 копируются с «Элементов» дословно («простое правило вырезания кода и вставки
 его в описание»). Валидатор в пределах всех вхождений этих строк ПРОПУСКАЕТ
 правила проверки (nbsp/«ё»/тире/инварианты) — ошибки не выводятся, чтобы не
-ломать готовый блок автора/текста с источника.
+ломать готовый блок автора/текста с источника. Режим --fix их тоже НЕ трогает
+(иначе «причёсывание» тире/nbsp расходилось бы с оригиналом).
+
+Требования к регистрации фрагмента:
+  * строка фрагмента должна СОВПАДАТЬ с текстом в прототипе побайтово
+    (регистр, пробелы, `&nbsp;`) — иначе вхождение не найдётся и правила
+    сработают как обычно;
+  * если один и тот же готовый блок вставлен в разных формах (например
+    «Клинический психолог…» в полях автора и «клинический психолог…» после
+    тире в тексте описания) — регистрируем КАЖДУЮ форму отдельным элементом,
+    либо (лучше) не переписываем готовый блок под свой текст;
+  * на правило 1h (настоящий U+00A0 в данных вместо текста «&nbsp;»)
+    дословность НЕ распространяется: это требование к записи данных, а не
+    к типографике.
 
 ЧАСТИЧНАЯ ПРОВЕРКА (--only): правим конкретное поле прототипа — проверяем
 и пересобираем ТОЛЬКО его, а не весь прототип:
@@ -507,7 +520,7 @@ def frag(t: str, m) -> str:
 
 # ------------------------------------------- режим --fix (автоправки механики)
 
-def _spans_fix(t: str):
+def _spans_fix(t: str, fragments=None):
     """Собирает список (start, end, replacement) механических правок nbsp/«ё».
 
     Работаем в sentinel-тексте (t), чтобы использовать те же правила, что и
@@ -527,10 +540,18 @@ def _spans_fix(t: str):
     НЕ авто-правим (нужен человек): наводки «название организации?», прямые
     кавычки, лапки, римские цифры, добавление «ё» по списку yo_words
     (категории 1–4 — смысл решает пользователь).
+
+    ДОСЛОВНЫЕ ВСТАВКИ С «ЭЛЕМЕНТОВ» (`fragments` = verbatim_fragments) НЕ ТРОГАЕМ
+    вообще: в них обычные пробелы — это каноничный вид чужого готового блока,
+    и «причесывание» тире/nbsp ломает дословность (правило пользователя
+    01.10.2026). Раньше --fix их правил, и блок автора расходился с оригиналом.
     """
     spans = []  # (start, end, replacement)
+    vrange = verbatim_ranges(t, fragments)
 
     def add_remove(a, b, repl):
+        if vrange and in_verbatim(a, vrange):
+            return                      # дословная вставка с «Элементов»
         spans.append((a, b, repl))
 
     # nbsp после однобуквенного: заменить пробел-группу на один sentinel
@@ -592,14 +613,17 @@ def _spans_fix(t: str):
     return chosen
 
 
-def apply_fixes(text_orig: str) -> tuple:
+def apply_fixes(text_orig: str, fragments=None) -> tuple:
     """Применяет механические правки к ИСХОДНОМУ тексту (с «&nbsp;»).
 
     Возвращает (исправленный_текст, число_изменённых_фрагментов). Сырой
     U+00A0 при этом нормализуется к тексту «&nbsp;» (rule проекта).
+
+    fragments — verbatim_fragments: диапазоны дословных вставок с
+    «Элементов», внутри которых NOTHING не правится (см. _spans_fix).
     """
     t = analyze(text_orig)
-    chosen = _spans_fix(t)
+    chosen = _spans_fix(t, fragments)
     if not chosen:
         return text_orig, 0
     for a, b, repl in sorted(chosen, key=lambda s: s[0], reverse=True):
@@ -608,8 +632,8 @@ def apply_fixes(text_orig: str) -> tuple:
     return out, len(chosen)
 
 
-def fix_document_text(text: str) -> tuple:
-    return apply_fixes(text)
+def fix_document_text(text: str, fragments=None) -> tuple:
+    return apply_fixes(text, fragments)
 
 
 def fix_proto_values(proto: dict, sel=None) -> tuple:
@@ -621,14 +645,19 @@ def fix_proto_values(proto: dict, sel=None) -> tuple:
 
     sel — выборка --only: None — правим всё, иначе только выбранные области
     и номера полей (частичная правка).
+
+    Дословные вставки из `verbatim_fragments` (готовые блоки с «Элементов»)
+    передаются в apply_fixes и потому остаются нетронутыми во ВСЕХ полях,
+    включая поля автора 7.4 и block_html.
     """
     changed = 0
+    fragments = proto.get("verbatim_fragments") if isinstance(proto, dict) else None
 
     def fix_str(s):
         nonlocal changed
         if not isinstance(s, str) or not s.strip():
             return s
-        fx, n = apply_fixes(s)
+        fx, n = apply_fixes(s, fragments)
         if n:
             changed += 1
             return fx

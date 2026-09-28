@@ -12,7 +12,10 @@
 3. все упоминаемые в `SKILL.md` локальные пути (`tools/…`,
    `reference/…`, `data/…`, `.opencode/…`) указывают на существующие
    файлы (сначала относительно папки скилла, затем корня проекта);
-4. YAML-файлы упомянутых путей читаются (нет поломанной структуры).
+4. YAML-файлы упомянутых путей читаются (нет поломанной структуры);
+5. МЕХАНИКА `tools/check_prototype.py` не ломает дословные вставки:
+   режим `--fix` не правит текст внутри `verbatim_fragments`
+   (регрессия 29.09.2026 — блок автора с «Элементов» расходился с оригиналом).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -111,6 +114,34 @@ def check_skill(dir_path: str) -> list:
     return problems
 
 
+def check_verbatim_fix() -> list:
+    """--fix не должен трогать дословные вставки (verbatim_fragments).
+
+    Готовый блок с «Элементов» вставляется как есть: обычные пробелы внутри
+    него — норма, и «причёсывание» тире/nbsp ломает дословность.
+    """
+    problems = []
+    path = os.path.join(ROOT, "tools", "check_prototype.py")
+    if not os.path.isfile(path):
+        return problems
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_cp_mech", path)
+    cp = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(cp)
+    except Exception as e:                       # noqa: BLE001
+        return ["tools/check_prototype.py не импортируется: %s" % e]
+    frag = ["кафедры естественно-научных и гуманитарных дисциплин"]
+    text = ("<p>Лекция 3&nbsp;октября про 15 и о 6 книгах. Факультет "
+            + frag[0] + ".</p>")
+    out, _n = cp.apply_fixes(text, frag)
+    if frag[0] not in out:
+        problems.append("--fix исказил дословный фрагмент (verbatim_fragments)")
+    if "&nbsp;и" not in out or "&nbsp;книгах" not in out:
+        problems.append("--fix перестал править nbsp вне дословных фрагментов")
+    return problems
+
+
 def main() -> None:
     if not os.path.isdir(SKILLS_DIR):
         print("нет каталога .opencode/skills")
@@ -130,6 +161,13 @@ def main() -> None:
         for p in problems:
             print("     - %s" % p)
         ok = ok and not problems
+
+    mech = check_verbatim_fix()
+    print("%s механика: --fix не трогает verbatim_fragments"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
 
     print()
     if ok:

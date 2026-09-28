@@ -29,10 +29,11 @@ PORT = int(os.environ.get('PORT', 8000))
 
 state = {
     'running': False,
-    'stage': '',          # scrape | build | git | done | error
+    'stage': '',          # scrape | protos | build | git | done | error
     'percent': 0,
     'message': '',
     'report': None,       # данные из data/update_report.json
+    'proto_report': None, # {'total': N, 'changed': [id, …]} — проход по прототипам
     'error': None,
     'commit': None,       # короткий hash последнего коммита
 }
@@ -74,14 +75,116 @@ def has_uncommitted():
                        text=True, encoding='utf-8', errors='replace')
     return bool((p.stdout or '').strip())
 
-def git_publish(report):
+
+# ------------------------------------------------- проход по прототипам
+
+PROTO_DIR = os.path.join(ROOT, 'data', 'prototypes')
+PROTO_STAMP = os.path.join(ROOT, 'data', 'proto_stamp.json')
+PROTO_FILES = ('prototype.json', '_state.json')
+
+def proto_fingerprint():
+    """{id прототипа: подпись его файлов} — подпись меняется при правке.
+
+    Прототипом считаем папку с `prototype.json` (так же, как build.py и
+    protolib): папки только с `passport.txt` прототипами не являются.
+    Подпись — по РАЗМЕРУ и хэшу содержимого, а не по времени изменения:
+    время не переносится между машинами, а при `git add`/`checkout`
+    меняется у всех файлов разом.
+    """
+    import hashlib
+    out = {}
+    if not os.path.isdir(PROTO_DIR):
+        return out
+    for name in sorted(os.listdir(PROTO_DIR)):
+        if name.startswith(('_', '.')) or not os.path.isdir(os.path.join(PROTO_DIR, name)):
+            continue
+        if not os.path.exists(os.path.join(PROTO_DIR, name, 'prototype.json')):
+            continue
+        marks = []
+        for fn in PROTO_FILES:
+            fp = os.path.join(PROTO_DIR, name, fn)
+            try:
+                with open(fp, 'rb') as f:
+                    data = f.read()
+                marks.append('%s:%d:%s' % (fn, len(data),
+                                           hashlib.sha1(data).hexdigest()[:12]))
+            except OSError:
+                marks.append('%s:-' % fn)
+        out[name] = '|'.join(marks)
+    return out
+
+def load_proto_stamp():
+    """Подпись прототипов на момент ПОСЛЕДНЕГО обновления (пусто — если нет)."""
+    if not os.path.exists(PROTO_STAMP):
+        return {}
+    try:
+        with open(PROTO_STAMP, encoding='utf-8') as f:
+            return json.load(f).get('protos') or {}
+    except Exception:
+        return {}
+
+def save_proto_stamp(fps):
+    """Запоминаем подпись прототипов, которые ПУБЛИКУЕМ.
+
+    Файл `data/proto_stamp.json` — часть проекта (в Git): после клона он
+    есть и соответствует уже закоммиченным прототипам, поэтому проход
+    сразу показывает «0 изменённых», а не «все изменились».
+
+    Записывается ДО `git add`: тогда подпись в коммите соответствует
+    состоянию, которое мы только что отправили, и рабочая копия остаётся
+    чистой (иначе появился бы вечный «есть изменения»).
+    """
+    try:
+        if load_proto_stamp() == fps:
+            return                      # ничего не поменялось — файл не трогаем
+        tmp = PROTO_STAMP + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as f:
+            json.dump({'date': _time.strftime('%Y-%m-%d %H:%M:%S'), 'protos': fps},
+                      f, ensure_ascii=False, indent=2)
+        os.replace(tmp, PROTO_STAMP)
+    except Exception as e:
+        print('Не удалось сохранить подпись прототипов: %s' % e)
+
+def scan_prototypes():
+    """ЯВНЫЙ проход по прототипам: считаем их и сверяем с прошлым обновлением.
+
+    Возвращает (все, изменившиеся). Изменившиеся печатаются в консоль и в
+    прогресс кнопки — видно, что прототипы реально проверялись.
+    """
+    cur = proto_fingerprint()
+    prev = load_proto_stamp()
+    changed = [pid for pid, sig in cur.items() if prev.get(pid) != sig]
+    print('ПРОТОТИПЫ: всего %d, изменено с прошлого обновления: %d'
+          % (len(cur), len(changed)))
+    for pid in sorted(cur):
+        mark = 'ИЗМЕНЁН' if pid in changed else 'без изменений'
+        print('  ПРОТОТИП %s — %s' % (pid, mark))
+    return sorted(cur), sorted(changed)
+
+def git_publish(report, proto_report=None, kind='pipeline'):
     state['stage'] = 'git'
     state['message'] = 'Отправка изменений на GitHub…'
+    report = report or {}
     added, changed, removed = (len(report.get('added', [])), len(report.get('changed', [])),
                                len(report.get('removed', [])))
-    msg = 'Автообновление данных: +%d новых, %d изменено, %d удалено' % (added, changed, removed)
-    if added + changed + removed == 0:
-        msg += '; обновлены прототипы и правки'
+    pch = (proto_report or {}).get('changed') or []
+    if kind == 'reload':
+        # Кнопка «Перезагрузить с «Элементов»»: публикуем ТО, что скачали.
+        ids = ', '.join(str(x.get('id', '?')) for x in (report.get('changed') or [])[:10])
+        msg = 'Перезагрузка с «Элементов»: обновлено событий: %d' % changed
+        if ids:
+            msg += ' (%s)' % ids
+    else:
+        msg = ('Автообновление данных: +%d новых, %d изменено, %d удалено'
+               % (added, changed, removed))
+        if pch:
+            msg += '; прототипов обновлено: %d (%s)' % (len(pch), ', '.join(pch))
+        if added + changed + removed == 0 and not pch:
+            msg += '; прототипы не изменились'
+    # Подпись прототипов пишем ДО `git add`: она описывает то состояние,
+    # которое мы сейчас отправляем, поэтому рабочая копия остаётся чистой,
+    # а в коммите подпись соответствует опубликованным прототипам.
+    save_proto_stamp(proto_fingerprint())
     for cmd in (['git', 'add', '-A'], ['git', 'commit', '-m', msg], ['git', 'push']):
         p = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True,
                            encoding='utf-8', errors='replace')
@@ -90,7 +193,7 @@ def git_publish(report):
             state['error'] = out[-800:]
             return False
     p = subprocess.run(['git', 'rev-parse', '--short', 'HEAD'], cwd=ROOT,
-                       capture_output=True, text=True, encoding='utf-8')
+                       capture_output=True, text=True, encoding='utf-8', errors='replace')
     state['commit'] = (p.stdout or '').strip()
     return True
 
@@ -98,8 +201,9 @@ def run_pipeline():
     state['running'] = True
     try:
         state.update({'stage': 'scrape', 'percent': 0, 'message': 'Начинаем обновление…',
-                      'error': None, 'commit': None, 'report': None})
-        if run_step('scrape', [PY, os.path.join('scrape.py')], 2, 68) != 0:
+                      'error': None, 'commit': None, 'report': None,
+                      'proto_report': None})
+        if run_step('scrape', [PY, os.path.join('scrape.py')], 2, 60) != 0:
             state['stage'] = 'error'
             state['message'] = 'Ошибка при сборе данных'
             return
@@ -107,14 +211,30 @@ def run_pipeline():
         state['report'] = report
         total = len((report or {}).get('added', [])) + len((report or {}).get('changed', [])) \
             + len((report or {}).get('removed', []))
-        if total == 0 and not has_uncommitted():
-            state.update({'stage': 'done', 'percent': 100, 'message': 'Изменений нет — данные уже актуальны.'})
+
+        # --- ЯВНЫЙ ПРОХОД ПО ПРОТОТИПАМ ---------------------------------
+        state['stage'] = 'protos'
+        state['percent'] = 62
+        state['message'] = 'Проход по прототипам…'
+        all_protos, proto_changed = scan_prototypes()
+        state['proto_report'] = {'total': len(all_protos), 'changed': proto_changed}
+        state['percent'] = 68
+        state['message'] = 'Прототипов: %d, изменено: %d' % (len(all_protos), len(proto_changed))
+        _time.sleep(0.4)   # чтобы прогресс-бар успел показать результат прохода
+
+        # Изменилось ли что-то вообще: события ИЛИ прототипы (или есть
+        # незакоммиченные правки других файлов).
+        protos_dirty = bool(proto_changed) or has_uncommitted()
+        if total == 0 and not protos_dirty:
+            state.update({'stage': 'done', 'percent': 100,
+                          'message': 'Изменений нет — ни события, ни прототипы '
+                                     'не менялись с прошлого обновления.'})
             return
-        if run_step('build', [PY, os.path.join('build.py')], 70, 84) != 0:
+        if run_step('build', [PY, os.path.join('build.py')], 70, 86) != 0:
             state['stage'] = 'error'
             state['message'] = 'Ошибка при сборке сайта'
             return
-        if not git_publish(report):
+        if not git_publish(report, state['proto_report']):
             state['stage'] = 'error'
             state['message'] = 'Не удалось опубликовать изменения'
             return
@@ -202,24 +322,25 @@ def watch_rebuild():
 
 
 def reload_event(eid):
-    """Перезагрузить одно событие с elementy.ru и пересобрать сайт.
+    """Перезагрузить одно событие с elementy.ru.
 
     Кнопка «Перезагрузить с «Элементов»» на странице события: подходит, когда
     на «Элементах» что-то исправили, а ждать полного обновления не хочется.
+    Возвращает (ok, сообщение, изменилось ли).
     """
     fp = os.path.join(ROOT, 'data', 'events.json')
     try:
         evs = json.load(open(fp, encoding='utf-8'))
     except Exception as e:
-        return False, 'не прочитался data/events.json: %s' % e
+        return False, 'не прочитался data/events.json: %s' % e, False
     ev = next((x for x in evs if str(x.get('id')) == str(eid)), None)
     if ev is None:
-        return False, 'событие %s не найдено в data/events.json' % eid
+        return False, 'событие %s не найдено в data/events.json' % eid, False
     p = subprocess.run([PY, os.path.join(ROOT, 'scrape.py'), '--ids', str(eid)],
                        cwd=ROOT, capture_output=True, text=True,
                        encoding='utf-8', errors='replace')
     if p.returncode != 0:
-        return False, 'не удалось скачать событие: %s' % ((p.stderr or '')[-300:])
+        return False, 'не удалось скачать событие: %s' % ((p.stderr or '')[-300:]), False
     try:
         rep = json.load(open(os.path.join(ROOT, 'data', 'update_report.json'),
                              encoding='utf-8'))
@@ -227,9 +348,9 @@ def reload_event(eid):
         rep = {}
     changed = rep.get('changed') or []
     if not changed:
-        return True, 'Изменений нет — данные на «Элементах» такие же.'
+        return True, 'Изменений нет — данные на «Элементах» такие же.', False
     fields = ', '.join(changed[0].get('fields') or [])
-    return True, 'Обновлено (%s).' % (fields or 'данные')
+    return True, 'Обновлено (%s).' % (fields or 'данные'), True
 
 
 def proto_action(data):
@@ -239,9 +360,15 @@ def proto_action(data):
     if not pid or '/' in pid or '\\' in pid or pid.startswith('.'):
         return False, 'неверный ID'
     if action == 'reload':
-        ok, msg = reload_event(pid)
+        ok, msg, changed = reload_event(pid)
         if not ok:
             return False, msg
+        if not changed:
+            # Данные на «Элементах» те же — публиковать нечего.
+            return True, msg
+        # Пересобираем сайт и ПУБЛИКУЕМ на GitHub: кнопка «Обновить данные»
+        # это делает, а перезагрузка одного события раньше только
+        # пересобирала сайт локально — на GitHub лекция не обновлялась.
         watch['busy'] = True
         try:
             ok2, out = rebuild_site()
@@ -249,7 +376,10 @@ def proto_action(data):
             watch['busy'] = False
         if not ok2:
             return False, 'сайт не пересобрался: %s' % out
-        return True, msg
+        if not git_publish(load_report(), {'total': 0, 'changed': []}, kind='reload'):
+            return False, 'не удалось отправить изменения на GitHub%s' % (
+                ': ' + state['error'] if state.get('error') else '')
+        return True, msg + ' Изменение опубликовано на GitHub (коммит %s).' % (state['commit'] or '?')
     if pid not in protolib.list_ids():
         return False, 'прототип %s не найден' % pid
     try:
