@@ -271,6 +271,7 @@ def proto_lectorium(p):
 ORGANIZER_NAMES = {
     'spbu.ru': 'Санкт-Петербургский государственный университет',
     'festivalnauki.ru': 'Фестиваль науки NAUKA 0+',
+    'yeltsin.ru': 'Филиал Ельцин Центра в Москве',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')

@@ -11,8 +11,12 @@
   POST /api/proto           — действие с прототипом: скрыть/показать, комментарий,
                               обратная связь, удаление, правка HTML-поля. Каждое
                               действие пересобирает сайт (build.py).
+Автопересборка: сервер следит за папкой data/prototypes (prototype.json,
+   _state.json) и пересобирает сайт, если прототип изменился извне (редактор,
+   агент). Конфликты не создаёт: пересборку пропускает, пока идёт обновление
+   данных или только что была пересборка после действия с прототипом.
 """
-import os, re, json, threading, subprocess, sys, webbrowser
+import os, re, json, threading, subprocess, sys, webbrowser, time as _time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
@@ -64,11 +68,20 @@ def run_step(name, cmd, p0, p1):
         state['error'] = ('\n'.join(tail[-8:]) + '\n' + stderr_txt[-600:]).strip()
     return rc
 
+def has_uncommitted():
+    """Есть ли незакоммиченные изменения (события, прототипы, правки)."""
+    p = subprocess.run(['git', 'status', '--porcelain'], cwd=ROOT, capture_output=True,
+                       text=True, encoding='utf-8', errors='replace')
+    return bool((p.stdout or '').strip())
+
 def git_publish(report):
     state['stage'] = 'git'
     state['message'] = 'Отправка изменений на GitHub…'
-    msg = 'Автообновление данных: +%d новых, %d изменено, %d удалено' % (
-        len(report.get('added', [])), len(report.get('changed', [])), len(report.get('removed', [])))
+    added, changed, removed = (len(report.get('added', [])), len(report.get('changed', [])),
+                               len(report.get('removed', [])))
+    msg = 'Автообновление данных: +%d новых, %d изменено, %d удалено' % (added, changed, removed)
+    if added + changed + removed == 0:
+        msg += '; обновлены прототипы и правки'
     for cmd in (['git', 'add', '-A'], ['git', 'commit', '-m', msg], ['git', 'push']):
         p = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True,
                            encoding='utf-8', errors='replace')
@@ -94,7 +107,7 @@ def run_pipeline():
         state['report'] = report
         total = len((report or {}).get('added', [])) + len((report or {}).get('changed', [])) \
             + len((report or {}).get('removed', []))
-        if total == 0:
+        if total == 0 and not has_uncommitted():
             state.update({'stage': 'done', 'percent': 100, 'message': 'Изменений нет — данные уже актуальны.'})
             return
         if run_step('build', [PY, os.path.join('build.py')], 70, 84) != 0:
@@ -116,7 +129,76 @@ def rebuild_site():
                        text=True, encoding='utf-8', errors='replace')
     if p.returncode != 0:
         return False, ((p.stdout or '') + (p.stderr or ''))[-900:]
+    watch['last_rebuild'] = _time.time()
     return True, p.stdout or ''
+
+
+# ------------------------------------------------------------ автопересборка
+
+WATCH_DIR = os.path.join(ROOT, 'data', 'prototypes')
+WATCH_POLL = 0.5          # период опроса файлов, сек
+WATCH_DEBOUNCE = 1.0      # ждём столько без изменений, потом пересобираем
+WATCH_FILES = ('prototype.json', '_state.json')
+watch = {
+    'snap': [],
+    'changed_at': 0.0,
+    'lock': threading.Lock(),
+    'last_rebuild': 0.0,
+    'busy': False,        # идёт пересборка (кнопка/действие) — вотчер ждёт
+}
+
+def watch_snapshot():
+    """(путь, mtime_ns, размер) всех файлов прототипов — для сравнения."""
+    out = []
+    if not os.path.isdir(WATCH_DIR):
+        return out
+    for name in sorted(os.listdir(WATCH_DIR)):
+        if name.startswith('_') or name.startswith('.'):
+            continue
+        folder = os.path.join(WATCH_DIR, name)
+        for fn in WATCH_FILES:
+            fp = os.path.join(folder, fn)
+            try:
+                st = os.stat(fp)
+                out.append((fp, st.st_mtime_ns, st.st_size))
+            except OSError:
+                pass
+    return out
+
+def watch_loop():
+    """Фоновый поток: заметили изменение прототипа — пересобираем сайт."""
+    watch['snap'] = watch_snapshot()
+    while True:
+        _time.sleep(WATCH_POLL)
+        cur = watch_snapshot()
+        if cur != watch['snap']:
+            watch['snap'] = cur
+            watch['changed_at'] = _time.time()
+            continue
+        if not watch['changed_at']:
+            continue
+        if _time.time() - watch['changed_at'] < WATCH_DEBOUNCE:
+            continue
+        watch['changed_at'] = 0.0
+        if state['running']:
+            # идёт полное обновление данных — сборку и так сделает scrape/pipeline
+            continue
+        if watch['busy']:
+            # сейчас пересобирает само действие с прототипом
+            continue
+        if _time.time() - watch['last_rebuild'] < WATCH_DEBOUNCE:
+            # это наша же пересборка после действия с прототипом (build.py
+            # прототипы не трогает, но _state.json мог измениться)
+            continue
+        threading.Thread(target=watch_rebuild, daemon=True).start()
+
+def watch_rebuild():
+    ok, out = rebuild_site()
+    watch['last_rebuild'] = _time.time()
+    if not ok:
+        print('Автопересборка после правки прототипа: ОШИБКА\n%s' % out)
+    else:
+        print('Автопересборка после правки прототипа: готово')
 
 
 def reload_event(eid):
@@ -160,7 +242,11 @@ def proto_action(data):
         ok, msg = reload_event(pid)
         if not ok:
             return False, msg
-        ok2, out = rebuild_site()
+        watch['busy'] = True
+        try:
+            ok2, out = rebuild_site()
+        finally:
+            watch['busy'] = False
         if not ok2:
             return False, 'сайт не пересобрался: %s' % out
         return True, msg
@@ -187,7 +273,11 @@ def proto_action(data):
         return False, str(e).strip("'")
     except Exception as e:
         return False, 'ошибка: %s' % e
-    ok, out = rebuild_site()
+    watch['busy'] = True
+    try:
+        ok, out = rebuild_site()
+    finally:
+        watch['busy'] = False
     if not ok:
         return False, 'сайт не пересобрался: %s' % out
     return True, 'готово'
@@ -251,5 +341,6 @@ class Handler(SimpleHTTPRequestHandler):
 if __name__ == '__main__':
     print('Сайт «Научный календарь»: http://localhost:%d' % PORT)
     print('Чтобы остановить сервер, закройте это окно (или нажмите Ctrl+C).')
+    threading.Thread(target=watch_loop, daemon=True).start()
     threading.Timer(1.0, lambda: webbrowser.open('http://localhost:%d' % PORT)).start()
     ThreadingHTTPServer(('127.0.0.1', PORT), Handler).serve_forever()

@@ -1,84 +1,40 @@
-# -*- coding: utf-8 -*-
-import io, re, os
+﻿# -*- coding: utf-8 -*-
+import io, json, os, re
 
-SRC = r"C:\_PROJ\Zerocoder\Intensiv_1\data\prototypes\TP-4201530\description.md"
-LOG = r"C:\_PROJ\Zerocoder\Intensiv_1\_tmp\audit.log"
+BASE = 'data/prototypes'
+PIDS = ['TP-4207864', 'TP-4213846', 'TP-4213914', 'TP-4215931']
+AUD = 'АУДИТ (proofreading п.0, 28.09.2026): «ё» в тексте прототипа нет. Обратная проверка yo_words: «Все спикеры» — мн.ч., без ё; «ее знаниями» — инвариант «ее»; имена собственные (Ельцин, Ломоносов, Сколтех, Коротин, Миркес, Самофалов, Зайцев, Долгоруковых-Бобринских) — «ё» не требуется. nbsp-места:'
 
-with io.open(SRC, "r", encoding="utf-8") as f:
-    s = f.read()
+def x(ctx):
+    s = ctx.replace('&nbsp;', ' | ')
+    s = re.sub(r'<[^>]+>', ' ', s)
+    s = s.replace('&laquo;','').replace('&raquo;','')
+    return ' '.join(s.split())[:42]
 
-lines = []
-def log(x):
-    lines.append(x)
-
-log("=== АУДИТ description.md (TP-4201530) ===")
-log("длина: %d" % len(s))
-log("")
-
-# ---- 1. ВСЕ nbsp с контекстом ----
-m = list(re.finditer(r"&nbsp;", s))
-log("nbsp ВСЕГО: %d" % len(m))
-for x in m:
-    i = x.start()
-    ctx = s[max(0, i - 22):i + 22].replace("\r", " ").replace("\n", " ")
-    log("  [%d] ...%s..." % (i, ctx))
-log("")
-
-# ---- 2. АВТОМАТ-ПРОВЕРКА: nbsp после двухбуквенных предлогов/союзов ----
-log("=== ПРОВЕРКА nbsp ПОСЛЕ ДВУХБУКВЕННЫХ (должно быть 0) ===")
-suspects = ["на", "от", "до", "по", "из", "за", "об", "но", "не", "как",
-            "что", "это", "при", "вот", "или", "уже", "все", "еще", "там", "тут"]
-found = 0
-for w in suspects:
-    c = s.count(w + "&nbsp;")
-    if c:
-        found += c
-        log("  НАРУШЕНИЕ %d: «%s&nbsp;»" % (c, w))
-log("  итог нарушений: %d" % found)
-log("")
-
-# ---- 3. «ё» ----
-log("=== «ё» ===")
-mm = list(re.finditer(r"[ёЁ]", s))
-log("ё ВСЕГО: %d" % len(mm))
-for x in mm:
-    i = x.start()
-    log("  [%d] ...%s..." % (i, s[max(0, i - 12):i + 12].replace("\r", " ").replace("\n", " ")))
-log("")
-
-# ---- 4. Тире/дефис ----
-log("=== ТИРЕ/ДЕФИС ===")
-log("— (U+2014 em-dash): %d" % s.count("\u2014"))
-log("– (U+2013 en-dash): %d" % s.count("\u2013"))
-log("- (ASCII hyphen): %d" % s.count("-"))
-log("")
-
-# ---- 5. Кавычки ----
-log("=== КАВЫЧКИ ===")
-log("« : %d" % s.count("\u00ab"))
-log("» : %d" % s.count("\u00bb"))
-log("„ (лапки-откр): %d" % s.count("\u201e"))
-log('" (ASCII): %d' % s.count('"'))
-log("")
-
-# ---- 6. KLBLOCK ----
-log("=== KLBLOCK ===")
-log("KLBLOCK всего: %d" % s.count("KLBLOCK"))
-for x in re.finditer(r"KLBLOCK", s):
-    i = x.start()
-    log("  [%d] ...%s..." % (i, s[max(0, i - 20):i + 50].replace("\r", " ").replace("\n", " ")))
-log("")
-
-# ---- 7. Буквенные сокращения (правило: nbsp между буквами; КРОМЕ поста в ТГ) ----
-log("=== БУКВЕННЫЕ СОКРАЩЕНИЯ ===")
-def abbr_log(txt):
-    log("к.ф.н. (без nbsp): %d ; к.&nbsp;ф.&nbsp;н. (с nbsp): %d" % (
-        txt.count("к.ф.н."), txt.count("к.&nbsp;ф.&nbsp;н.")))
-    log("н.с. (без nbsp): %d ; н.&nbsp;с. (с nbsp): %d" % (
-        txt.count("н.с."), txt.count("н.&nbsp;с.")))
-abbr_log(s)
-log("")
-
-with io.open(LOG, "w", encoding="utf-8") as f:
-    f.write("\n".join(lines) + "\n")
-print("AUDIT DONE -> %s" % LOG)
+for pid in PIDS:
+    f = os.path.join(BASE, pid, 'prototype.json')
+    p = json.load(io.open(f, encoding='utf-8'))
+    # cut old audit
+    notes = p.get('notes','')
+    if '\n\n\nАУДИТ' in notes:
+        notes = notes.split('\n\n\nАУДИТ')[0]
+    texts = []
+    for fl in p.get('fields', []):
+        texts.append(fl.get('value', ''))
+    texts.append(p.get('title',''))
+    texts.append(p.get('annot',''))
+    texts.append(p.get('lecturer',''))
+    texts.append(p.get('desc_html',''))
+    texts += list(p.get('extra_html', []))
+    raw = '\n'.join(texts)
+    lines = []
+    seen = set()
+    for pos in [m.start() for m in re.finditer('&nbsp;', raw)]:
+        seg = x(raw[max(0,pos-24):pos+28])
+        if seg in seen: continue
+        seen.add(seg)
+        lines.append('  * ' + seg)
+    audit = AUD + '\n' + '\n'.join(lines)
+    p['notes'] = (notes + '\n\n\n' + audit).strip()
+    json.dump(p, io.open(f,'w',encoding='utf-8'), ensure_ascii=False, indent=1)
+    print(pid, 'nbsp:', len(lines))

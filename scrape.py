@@ -254,6 +254,11 @@ def short_price(text):
         if not moneys:
             if re.search(r'вход свободн|бесплатн', low):
                 return 'Бесплатно'
+            # «Вход по билетам в музей» — не бесплатно: цену берём из самой фразы,
+            # но без служебного слова «Вход» (его добавляет шаблон сайта)
+            m_ticket = re.search(r'вход\s+по\s+билетам\s+([^.;\n]{2,40})', low)
+            if m_ticket:
+                return 'По билетам ' + m_ticket.group(1).strip()
             return None
         off_pref, off_amt, off_to = moneys[0][0], moneys[0][1], None
 
