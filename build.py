@@ -274,6 +274,7 @@ ORGANIZER_NAMES = {
     'yeltsin.ru': 'Филиал Ельцин Центра в Москве',
     'your-sector-of-space.timepad.ru': 'Твой сектор космоса',
     'space-school.org': 'Твой сектор космоса',
+    'lobachevskylab.timepad.ru': 'Парк науки ННГУ «Лобачевский Lab»',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')
