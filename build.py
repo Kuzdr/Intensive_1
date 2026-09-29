@@ -51,6 +51,18 @@ def nbsp_to_char(s):
 def esc(s):
     return H.escape(nbsp_to_char(s or ''))
 
+def esc_nbsp_text(s):
+    """HTML-escape для атрибута data-text в кнопках правки/копирования полей.
+
+    В prototype.json неразбиваемый пробел записан текстом `&nbsp;`, и в окне
+    правки / при копировании он должен оставаться именно текстом `&nbsp;`
+    (а не «сырым» U+00A0, который выглядит как обычный пробел и теряется при
+    вставке — решение пользователя 28.09.2026). Обычный H.escape здесь
+    правильный: `&nbsp;` превращается в `&amp;nbsp;`, а браузер при чтении
+    атрибута вернёт буквальный `&nbsp;`.
+    """
+    return H.escape(s or '')
+
 def fmt_date_ru(iso):
     y, m, d = map(int, iso.split('-'))
     return '%d %s %d' % (d, MONTHS_GEN[m - 1], y)
@@ -944,7 +956,7 @@ def edit_btns(area, key, name, value=''):
     return ('<span class="fbtns" data-area="%s" data-key="%s" data-name="%s" data-text="%s">'
             '<button type="button" class="fb" data-act="edit" title="Редактировать %s">&#9998;</button>'
             '<button type="button" class="fb" data-act="copy" title="Скопировать %s">&#128203;</button>'
-            '</span>') % (esc(area), esc(key), esc(name), esc(value or ''),
+            '</span>') % (esc(area), esc(key), esc(name), esc_nbsp_text(value or ''),
                           esc(name.lower()), esc(name.lower()))
 
 # --------------------------------------------------------- источники прототипа
