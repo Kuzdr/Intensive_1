@@ -402,6 +402,7 @@ def parse_page(slug, html):
         "time": time_h,
         "price_human": price_h,
         "online": online,
+        "has_online": bool(online),
         "card_items": items,
         "sections": sections,
         "description": [s for s in sections if not s["heading"]],

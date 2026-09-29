@@ -111,6 +111,16 @@ def price_rub(price_human):
 DASH = "—&nbsp;"
 
 
+def pas_online(txt):
+    """Добавляет « и ОНЛАЙН» перед финальной точкой HTML-абзаца."""
+    t = txt.rstrip()
+    if t.endswith(".</p>"):
+        return t[:-5] + " и&nbsp;ОНЛАЙН.</p>"
+    if t.endswith("."):
+        return t[:-1] + " и&nbsp;ОНЛАЙН."
+    return t + " и&nbsp;ОНЛАЙН."
+
+
 def dash_item(line):
     t = re.sub(r"^[—–-]\s*&nbsp;\s*|^[—–-]\s+", "", line)
     return "<li>%s</li>" % t.strip()
@@ -340,14 +350,21 @@ def fields_for(ev, cfg, venue, today):
 
 def desc_for(ev, cfg, venue, auths):
     dt = d(ev["date_iso"])
-    parts = ['<p class="small"><b>%s, %d&nbsp;%s %d&nbsp;года, %s, %s, %s.</b></p>' % (
+    online = " и&nbsp;ОНЛАЙН" if ev.get("online") else ""
+    parts = ['<p class="small"><b>%s, %d&nbsp;%s %d&nbsp;года, %s, %s, %s%s.</b></p>' % (
         WD[dt.weekday()].capitalize(), dt.day, MONTHS[dt.month - 1], dt.year,
-        ev["time"], ev.get("city") or "", venue["head"])]
+        ev["time"], ev.get("city") or "", venue["head"], online)]
+    if online:
+        # Число в названии площадки («LOFT 13») + союз «и»: валидатор требует
+        # nbsp после числа — привязываем «13» к «и» («LOFT 13&nbsp;и&nbsp;ОНЛАЙН»).
+        parts[0] = re.sub(r"(\d) +и&nbsp;ОНЛАЙН", r"\1&nbsp;и&nbsp;ОНЛАЙН", parts[0])
     if cfg.get("intro") is not None:
-        parts.append(nbsp_normalize(cfg["intro"]))
+        payload = nbsp_normalize(cfg["intro"])
+        parts.append(pas_online(payload) if ev.get("online") else payload)
     else:
-        parts.append("<p>Лекция <b><i>%s</i> «%s»</b>.</p>"
-                     % (cfg.get("gen") or lecturer_name(ev) or "", cfg["title"]))
+        parts.append("<p>Лекция <b><i>%s</i> «%s»</b>%s.</p>"
+                     % (cfg.get("gen") or lecturer_name(ev) or "", cfg["title"],
+                        " и&nbsp;ОНЛАЙН" if ev.get("online") else ""))
     parts.append("<KLBLOCK eltclub_authors_about/>")
     parts.append('<blockquote class="small">')
     if cfg.get("body"):
@@ -490,6 +507,10 @@ def main():
         cfg["title"] = nbsp_normalize(cfg["title"])
         if cfg.get("annot"):
             cfg["annot"] = nbsp_normalize(cfg["annot"])
+        annot = cfg.get("annot") or "Лекция %s «%s» в&nbsp;лектории «Medio Modo»." % (
+            cfg.get("gen") or lecturer_name(ev), cfg["title"])
+        if ev.get("online"):
+            annot = pas_online(annot)
         p = {
             "id": proto_id(ev, cfg),
             "lectory": "Medio Modo",
@@ -504,8 +525,7 @@ def main():
                       else (cfg.get("types") or ["Лекция"])),
             "topics": cfg.get("topics") or [],
             "price_short": (price_rub(ev.get("price_human") or "") or "").replace("&nbsp;", " "),
-            "annot": cfg.get("annot") or "Лекция %s «%s» в&nbsp;лектории «Medio Modo»."
-                                    % (cfg.get("gen") or lecturer_name(ev), cfg["title"]),
+            "annot": annot,
             "url": ev["url"],
             "sources": cfg.get("sources") or [ev["url"]],
             "fields": fields_for(ev, cfg, venue, today),
