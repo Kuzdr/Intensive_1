@@ -384,8 +384,11 @@ def card(e, prefix=''):
 </div>'''
 
 def proto_actions(e, where='card'):
-    """Кнопки действий с прототипом. На не-локальном сайте (GitHub Pages) кнопки
-    правки скрывает prototypes.js — здесь только разметка и текущие значения."""
+    """Кнопки действий с прототипом. На не-локальном сайте (GitHub Pages) их
+    скрывает prototypes.js (комментарий, обратная связь, скрытие, удаление) —
+    здесь только разметка и текущие значения. Правка отдельного поля живёт
+    в PROTOTYPES_JS и на удалённом сайте сохраняется в браузере (до
+    пересборки сайта)."""
     st = e.get('st') or {}
     hid = '1' if e.get('hidden') else '0'
     return ('<div class="pbtns" data-for="%s" data-id="%s" data-hidden="%s"'
@@ -2137,20 +2140,37 @@ btnGen.addEventListener('click', render);
 })();
 '''
 
+def build_stamp():
+    """Метка сборки сайта. Вписывается в prototypes.js: правки полей,
+    сделанные в браузере на удалённом сайте, хранятся вместе с ней, поэтому
+    после пересборки и публикации сайта они автоматически исчезают."""
+    return datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+
 def build_prototypes_js():
-    open(os.path.join(JS_DIR, 'prototypes.js'), 'w', encoding='utf-8').write(PROTOTYPES_JS)
+    js = PROTOTYPES_JS.replace('/*BUILD*/', build_stamp())
+    open(os.path.join(JS_DIR, 'prototypes.js'), 'w', encoding='utf-8').write(js)
 
 PROTOTYPES_JS = r'''
 /* Прототипы лекций: показ и скрытие, фильтры, комментарии, обратная связь,
-   правка HTML. Работает на всех страницах сайта. Действия с прототипом и
-   сохранение правок — только на локальном сервере (localhost); на GitHub
-   Pages кнопка правки тоже видна и открывает HTML для чтения и копирования. */
+   правка HTML. Работает на всех страницах сайта.
+   Правка поля работает и на локальном сервере, и на GitHub Pages:
+   на localhost «Сохранить» пишет значение в файл прототипа и пересобирает
+   сайт, на удалённом сайте — запоминает правку в localStorage браузера
+   и подставляет её на страницу (BUILD — метка сборки: как только сайт
+   пересоберут и опубликуют заново, все такие правки исчезают). */
 (function () {
   'use strict';
 
   var IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname);
   var K_MODE = 'nk_mode', K_HIDDEN = 'nk_hidden', K_ORG = 'nk_organizers',
       K_ORG_ALL = 'nk_organizers_all';
+  /* Правки полей, сделанные прямо в браузере на удалённом сайте (GitHub
+     Pages). Записаны вместе с меткой сборки сайта: как только страницу
+     пересоберут и опубликуют заново, метка сменится и все правки пропадут —
+     ровно то, что нужно: «работает до следующего обновления с localhost».
+     На локальном сервере эта механика не нужна — там значения пишутся в файл. */
+  var K_LOCAL_EDITS = 'nk_field_edits';
+  var BUILD = '/*BUILD*/';
 
   // ------------------------------------------------------------------ утилиты
   function $(s, r) { return (r || document).querySelector(s); }
@@ -2282,10 +2302,17 @@ PROTOTYPES_JS = r'''
     modalDirty = null;
   }
   function wireModal(b, onBtn) {
-    b.addEventListener('click', function (e) {
+    /* Окно у нас одно и то же (openModal переиспользует тот же .modal), поэтому
+       обработчик от прошлого окна надо снимать: иначе кнопка «Сохранить» в
+       новом окне срабатывала бы ещё и на все старые (правка одного поля
+       переписывала бы другие). */
+    if (b.__pjBtn) b.removeEventListener('click', b.__pjBtn);
+    var h = function (e) {
       var x = e.target.getAttribute && e.target.getAttribute('data-x');
       if (x) onBtn(x, e.target);
-    });
+    };
+    b.__pjBtn = h;
+    b.addEventListener('click', h);
   }
 
   /* Отслеживаем, менял ли пользователь содержимое окна. modalDirty — функция,
@@ -2472,21 +2499,151 @@ PROTOTYPES_JS = r'''
     });
   }
 
+  // ------------------------------- правки, сделанные в браузере (удалён. сайт)
+  /* Правка поля на удалённом сайте не может уехать в файл (сервера нет), но
+     пользователю нужно видеть результат и иметь возможность скопировать код.
+     Поэтому «Сохранить» кладёт значение в localStorage, и мы подставляем его
+     в страницу. Всё держится до следующей пересборки сайта с localhost:
+     в ключе лежит метка сборки BUILD, и при её смене хранилище забывается. */
+  function editsKey() { return K_LOCAL_EDITS + ':' + BUILD; }
+
+  function readEdits() {
+    var o = null;
+    try { o = JSON.parse(load(editsKey()) || 'null'); } catch (e) { o = null; }
+    return (o && typeof o === 'object') ? o : {};
+  }
+
+  function writeEdits(o) { store(editsKey(), JSON.stringify(o)); }
+
+  /* Ключ правки: ID прототипа + область + номер поля. ID обязателен: поля
+     «fields|1» есть на каждой странице прототипа, и без него правка одного
+     события подставлялась бы ко всем сразу. */
+  function editId(area, key) {
+    return (pageId() || '-') + '|' + (area || '') + '|' + (key || '');
+  }
+
+  /* Запись правки: {v: новое значение, o: значение, которое было на сайте}.
+     'o' нужно, чтобы правку можно было отменить («Вернуть как было»). */
+  function editRec(area, key) {
+    var v = readEdits()[editId(area, key)];
+    if (v == null) return null;
+    return (typeof v === 'object') ? v : { v: String(v), o: null };
+  }
+
+  function savedValue(area, key) {
+    var r = editRec(area, key);
+    return r ? r.v : null;
+  }
+
+  function setSaved(area, key, value, original) {
+    var o = readEdits();
+    var id = editId(area, key);
+    if (value == null) delete o[id];
+    else o[id] = { v: value, o: (original == null ? null : original) };
+    writeEdits(o);
+  }
+
+  function findWraps(area, key) {
+    return $$('.fbtns[data-area="' + (area || '') + '"][data-key="' + (key || '') + '"]');
+  }
+
+  /* Значение, которое было на сайте до правки. Запоминаем в самой странице
+     (data-orig), чтобы «Вернуть как было» работало даже тогда, когда
+     localStorage недоступен (например, страница открыта как файл). */
+  function origValue(area, key, wrap) {
+    var w = wrap || findWraps(area, key)[0];
+    if (!w) return '';
+    var o = w.getAttribute('data-orig');
+    return o == null ? (w.getAttribute('data-text') || '') : o;
+  }
+
+  /* Подставить сохранённое значение в разметку страницы. Для полей таблицы
+     меняем значение в ячейке, для desc — блок описания, для extra — свой
+     абзац доп. информации, для source — ссылку. */
+  function applySaved(area, key, value) {
+    findWraps(area, key).forEach(function (w) {
+      if (w.getAttribute('data-orig') == null) {
+        w.setAttribute('data-orig', w.getAttribute('data-text') || '');
+      }
+      w.setAttribute('data-text', value);
+      var row = w.closest ? w.closest('tr') : null;
+      var bar = w.closest ? w.closest('.fbar, .exbar') : null;
+      if (area === 'desc') {
+        var fb = bar ? bar.closest('.fblock') : null;
+        var dv = fb ? $('.pdesc', fb) : null;
+        if (dv) dv.innerHTML = klToView(value);
+        return;
+      }
+      if (area === 'extra') {
+        /* у каждого абзаца доп. информации своя строка .exrow */
+        var er = bar ? bar.closest('.exrow') : null;
+        var xv = er ? $('.exview', er) : null;
+        if (xv) xv.innerHTML = klToView(value);
+        return;
+      }
+      if (area === 'source') {
+        var line = w.closest ? w.closest('.src-line') : null;
+        var cell = row ? row.querySelector('.fval') : null;
+        var a = (line && line.querySelector('a')) || (cell && cell.querySelector('a'));
+        if (a) { a.setAttribute('href', value); a.textContent = value; }
+        else if (cell) cell.textContent = value || '—';
+        return;
+      }
+      /* обычное поле таблицы (fields, author_fields): значение в ячейке
+         сайт тоже выводит «как есть», без экранирования */
+      if (row) {
+        var fv = row.querySelector('.fval');
+        if (fv) fv.innerHTML = klToView(value) || '—';
+      }
+    });
+  }
+
+  /* Приводим сохранённый код к тому виду, в каком его показывает сайт:
+     слэши в путях и тег KLBLOCK в угловых скобках. Префикс для картинок
+     (../assets) сайт добавляет сам при сборке, в браузере он уже есть. */
+  function klToView(html) {
+    return String(html == null ? '' : html)
+      .replace(/\\/g, '/')
+      .replace(/<\/?KLBLOCK[^>]*>/gi, function (m) {
+        return '<span class="klblock">' + esc(m) + '</span>';
+      });
+  }
+
+  /* Восстановить на странице все правки, сохранённые в этом браузере. */
+  function applySavedAll() {
+    if (IS_LOCAL) return;
+    var o = readEdits();
+    var mine = (pageId() || '-') + '|';
+    Object.keys(o).forEach(function (k) {
+      /* чужие прототипы не трогаем: ключ начинается с ID этой страницы */
+      if (k.indexOf(mine) !== 0) return;
+      var parts = k.split('|');
+      var rec = (o[k] && typeof o[k] === 'object') ? o[k] : { v: String(o[k]) };
+      applySaved(parts[1], parts.slice(2).join('|'), rec.v);
+    });
+  }
+
   // --------------------------------------------------------------------- правка
   function openEdit(fb, area, key, name, value) {
-    /* На удалённом сайте модалка открывается для чтения HTML и копирования
-       части кода; «Сохранить» и правка — только на локальном сервере. */
+    /* Правка HTML доступна и на удалённом сайте (GitHub Pages). Разница в
+       одном действии: на localhost «Сохранить» пишет значение в файл
+       прототипа и пересобирает сайт, на удалённом сайте — запоминает
+       правку в браузере и подставляет её на страницу (до пересборки). */
     var actions = '<button type="button" class="tbtn sec" data-x="cancel">Закрыть</button>'
-      + '<button type="button" class="tbtn sec" data-x="copy">Скопировать</button>';
-    if (IS_LOCAL) actions += '<button type="button" class="tbtn" data-x="save">Сохранить</button>';
+      + '<button type="button" class="tbtn sec" data-x="copy">Скопировать</button>'
+      + '<button type="button" class="tbtn" data-x="save">Сохранить</button>';
+    if (!IS_LOCAL && savedValue(area, key) != null) {
+      actions += '<button type="button" class="tbtn sec" data-x="reset">Вернуть как было</button>';
+    }
     var b = openModal(
       '<div class="modal-title">Правка: ' + esc(name) + '</div>'
       + '<div class="modal-hint">' + (IS_LOCAL
           ? 'Правится HTML-код. «Сохранить» перезапишет значение и пересоберёт сайт.'
-          : 'Просмотр HTML-кода. Правка и сохранение работают только на локальном сервере.')
+          : 'Правится HTML-код. «Сохранить» запомнит правку в этом браузере и подставит '
+            + 'её на страницу — она действует до следующего обновления сайта с localhost. '
+            + 'В файл прототипа правка не попадает: код можно забрать кнопкой «Скопировать».')
       + '</div>'
-      + '<div class="modal-body"><textarea id="pj-ta" spellcheck="false"'
-      + (IS_LOCAL ? '' : ' readonly') + '></textarea></div>'
+      + '<div class="modal-body"><textarea id="pj-ta" spellcheck="false"></textarea></div>'
       + '<div class="modal-actions">' + actions + '</div>',
       null);
     b.classList.add('modal-edit', 'modal-drag', 'modal-resize');
@@ -2495,11 +2652,28 @@ PROTOTYPES_JS = r'''
     wireModal(b, function (x) {
       if (x === 'cancel') return closeModal();
       if (x === 'copy') { copyReport($('#pj-ta', b).value); return; }
+      if (x === 'reset') {
+        var orig = origValue(area, key);
+        setSaved(area, key, null);
+        applySaved(area, key, orig);
+        findWraps(area, key).forEach(function (w) { w.removeAttribute('data-orig'); });
+        closeModal();
+        toast('Правка отменена, значение как на сайте');
+        return;
+      }
       if (x === 'save') {
         var v = $('#pj-ta', b).value;
+        if (IS_LOCAL) {
+          closeModal();
+          run({ action: 'field', id: pageId(), area: area, key: key, value: v },
+            'Сохранено, сайт пересобран');
+          return;
+        }
+        /* удалённый сайт: сервера нет — держим правку в браузере */
+        setSaved(area, key, v, origValue(area, key));
+        applySaved(area, key, v);
         closeModal();
-        run({ action: 'field', id: pageId(), area: area, key: key, value: v },
-          'Сохранено, сайт пересобран');
+        toast('Правка сохранена в браузере — до следующего обновления сайта');
       }
     });
   }
@@ -2560,24 +2734,29 @@ PROTOTYPES_JS = r'''
     var fb = e.target.closest ? e.target.closest('.fbtns .fb') : null;
     if (!fb) return;
     var wrap = fb.closest('.fbtns');
+    var area = wrap.getAttribute('data-area');
+    var key = wrap.getAttribute('data-key');
     var val = wrap.getAttribute('data-text');
     if (val == null) val = '';
+    /* если поле правили в этом браузере, показываем сохранённое значение */
+    var sv = savedValue(area, key);
+    if (sv != null) val = sv;
     if (fb.getAttribute('data-act') === 'copy') { copyReport(val); return; }
     if (fb.getAttribute('data-act') === 'copyid') {
       copyReport(fb.getAttribute('data-text') || '');
       return;
     }
-    openEdit(fb, wrap.getAttribute('data-area'), wrap.getAttribute('data-key'),
-      wrap.getAttribute('data-name'), val);
+    openEdit(fb, area, key, wrap.getAttribute('data-name'), val);
   });
 
   /* на не-локальном сайте (GitHub Pages) кнопки действий с прототипом
      (скрыть/удалить/комментарий/обратная связь) не показываем — они требуют
-     локального сервера. Кнопку правки HTML показываем везде: на удалённом
-     сайте она открывает модалку для чтения и копирования кода. */
+     локального сервера. Правка поля работает везде: на удалённом сайте
+     «Сохранить» кладёт правку в localStorage браузера (см. applySavedAll). */
   if (!IS_LOCAL) {
     $$('.pbtns').forEach(function (b) { b.hidden = true; });
   }
+  applySavedAll();
 
   // ========================================================= главная: фильтры
   var main = $('.idxmain');

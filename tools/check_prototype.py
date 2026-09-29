@@ -457,6 +457,10 @@ def p_roman_spacing(t: str):
     слово или запятая («Петра&nbsp;I&nbsp;до», «Екатерины&nbsp;II,&nbsp;…»);
     после цифры точка, кавычка или конец фразы — там ничего не нужно.
     В URL и именах файлов правило не применяем.
+    ИСКЛЮЧЕНИЕ (записано пользователем 29.09.2026): если перед цифрой стоит
+    слово латиницей («GTA VI», «Grand Theft Auto VI»), это часть названия, а не
+    римский номер, — правило не применяем. Русские номера всегда идут после
+    кириллического слова.
     """
     pat = re.compile(
         r"(?<![A-Za-z0-9])(?:%s)(?![A-Za-z0-9])" % "|".join(ROMAN),
@@ -468,12 +472,15 @@ def p_roman_spacing(t: str):
         after = t[m.end()] if m.end() < len(t) else ""
         if before in "-_/\\.:0123456789" or after in "-_/\\.:0123456789":
             continue                      # часть URL, имени файла, времени
-        if before != SENT:
+        if before == " " and re.search(
+                r"[A-Za-z][A-Za-z-]*$", t[:m.start()].rstrip(SENT + " ")):
+            continue                      # «GTA VI» — часть названия латиницей
+        if before == SENT:
+            if after == " " or (after and (after.isalpha() or after == ",")):
+                if after != SENT:
+                    out.append(m)
+        else:
             out.append(m)
-            continue
-        if after == " " or (after and (after.isalpha() or after == ",")):
-            if after != SENT:
-                out.append(m)
     return out
 
 
