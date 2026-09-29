@@ -185,6 +185,38 @@ def save_state(st):
     os.replace(tmp, STATE_FILE)
 
 
+def state_health():
+    """Читаемость файла состояния — БЕЗ побочных эффектов (ничего не переименовываем).
+
+    Возвращает (ok, сообщение). ok=False — состояние прототипов прочитать
+    нельзя, а это значит, что ВСЕ скрытые пользователем прототипы могут
+    «восстановиться» и снова попасть в список на сайте. Проверяется и основной
+    файл, и резервная копия: build.py/serve.py обязаны на такое сообщение
+    останавливаться, а не молча публиковать список без скрытых.
+    """
+    exist = [p for p in (STATE_FILE, STATE_BAK) if os.path.exists(p)]
+    if not exist:
+        return True, 'файла состояния нет — скрытых прототипов не задано'
+    good = []
+    for p in exist:
+        try:
+            _read_json(p)
+            good.append(os.path.basename(p))
+        except Exception:
+            pass
+    if good:
+        extra = '' if len(good) == len(exist) else ' (остальные не читаются)'
+        return True, 'файл состояния читается: %s%s' % (', '.join(good), extra)
+    return False, ('НЕ ЧИТАЕТСЯ %s — скрытые вами прототипы могут появиться в списке!'
+                   % ', '.join(os.path.basename(p) for p in exist))
+
+
+def hidden_ids(st=None):
+    """ID прототипов, скрытых пользователем (из состояния)."""
+    st = load_state() if st is None else st
+    return sorted(pid for pid, it in (st.get('items') or {}).items() if it.get('hidden'))
+
+
 def state_of(st, pid):
     it = (st.get('items') or {}).get(pid) or {}
     return {

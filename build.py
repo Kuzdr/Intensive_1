@@ -178,7 +178,7 @@ def annot_snippet(e, limit=260):
 # ------------------------------------------------------------------ прототипы
 
 items = list(evs)          # события «Элементов» + прототипы (для списка и страниц)
-PROTO_SUMMARY = {'shown': 0, 'hidden': 0, 'archived': 0, 'dup': 0, 'total': 0}
+PROTO_SUMMARY = {'shown': 0, 'hidden': 0, 'hidden_user': 0, 'archived': 0, 'dup': 0, 'total': 0}
 
 def proto_item(p, st):
     """Данные прототипа -> то же, что у события «Элементов» (для карточки)."""
@@ -214,21 +214,30 @@ def proto_item(p, st):
 
 def load_prototypes():
     """Читает data/prototypes/*/prototype.json, применяет состояние пользователя,
-    прячет прошедшие (в архив) и дубли «Элементов»."""
+    прячет прошедшие (в архив) и дубли «Элементов».
+
+    Каждый прототип печатается отдельной строкой — видно, что список реально
+    проходили, и видно, почему прототип не показан на сайте.
+    """
     global items
     items = list(evs)
     state = PL.load_state()
     notes = []
+    ok, health = PL.state_health()
+    if not ok:
+        print('ВНИМАНИЕ: ' + health)
+        notes.append('ВНИМАНИЕ: ' + health)
     for pid in PL.list_ids():
         try:
             p = PL.load(pid)
         except Exception as e:
-            print('ПРОТОТИП %s: не читается (%s)' % (pid, e))
+            print('  ПРОТОТИП %s — НЕ ЧИТАЕТСЯ (%s)' % (pid, e))
             continue
         PROTO_SUMMARY['total'] += 1
         if PL.is_past(p.get('date_iso')):
             PL.archive(pid)
             PROTO_SUMMARY['archived'] += 1
+            print('  ПРОТОТИП %s — перенесён в архив (лекция уже прошла)' % pid)
             notes.append('%s — событие уже прошло, перенесён в архив' % pid)
             continue
         st = PL.state_of(state, pid)
@@ -240,13 +249,20 @@ def load_prototypes():
         it = proto_item(p, st)
         if hits:
             PROTO_SUMMARY['dup'] += 1
+            print('  ПРОТОТИП %s — скрыт: такая же лекция уже стоит на «Элементах» '
+                  '(ID %s: %s)' % (pid, dup['id'], ', '.join(hits)))
             notes.append('%s — дубль на «Элементах» (ID %s: %s), скрыт автоматически'
                          % (pid, dup['id'], ', '.join(hits)))
+        if st['hidden']:
+            PROTO_SUMMARY['hidden_user'] += 1
+            if not hits:
+                print('  ПРОТОТИП %s — скрыт вами' % pid)
         if st['hidden'] or hits:
             PROTO_SUMMARY['hidden'] += 1
             it['hidden'] = True
         else:
             PROTO_SUMMARY['shown'] += 1
+            print('  ПРОТОТИП %s — в списке на сайте' % pid)
         items.append(it)
     items.sort(key=lambda e: (e['date_iso'], e.get('time_start') or '99:99'))
     return notes
@@ -533,6 +549,7 @@ TOOLBAR_PAGE = '''<div class="toolbar toolbar-page">
 
 PANEL = '''<div class="update-panel" id="update-panel-top" hidden>
   <div class="update-progress" hidden>
+    <div class="bar-counts"></div>
     <div class="bar"><div class="bar-fill" id="up-bar"></div></div>
     <div class="bar-msg" id="up-msg"></div>
   </div>
@@ -544,6 +561,7 @@ PANEL = '''<div class="update-panel" id="update-panel-top" hidden>
 
 PANEL_PAGE = '''<div class="update-panel" id="update-panel-%s" hidden>
   <div class="update-progress" hidden>
+    <div class="bar-counts"></div>
     <div class="bar"><div class="bar-fill"></div></div>
     <div class="bar-msg"></div>
   </div>
@@ -1431,6 +1449,7 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .bar { height: 14px; background: #ece4d0; border-radius: 7px; overflow: hidden; }
 .bar-fill { height: 100%; width: 0; background: #b07a2f; transition: width .4s ease; }
 .bar-msg { margin-top: 6px; font-size: 13px; color: #6a643f; }
+.bar-counts { margin-bottom: 8px; padding: 7px 10px; background: #f6f4ec; border: 1px solid #e3ded0; border-radius: 4px; font-size: 13.5px; font-weight: 600; color: #333; }
 
 /* footer */
 .footer { background: #efe9da; border-top: 1px solid #d8d2c4; margin-top: 30px; padding: 18px 0 26px; font-size: 12.5px; color: #6a643f; }
@@ -1571,7 +1590,11 @@ def build_toolbar_js():
   var timer = null;
   // активная панель — та, что под нажатой кнопкой (кнопок может быть две)
   var cur = null;
-  var panel = null, progress = null, bar = null, msg = null, status = null, actions = null;
+  var panel = null, progress = null, bar = null, msg = null, status = null, actions = null, counts = null;
+  // Результат последнего обновления переживает перезагрузку страницы: иначе
+  // статистику (сколько событий, сколько прототипов, что изменилось) не
+  // успеваешь прочитать — страница перечитывается сразу после успеха.
+  var LAST = 'nc:last-update';
 
   function usePanel(btn) {
     cur = btn;
@@ -1581,6 +1604,7 @@ def build_toolbar_js():
     progress = box.querySelector('.update-progress');
     bar = box.querySelector('.bar-fill');
     msg = box.querySelector('.bar-msg');
+    counts = box.querySelector('.bar-counts');
     status = box.querySelector('.update-status');
     actions = box.querySelector('.update-actions');
     var cl = box.querySelector('.update-actions .tbtn');
@@ -1602,6 +1626,12 @@ def build_toolbar_js():
     bar.style.width = Math.round(p) + '%';
     msg.textContent = m;
   }
+  // Счётчик виден ВСЕ время обновления: сколько событий и сколько прототипов.
+  function setCounts(line) {
+    if (!counts) return;
+    counts.textContent = line || '';
+    counts.hidden = !line;
+  }
   function showResult(txt, isErr) {
     if (timer) { clearInterval(timer); timer = null; }
     panel.hidden = false;
@@ -1611,32 +1641,124 @@ def build_toolbar_js():
     status.hidden = false;
     actions.hidden = false;
     if (!isErr) {
-      // Обновление удалось — перечитываем страницу целиком, чтобы новые данные отобразились.
-      setTimeout(function () { location.reload(); }, 1200);
+      // Сохраняем статистику: страница сейчас перечитается целиком, а панель
+      // с результатом должна остаться читаемой и после перезагрузки.
+      try {
+        localStorage.setItem(LAST, JSON.stringify({
+          t: new Date().toLocaleString('ru-RU'), x: txt
+        }));
+      } catch (e) {}
+      setTimeout(function () { location.reload(); }, 2500);
     }
   }
   function hidePanel() {
     panel.hidden = true;
     if (timer) { clearInterval(timer); timer = null; }
+    try { localStorage.removeItem(LAST); } catch (e) {}
+  }
+  // Кнопка «Закрыть» должна прятать ИМЕННО свою панель: панель показывается
+  // ещё до нажатия «Обновить» (сохранённый результат, предупреждение), когда
+  // общая переменная panel ещё пустая.
+  function wireClose(box) {
+    var ac = box.querySelector('.update-actions');
+    if (!ac) return;
+    ac.hidden = false;
+    var b = ac.querySelector('.tbtn');
+    if (b && !b.dataset.wired) {
+      b.dataset.wired = '1';
+      b.addEventListener('click', function () {
+        box.hidden = true;
+        if (timer) { clearInterval(timer); timer = null; }
+        try { localStorage.removeItem(LAST); } catch (e) {}
+      });
+    }
+  }
+  // Показать сохранённый результат прошлого обновления (после перезагрузки).
+  function showLast() {
+    var raw = null;
+    try { raw = localStorage.getItem(LAST); } catch (e) { return; }
+    if (!raw) return;
+    var d = null;
+    try { d = JSON.parse(raw); } catch (e) { return; }
+    if (!d || !d.x) return;
+    var box = document.getElementById('update-panel-top') || document.querySelector('.update-panel');
+    if (!box) return;
+    box.hidden = false;
+    var pr = box.querySelector('.update-progress');
+    var st = box.querySelector('.update-status');
+    if (pr) pr.hidden = true;
+    if (st) {
+      st.textContent = 'ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ (' + d.t + ')\n\n' + d.x;
+      st.style.color = '#2e5d2e';
+      st.hidden = false;
+    }
+    wireClose(box);
+  }
+  // Предупреждение сразу при загрузке страницы: сервер работает на коде,
+  // который был до последних правок, — новых возможностей в нём нет.
+  function showStale(files) {
+    var box = document.getElementById('update-panel-top') || document.querySelector('.update-panel');
+    if (!box) return;
+    box.hidden = false;
+    var pr = box.querySelector('.update-progress');
+    var ct = box.querySelector('.bar-counts');
+    var st = box.querySelector('.update-status');
+    if (pr) pr.hidden = true;
+    if (ct) ct.hidden = true;
+    if (st) {
+      st.textContent = 'ВНИМАНИЕ: сервер запущен до последних правок ('
+        + files.join(', ') + ').'
+        + '\nПоэтому часть возможностей не работает — например, проход по'
+        + ' прототипам в начале обновления.'
+        + '\n\nПерезапустите сервер: в его окне нажмите Ctrl+C, затем введите'
+        + ' снова python serve.py';
+      st.style.color = '#8c5a2f';
+      st.hidden = false;
+    }
+    wireClose(box);
   }
   function reportText(r) {
     if (!r) return 'Данные обновлены, отчёт не сохранился.';
     var lines = [];
-    lines.push('Добавлено: ' + (r.added || []).length);
-    lines.push('Изменено: ' + (r.changed || []).length);
-    lines.push('Удалено: ' + (r.removed || []).length);
+    lines.push('СОБЫТИЯ «ЭЛЕМЕНТЫ»');
     lines.push('Всего в календаре: ' + (r.total || 0));
+    lines.push('Добавлено: ' + (r.added || []).length
+               + '   Изменено: ' + (r.changed || []).length
+               + '   Удалено: ' + (r.removed || []).length);
     return lines.join('\n');
   }
   function protoText(p) {
     if (!p) return '';
-    var t = 'Прототипов: ' + p.total + ', изменено: ' + ((p.changed || []).length);
-    if ((p.changed || []).length) t += ' (' + p.changed.join(', ') + ')';
-    else t += ' — с прошлого обновления не менялись';
-    return t;
+    var ch = p.changed || [];
+    var lines = [];
+    lines.push('ПРОТОТИПЫ (проход: всего ' + (p.checked || p.total || 0) + ')');
+    lines.push('Проверено: ' + (p.checked || p.total || 0)
+               + '   показано: ' + (p.shown || 0)
+               + '   скрыто: ' + (p.hidden || 0)
+               + ' (вами: ' + (p.hidden_user || []).length
+               + ', лекция уже стоит на «Элементах»: ' + (p.hidden_dup || []).length + ')'
+               + '   в архиве: ' + (p.archived || []).length);
+    if (ch.length) {
+      lines.push('Изменено с прошлого обновления: ' + ch.length + ' (' + ch.join(', ') + ')');
+    } else {
+      lines.push('Изменено с прошлого обновления: нет — все прототипы те же, что уехали на GitHub');
+    }
+    if (p.state_ok === false) {
+      lines.push('ВНИМАНИЕ: ' + p.state_msg);
+    }
+    var pass = p.items || [];
+    if (pass.length) {
+      lines.push('');
+      lines.push('Проход по прототипам:');
+      pass.forEach(function (it) {
+        lines.push('  ' + it.id + ' — ' + it.status + ' (' + it.mark + ')');
+      });
+    }
+    return lines.join('\n');
   }
   function startUpdate() {
     hideModal();
+    try { localStorage.removeItem(LAST); } catch (e) {}
     showProgress();
     fetch('/api/update', { method: 'POST' }).then(function (res) {
       if (res.status === 409) { showResult('Обновление уже идёт.', true); return; }
@@ -1648,6 +1770,7 @@ def build_toolbar_js():
   function poll() {
     fetch('/api/update/status').then(function (r) { return r.json(); }).then(function (s) {
       setProgress(s.percent, s.message || '');
+      setCounts(s.counts_line || '');
       if (!s.running) {
         if (timer) { clearInterval(timer); timer = null; }
         if (s.error) {
@@ -1657,11 +1780,20 @@ def build_toolbar_js():
           var pr = protoText(s.proto_report);
           var busy = (s.report && (s.report.added.length || s.report.changed.length
                                    || s.report.removed.length)) || s.commit || !!pr;
+          var head = s.counts_line ? s.counts_line + '\n' : '';
+          // Сервер запущен ДО последних правок кода — часть возможностей в нём
+          // просто отсутствует. Это и была причина «ничего не изменилось».
+          var warn = (s.stale && s.stale.length)
+            ? 'ВНИМАНИЕ: сервер запущен до последних правок (' + s.stale.join(', ')
+              + '). Часть возможностей не работает.\nПерезапустите сервер:'
+              + ' Ctrl+C в его окне, затем снова python serve.py\n\n'
+            : '';
           if (busy) {
-            showResult(s.message + '\n\n' + (pr ? pr + '\n' : '')
-                       + (s.report ? reportText(s.report) : '') + extra, false);
+            var stat = (pr ? pr + '\n' : '')
+                       + (s.report ? reportText(s.report) : '');
+            showResult(warn + head + s.message + '\n\n' + stat + extra, false);
           } else {
-            showResult(s.message, false);
+            showResult(warn + head + s.message + '\n\n' + pr, false);
           }
         }
       }
@@ -1685,6 +1817,13 @@ def build_toolbar_js():
   });
   ok.addEventListener('click', startUpdate);
   cancel.addEventListener('click', hideModal);
+  // Сразу после загрузки спрашиваем сервер: не запущен ли он на старом коде.
+  if (isLocal) {
+    fetch('/api/update/status').then(function (r) { return r.json(); })
+      .then(function (s) { if (s && s.stale && s.stale.length) showStale(s.stale); })
+      .catch(function () {});
+  }
+  showLast();
 })();
 '''.replace('/*SNAPSHOT*/', snap)
     open(os.path.join(JS_DIR, 'toolbar.js'), 'w', encoding='utf-8').write(js)
@@ -2607,9 +2746,9 @@ def main():
     notes = load_prototypes()
     for n in notes:
         print('  прототип: ' + n)
-    print('Прототипы: всего %d, показано %d, скрыто %d (из них дублей «Элементов»: %d), в архив: %d'
+    print('Прототипы: всего %d, показано %d, скрыто %d (вами %d; из них дублей «Элементов»: %d), в архив: %d'
           % (PROTO_SUMMARY['total'], PROTO_SUMMARY['shown'], PROTO_SUMMARY['hidden'],
-             PROTO_SUMMARY['dup'], PROTO_SUMMARY['archived']))
+             PROTO_SUMMARY['hidden_user'], PROTO_SUMMARY['dup'], PROTO_SUMMARY['archived']))
     progress(30, 'Страница событий…')
     build_index()
     progress(55, 'Страницы событий…')

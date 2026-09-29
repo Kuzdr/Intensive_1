@@ -27,16 +27,64 @@ SITE = os.path.join(ROOT, 'site')
 PY = sys.executable
 PORT = int(os.environ.get('PORT', 8000))
 
+# Когда загружен этот код. Если файл сервера меняли ПОСЛЕ запуска, работающий
+# сервер — старый: в нём нет ни прохода по прототипам, ни счётчиков, ни охраны
+# скрытых. Именно на этом пользователь споткнулся дважды («ничего не изменилось»),
+# поэтому предупреждение показывается и в консоли, и в панели кнопки.
+PROC_START = _time.time()
+CODE_FILES = ('serve.py', 'build.py', 'protolib.py')
+
+def stale_files():
+    """Файлы кода, изменённые после запуска этого процесса."""
+    out = []
+    for fn in CODE_FILES:
+        fp = os.path.join(ROOT, fn)
+        try:
+            if os.path.getmtime(fp) > PROC_START:
+                out.append(fn)
+        except OSError:
+            pass
+    return out
+
 state = {
     'running': False,
     'stage': '',          # scrape | protos | build | git | done | error
     'percent': 0,
     'message': '',
     'report': None,       # данные из data/update_report.json
-    'proto_report': None, # {'total': N, 'changed': [id, …]} — проход по прототипам
+    'proto_report': None, # сводка прохода по прототипам (total/shown/hidden/items)
     'error': None,
     'commit': None,       # короткий hash последнего коммита
+    'counts': None,       # {'events': N, 'protos': M, …} — счётчик для панели
+    'counts_line': '',    # готовая строка «События: … · Прототипы: …»
 }
+
+def set_counts(events=None, protos=None, ev=None, pr=None):
+    """Счётчик «сколько событий / сколько прототипов» — виден с самого начала.
+
+    Числа берутся из файлов проекта (data/events.json и папок прототипов),
+    поэтому появляются мгновенно, ещё до сбора данных с сайта. По ходу
+    обновления дополняются итогами: сколько событий и прототипов изменилось.
+    """
+    c = dict(state.get('counts') or {})
+    if events is not None:
+        c['events'] = events
+    if protos is not None:
+        c['protos'] = protos
+    if ev:
+        c.update(ev)
+    if pr:
+        c['changed_protos'] = len(pr.get('changed') or [])
+    state['counts'] = c
+    parts = ['События: %d' % c.get('events', 0)]
+    if 'added' in c:
+        parts[0] += ' (новых %d, изменено %d, удалено %d)' % (
+            c.get('added', 0), c.get('changed', 0), c.get('removed', 0))
+    parts.append('Прототипы: %d' % c.get('protos', 0))
+    if 'changed_protos' in c:
+        parts[1] += ' (изменено %d)' % c['changed_protos']
+    state['counts_line'] = ' · '.join(parts)
+    return state['counts_line']
 
 def load_report():
     fp = os.path.join(ROOT, 'data', 'update_report.json')
@@ -106,6 +154,10 @@ def proto_fingerprint():
             try:
                 with open(fp, 'rb') as f:
                     data = f.read()
+                # Переносы строк НЕ считаем правкой: один и тот же файл на
+                # Windows (CRLF) и на сервере GitHub Pages (LF) отличается
+                # только ими, а содержательно он тот же.
+                data = data.replace(b'\r\n', b'\n')
                 marks.append('%s:%d:%s' % (fn, len(data),
                                            hashlib.sha1(data).hexdigest()[:12]))
             except OSError:
@@ -145,21 +197,121 @@ def save_proto_stamp(fps):
     except Exception as e:
         print('Не удалось сохранить подпись прототипов: %s' % e)
 
-def scan_prototypes():
-    """ЯВНЫЙ проход по прототипам: считаем их и сверяем с прошлым обновлением.
+def load_events():
+    """События «Элементов» — нужны, чтобы отличить дубль (лекция уже стоит
+    на «Элементах») от обычного прототипа."""
+    fp = os.path.join(ROOT, 'data', 'events.json')
+    try:
+        with open(fp, encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return []
 
-    Возвращает (все, изменившиеся). Изменившиеся печатаются в консоль и в
-    прогресс кнопки — видно, что прототипы реально проверялись.
+
+def hidden_snapshot():
+    """Список прототипов, скрытых пользователем (из _state.json)."""
+    try:
+        return set(protolib.hidden_ids())
+    except Exception:
+        return set()
+
+
+def guard_hidden(before):
+    """Проверка: скрытые пользователем прототипы НЕ «восстановились».
+
+    Вызывается после сборки, до публикации. Скрытие хранится в
+    `data/prototypes/_state.json`; если файл не читается, все скрытые
+    прототипы молча вернулись бы в список на сайте. Такую публикацию
+    останавливаем, а не отправляем.
+
+    Возвращает (ok, сообщение об ошибке).
+    """
+    ok, msg = protolib.state_health()
+    if not ok:
+        return False, ('Остановлено: ' + msg
+                       + ' Публиковать нельзя — скрытые прототипы вернутся в список.')
+    lost = sorted(set(before) - hidden_snapshot())
+    if lost:
+        return False, ('Остановлено: во время обновления исчезло скрытие прототипов: %s.'
+                       ' Публикация отменена, чтобы скрытые прототипы не восстановились.'
+                       % ', '.join(lost))
+    # Файл состояния обязан попадать в Git: без него публичная версия сайта
+    # (GitHub Pages) соберётся без скрытых прототипов.
+    p = subprocess.run(['git', 'check-ignore', '-q', 'data/prototypes/_state.json'],
+                       cwd=ROOT, capture_output=True, text=True)
+    if p.returncode == 0:
+        return False, ('Остановлено: data/prototypes/_state.json попал в .gitignore —'
+                       ' скрытые прототипы не доедут до публичной версии сайта.')
+    return True, msg
+
+
+def proto_pass(evs=None, p0=62, p1=68, live=True):
+    """ЯВНЫЙ проход по прототипам.
+
+    Идём по каждому прототипу и для каждого печатаем ДВА факта:
+      1) изменился ли он с прошлого обновления (сравнение с подписью);
+      2) что с ним сейчас: в списке / скрыт вами / скрыт, потому что такая
+         же лекция уже стоит на «Элементах» (дубль) / перенесён в архив.
+
+    Отчёт возвращается целиком: он идёт в панель кнопки, в статистику
+    обновления и в сообщение коммита.
     """
     cur = proto_fingerprint()
     prev = load_proto_stamp()
-    changed = [pid for pid, sig in cur.items() if prev.get(pid) != sig]
-    print('ПРОТОТИПЫ: всего %d, изменено с прошлого обновления: %d'
-          % (len(cur), len(changed)))
-    for pid in sorted(cur):
-        mark = 'ИЗМЕНЁН' if pid in changed else 'без изменений'
-        print('  ПРОТОТИП %s — %s' % (pid, mark))
-    return sorted(cur), sorted(changed)
+    if evs is None:
+        evs = load_events()
+    st = protolib.load_state()
+    health_ok, health_msg = protolib.state_health()
+    ids = sorted(cur) or protolib.list_ids()
+    items, changed = [], []
+    shown, hid_user, hid_dup, archived = [], [], [], []
+    for i, pid in enumerate(ids, 1):
+        mark = 'ИЗМЕНЁН' if prev.get(pid) != cur.get(pid) else 'без изменений'
+        if prev.get(pid) != cur.get(pid):
+            changed.append(pid)
+        try:
+            p = protolib.load(pid)
+        except Exception as e:
+            status = 'НЕ ЧИТАЕТСЯ (%s)' % e
+        else:
+            if protolib.is_past(p.get('date_iso')):
+                status = 'перенесён в архив (лекция уже прошла)'
+                archived.append(pid)
+            else:
+                hits, dup = protolib.find_duplicate(p, evs)
+                own = protolib.state_of(st, pid)['hidden']
+                if own:
+                    hid_user.append(pid)
+                if hits:
+                    status = ('скрыт: такая же лекция уже стоит на «Элементах»'
+                              ' (ID %s: %s)' % (dup['id'], ', '.join(hits)))
+                    hid_dup.append(pid)
+                elif own:
+                    status = 'скрыт вами'
+                else:
+                    status = 'в списке на сайте'
+                    shown.append(pid)
+        items.append({'id': pid, 'mark': mark, 'status': status})
+        line = '  ПРОТОТИП %s — %s; %s' % (pid, mark, status)
+        print(line)
+        if live:
+            state['percent'] = p0 + (p1 - p0) * i // max(1, len(ids))
+            state['message'] = 'Проход по прототипам (%d из %d): %s — %s' % (i, len(ids), pid, status)
+            _time.sleep(0.12)          # чтобы проход был виден глазами
+    hidden_total = len(set(hid_user) | set(hid_dup))
+    print('ПРОТОТИПЫ: всего %d, изменено с прошлого обновления: %d; показано %d, '
+          'скрыто %d (вами %d, дублей «Элементов» %d), в архиве %d'
+          % (len(ids), len(changed), len(shown), hidden_total, len(set(hid_user)),
+             len(set(hid_dup)), len(archived)))
+    if not health_ok:
+        print('ВНИМАНИЕ: ' + health_msg)
+    return {
+        'total': len(ids), 'checked': len(ids), 'changed': changed,
+        'shown': len(shown), 'hidden': hidden_total,
+        'hidden_user': sorted(set(hid_user)), 'hidden_dup': sorted(set(hid_dup)),
+        'archived': sorted(archived), 'items': items,
+        'state_ok': health_ok, 'state_msg': health_msg,
+    }
 
 def git_publish(report, proto_report=None, kind='pipeline'):
     state['stage'] = 'git'
@@ -177,10 +329,20 @@ def git_publish(report, proto_report=None, kind='pipeline'):
     else:
         msg = ('Автообновление данных: +%d новых, %d изменено, %d удалено'
                % (added, changed, removed))
+    # Прототипы в статистике коммита: сколько проверено, сколько изменилось,
+    # сколько скрыто (вами / как дубли «Элементов»).
+    if proto_report:
+        msg += '; прототипов: %d' % proto_report.get('total', 0)
         if pch:
-            msg += '; прототипов обновлено: %d (%s)' % (len(pch), ', '.join(pch))
-        if added + changed + removed == 0 and not pch:
-            msg += '; прототипы не изменились'
+            msg += ', изменено: %d (%s)' % (len(pch), ', '.join(pch))
+        else:
+            msg += ', не изменились'
+        if proto_report.get('hidden'):
+            msg += '; скрыто %d (вами %d, дублей «Элементов» %d)' % (
+                proto_report['hidden'], len(proto_report.get('hidden_user') or []),
+                len(proto_report.get('hidden_dup') or []))
+        if proto_report.get('archived'):
+            msg += '; в архиве %d' % len(proto_report['archived'])
     # Подпись прототипов пишем ДО `git add`: она описывает то состояние,
     # которое мы сейчас отправляем, поэтому рабочая копия остаётся чистой,
     # а в коммите подпись соответствует опубликованным прототипам.
@@ -197,13 +359,56 @@ def git_publish(report, proto_report=None, kind='pipeline'):
     state['commit'] = (p.stdout or '').strip()
     return True
 
+def save_report_stats(report, proto_report):
+    """Дописывает в отчёт обновления сводку по прототипам.
+
+    `data/update_report.json` — тот же отчёт, который показывает панель
+    кнопки; кладём туда и прототипы, чтобы статистика обновления была в
+    одном месте (и переживала перезагрузку страницы).
+    """
+    if not isinstance(report, dict) or not proto_report:
+        return
+    try:
+        rep = dict(report)
+        rep['protos'] = {k: v for k, v in proto_report.items() if k != 'items'}
+        rep['protos_pass'] = proto_report.get('items') or []
+        fp = os.path.join(ROOT, 'data', 'update_report.json')
+        with open(fp, 'w', encoding='utf-8') as f:
+            json.dump(rep, f, ensure_ascii=False, indent=1)
+    except Exception as e:
+        print('Не удалось записать статистику прототипов в отчёт: %s' % e)
+
+
 def run_pipeline():
     state['running'] = True
     try:
-        state.update({'stage': 'scrape', 'percent': 0, 'message': 'Начинаем обновление…',
+        state.update({'stage': 'protos', 'percent': 0,
+                      'message': 'Начинаем обновление…',
                       'error': None, 'commit': None, 'report': None,
-                      'proto_report': None})
-        if run_step('scrape', [PY, os.path.join('scrape.py')], 2, 60) != 0:
+                      'proto_report': None, 'counts': None, 'counts_line': '',
+                      'stale': stale_files()})
+        # Счётчик появляется ПЕРВЫМ: сколько событий в календаре и сколько
+        # прототипов — до того, как что-либо скачивается.
+        line = set_counts(events=len(load_events()), protos=len(proto_fingerprint()))
+        state['message'] = line + ' — начинаем обновление: сначала прототипы'
+        if state['stale']:
+            state['message'] += ' (ВНИМАНИЕ: сервер старый, нужен перезапуск — %s)' \
+                                % ', '.join(state['stale'])
+        # Снимок ДО обновления: после сборки проверим, что скрытые вами
+        # прототипы не «восстановились» (см. guard_hidden).
+        hidden_before = hidden_snapshot()
+
+        # --- ШАГ 1. ПРОТОТИПЫ (с самого начала обновления) ----------------
+        proto_report = proto_pass(load_events(), 2, 14)
+        state['proto_report'] = proto_report
+        set_counts(pr=proto_report)
+        save_report_stats(load_report(), proto_report)
+        state['percent'] = 15
+        state['message'] = line + ' — прототипы проверены, переходим к событиям'
+
+        # --- ШАГ 2. СОБЫТИЯ «ЭЛЕМЕНТЫ» ------------------------------------
+        state['stage'] = 'scrape'
+        if run_step('scrape', [PY, os.path.join('scrape.py')], 16, 70) != 0:
             state['stage'] = 'error'
             state['message'] = 'Ошибка при сборе данных'
             return
@@ -211,20 +416,17 @@ def run_pipeline():
         state['report'] = report
         total = len((report or {}).get('added', [])) + len((report or {}).get('changed', [])) \
             + len((report or {}).get('removed', []))
-
-        # --- ЯВНЫЙ ПРОХОД ПО ПРОТОТИПАМ ---------------------------------
-        state['stage'] = 'protos'
-        state['percent'] = 62
-        state['message'] = 'Проход по прототипам…'
-        all_protos, proto_changed = scan_prototypes()
-        state['proto_report'] = {'total': len(all_protos), 'changed': proto_changed}
-        state['percent'] = 68
-        state['message'] = 'Прототипов: %d, изменено: %d' % (len(all_protos), len(proto_changed))
-        _time.sleep(0.4)   # чтобы прогресс-бар успел показать результат прохода
+        # Числа по событиям подставляем сразу после сбора.
+        line = set_counts(events=(report or {}).get('total') or len(load_events()),
+                          ev={'added': len((report or {}).get('added', [])),
+                              'changed': len((report or {}).get('changed', [])),
+                              'removed': len((report or {}).get('removed', []))})
+        state['percent'] = 71
+        state['message'] = line + ' — события собраны, собираем сайт'
 
         # Изменилось ли что-то вообще: события ИЛИ прототипы (или есть
         # незакоммиченные правки других файлов).
-        protos_dirty = bool(proto_changed) or has_uncommitted()
+        protos_dirty = bool(proto_report['changed']) or has_uncommitted()
         if total == 0 and not protos_dirty:
             state.update({'stage': 'done', 'percent': 100,
                           'message': 'Изменений нет — ни события, ни прототипы '
@@ -234,7 +436,18 @@ def run_pipeline():
             state['stage'] = 'error'
             state['message'] = 'Ошибка при сборке сайта'
             return
-        if not git_publish(report, state['proto_report']):
+        # Сборка могла перенести прошедшие прототипы в архив — пересчитываем
+        # видимость, иначе в статистике останутся устаревшие числа.
+        proto_report = proto_pass(load_events(), 86, 86, live=False)
+        state['proto_report'] = proto_report
+        set_counts(pr=proto_report)
+        save_report_stats(report, proto_report)
+        ok, why = guard_hidden(hidden_before)
+        if not ok:
+            state.update({'stage': 'error', 'error': why,
+                          'message': 'Обновление остановлено: скрытые прототипы могли вернуться в список.'})
+            return
+        if not git_publish(report, proto_report):
             state['stage'] = 'error'
             state['message'] = 'Не удалось опубликовать изменения'
             return
@@ -360,6 +573,7 @@ def proto_action(data):
     if not pid or '/' in pid or '\\' in pid or pid.startswith('.'):
         return False, 'неверный ID'
     if action == 'reload':
+        hidden_before = hidden_snapshot()
         ok, msg, changed = reload_event(pid)
         if not ok:
             return False, msg
@@ -376,7 +590,11 @@ def proto_action(data):
             watch['busy'] = False
         if not ok2:
             return False, 'сайт не пересобрался: %s' % out
-        if not git_publish(load_report(), {'total': 0, 'changed': []}, kind='reload'):
+        # Пересборка не имеет права «восстановить» скрытые прототипы.
+        hidden_ok, why = guard_hidden(hidden_before)
+        if not hidden_ok:
+            return False, why
+        if not git_publish(load_report(), proto_pass(load_events(), live=False), kind='reload'):
             return False, 'не удалось отправить изменения на GitHub%s' % (
                 ': ' + state['error'] if state.get('error') else '')
         return True, msg + ' Изменение опубликовано на GitHub (коммит %s).' % (state['commit'] or '?')
@@ -471,6 +689,11 @@ class Handler(SimpleHTTPRequestHandler):
 if __name__ == '__main__':
     print('Сайт «Научный календарь»: http://localhost:%d' % PORT)
     print('Чтобы остановить сервер, закройте это окно (или нажмите Ctrl+C).')
+    for f in stale_files():
+        print('ВНИМАНИЕ: файл %s изменён ПОСЛЕ запуска этого сервера.' % f)
+        print('          Значит сервер работает на старом коде — новое (например,')
+        print('          проход по прототипам при обновлении) не появится.')
+        print('          Перезапустите: Ctrl+C в этом окне, затем снова python serve.py')
     threading.Thread(target=watch_loop, daemon=True).start()
     threading.Timer(1.0, lambda: webbrowser.open('http://localhost:%d' % PORT)).start()
     ThreadingHTTPServer(('127.0.0.1', PORT), Handler).serve_forever()
