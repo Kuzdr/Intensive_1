@@ -609,6 +609,7 @@ MODAL_POST = '''<div class="modal-overlay" id="modal-post" hidden>
       <div class="post-controls">
         <label>С: <select id="pp-from"></select></label>
         <label>По: <select id="pp-to"></select></label>
+        <label class="post-chk"><input type="checkbox" id="pp-html"> HTML</label>
         <button type="button" class="tbtn" id="pp-gen">Сформировать</button>
       </div>
       <div class="post-preview" id="pp-preview"></div>
@@ -1439,6 +1440,11 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .post-controls label { font-size: 13px; color: #444; }
 .post-controls select { font: 13px/1.3 Arial, Helvetica, sans-serif; padding: 4px 8px; border: 1px solid #ccc3aa; border-radius: 3px; color: #4a3b1f; background: #fffdf5; }
 .post-controls .tbtn { padding: 5px 12px; }
+.post-controls .post-chk { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
+.post-controls .post-chk input { margin: 0; cursor: pointer; }
+.post-preview p { margin: 0 0 14px; }
+.post-preview p:last-child { margin-bottom: 0; }
+.post-preview a { color: #2b6cb0; }
 .post-preview { background: #fffdf5; border: 1px solid #ddd5c3; border-radius: 4px; padding: 14px 16px; font: 14px/1.55 Arial, Helvetica, sans-serif; color: #333; white-space: pre-line; overflow-wrap: anywhere; word-break: break-word; max-height: 56vh; overflow: auto; }
 
 .update-panel { margin: -6px 0 18px; background: #fff; border: 1px solid #ddd5c3; border-radius: 6px; padding: 14px 16px; }
@@ -1839,10 +1845,15 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: выбор да�
   if (!btns.length || !modal) return;
   var fFrom = document.getElementById('pp-from');
   var fTo = document.getElementById('pp-to');
+  var fHtml = document.getElementById('pp-html');
   var preview = document.getElementById('pp-preview');
   var btnGen = document.getElementById('pp-gen');
   var btnCopy = document.getElementById('pp-copy');
-  var cur = { text: '' };
+  var cur = { text: '', html: '' };
+  /* выбор «HTML» запоминается в браузере (как фильтры на сайте) */
+  var K_HTML = 'nk_post_html';
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 
   /* --- даты (Москва, UTC+3) --- */
   function mskNow() {
@@ -1953,7 +1964,28 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: выбор да�
     return 'https://elementy.ru/events?archive=2&evdate=' + mskMidnightTs(isoStr) + '&period=d&from=tg';
   }
 
-  function buildPost(from, to) {
+  /* --- оформление выделений и ссылок:
+         текстовый режим (по умолчанию) — «**жирный**» и «текст|URL»;
+         HTML-режим (чек-бокс «HTML») — «<b>жирный</b>» и «<a href="URL">текст</a>».
+         В HTML-режиме абзацы (те самые места, где в тексте была пустая строка)
+         оборачиваются в <p>, а переводы строк внутри абзаца — в <br>,
+         поэтому вид поста получается ровно таким же, как в текстовом режиме. --- */
+  function bold(text, html) {
+    return html ? '<b>' + text + '</b>' : '**' + text + '**';
+  }
+  function link(text, url, html) {
+    return html ? '<a href="' + url + '">' + text + '</a>' : text + '|' + url;
+  }
+  /* один абзац поста: строки внутри — переводы строк. У всех абзацев, кроме
+     последнего, в конце стоит «<br>&nbsp;»: при копировании в Телеграм
+     блочные элементы слипаются, а неразрывный пробел после перевода строки
+     даёт видимую пустую строку. */
+  function para(lines, html, last) {
+    if (!html) return lines.join('\n');
+    return '<p>' + lines.join('<br>') + (last ? '' : '<br>&nbsp;') + '</p>';
+  }
+
+  function buildPost(from, to, html) {
     var inRange = POST_EVENTS.filter(function (e) {
       return e.date >= from && e.date <= to;
     }).sort(function (a, b) {
@@ -1970,14 +2002,15 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: выбор да�
 
     var first = WD_ACC[wdNum(days[0])];
     var links = days.map(function (d) {
-      return WD_ACC[wdNum(d)] + '|' + dayUrl(d);
+      return link(WD_ACC[wdNum(d)], dayUrl(d), html);
     });
     var introDays = links.length === 1 ? links[0]
       : links.slice(0, -1).join(', ') + ' и ' + links[links.length - 1];
     var prep = first === 'вторник' ? 'во ' : 'в ';
-    var intro = 'Научно-популярные лекции|https://elementy.ru/events?from=tg ' + prep + introDays + ':';
+    var intro = link('Научно-популярные лекции', 'https://elementy.ru/events?from=tg', html)
+      + ' ' + prep + introDays + ':';
 
-    var blocks = inRange.map(function (e) {
+    var blocks = inRange.map(function (e, i) {
       var p1 = [e.date.slice(8) + '.' + e.date.slice(5, 7)];
       if (e.time_start) p1.push(e.time_start);
       if (e.city) p1.push(e.city);
@@ -1985,26 +2018,39 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: выбор да�
       if (e.price) loc += ' ' + e.price;
       if (loc) p1.push(loc);
       var lines = [p1.join(', ')];
-      if (e.lecturer) lines.push('**' + e.lecturer + '**');
-      lines.push((e.lecturer ? e.title : '**' + e.title + '**') + '|' + e.url + (e.subtitle || ''));
-      return lines.join('\n');
+      if (e.lecturer) lines.push(bold(e.lecturer, html));
+      var title = e.lecturer ? e.title : bold(e.title, html);
+      lines.push(link(title, e.url, html) + (e.subtitle || ''));
+      return para(lines, html, i === inRange.length - 1);
     });
 
-    return intro + '\n\n' + blocks.join('\n\n');
+    /* каждый абзац — <p>, между абзацами — пустая строка: в текстовом режиме
+       это «\n\n», в HTML — закрывающий и открывающий <p> */
+    return para([intro], html, !blocks.length) + (html ? '\n' : '\n\n')
+      + blocks.join(html ? '\n' : '\n\n');
   }
 
   function render() {
     var from = fFrom.value || '';
     var to = fTo.value || '';
     if (from > to) return;
-    cur.text = buildPost(from, to);
-    preview.textContent = cur.text;
+    if (fHtml && fHtml.checked) {
+      /* HTML-режим: показываем как готовый пост, а не как код */
+      cur.html = buildPost(from, to, true);
+      cur.text = '';
+      preview.innerHTML = cur.html;
+    } else {
+      cur.html = '';
+      cur.text = buildPost(from, to, false);
+      preview.textContent = cur.text;
+    }
   }
 
   function open() {
     fillFrom();
     fFrom.value = firstEventOnOrAfter(iso(mskNow()));
     fillTo();
+    if (fHtml) fHtml.checked = load(K_HTML) === '1';
     render();
     modal.hidden = false;
   }
@@ -2013,21 +2059,61 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: выбор да�
     btnCopy.textContent = 'Скопировано';
     setTimeout(function () { btnCopy.textContent = 'Копировать'; }, 1500);
   }
-  function legacyCopy() {
+  function flashPlainFallback() {
+    btnCopy.textContent = 'Скопирован код';
+    setTimeout(function () { btnCopy.textContent = 'Копировать'; }, 2500);
+  }
+  function legacyCopy(text) {
     var ta = document.createElement('textarea');
-    ta.value = cur.text;
+    ta.value = text;
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
+  }
+  function copyPlain(text) {
+    legacyCopy(text);
     flashCopied();
   }
+  /* HTML-режим: собираем фрагмент в невидимом блоке, выделяем его как
+     обычный текст в браузере и копируем выделение — в буфер попадают
+     и разметка (text/html), и простой текст, ровно как при ручном
+     выделении мышью. Если браузер не дал выделить — отдаём хотя бы код. */
+  function copyRich() {
+    if (!cur.html) return;
+    var holder = document.createElement('div');
+    holder.setAttribute('contenteditable', 'true');
+    holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:600px;'
+      + 'background:#fff;color:#000;font:14px/1.55 Arial,Helvetica,sans-serif;';
+    holder.innerHTML = cur.html;
+    document.body.appendChild(holder);
+    var range = document.createRange();
+    range.selectNodeContents(holder);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    sel.removeAllRanges();
+    document.body.removeChild(holder);
+    if (ok) {
+      flashCopied();
+    } else {
+      legacyCopy(cur.html);
+      flashPlainFallback();
+    }
+  }
   function copyText() {
+    if (cur.html) {
+      copyRich();
+      return;
+    }
     if (!cur.text) return;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(cur.text).then(flashCopied, legacyCopy);
+      navigator.clipboard.writeText(cur.text).then(flashCopied, function () { legacyCopy(cur.text); flashCopied(); });
     } else {
-      legacyCopy();
+      legacyCopy(cur.text);
+      flashCopied();
     }
   }
 
@@ -2037,6 +2123,10 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: выбор да�
     render();
   });
   fTo.addEventListener('change', render);
+  if (fHtml) fHtml.addEventListener('change', function () {
+    store(K_HTML, fHtml.checked ? '1' : '0');
+    render();
+  });
   btns.forEach(function (b) { b.addEventListener('click', open); });
 btnGen.addEventListener('click', render);
   btnCopy.addEventListener('click', copyText);
