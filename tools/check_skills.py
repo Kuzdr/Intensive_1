@@ -19,7 +19,10 @@
 6. МЕХАНИКА кнопки ID источника: `build.py` распознаёт числовой ID
    в адресе сайта-источника и не берёт ID там, где его нет
    («Элементы», ВДНХ, Timepad, Архэ — правило 30.09.2026, сайты
-   ВДНХ).
+   ВДНХ);
+7. МЕХАНИКА правил nbsp: списки однобуквенных и двухбуквенных слов
+   проверяются ВСЕХ регистров, включая заглавные «В тени…», «А вы…»
+   (регрессия 30.09.2026, прототипы TP-4190696 и TP-4190703).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -146,6 +149,54 @@ def check_verbatim_fix() -> list:
     return problems
 
 
+def check_nbsp_case() -> list:
+    """Правила nbsp после однобуквенных/двухбуквенных — ВСЕ РЕГИСТРЫ.
+
+    Регрессия 30.09.2026 (прототипы TP-4190696 «В тени космических
+    гигантов» и TP-4190703): списки ONE_LETTER/TWO_LETTER записаны в
+    нижнем регистре, и без re.IGNORECASE заглавные «В тени…», «А вы…»
+    не проверялись — ошибка проходила валидатор молча.
+    """
+    problems = []
+    path = os.path.join(ROOT, "tools", "check_prototype.py")
+    if not os.path.isfile(path):
+        return problems
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_cp_case", path)
+    cp = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(cp)
+    except Exception as e:                       # noqa: BLE001
+        return ["tools/check_prototype.py не импортируется: %s" % e]
+
+    nb = "\u00a0"
+    cases = [
+        # (текст, ожидаем ошибку, комментарий)
+        ("В тени космических гигантов", True, "заглавная «В» + обычный пробел"),
+        ("в тени космических гигантов", True, "строчная «в» + обычный пробел"),
+        ("В" + nb + "тени космических гигантов", False, "после «В» уже nbsp"),
+        ("А вы знаете", True, "заглавная «А» + обычный пробел"),
+        ("А" + nb + "вы знаете", False, "после «А» уже nbsp"),
+        ("Космос и косметика", True, "«и» + обычный пробел"),
+        ("Космос и" + nb + "косметика", False, "после «и» уже nbsp"),
+        ("На лекции вы узнаете", False, "после «На» обычный пробел — верно"),
+        ("На" + nb + "лекции вы узнаете", True, "после «На» nbsp запрещён"),
+        ("на" + nb + "лекции вы узнаете", True, "после «на» nbsp запрещён"),
+        ("Но" + nb + "это не так", True, "после «Но» nbsp запрещён"),
+        ("Но это не так", False, "после «Но» обычный пробел — верно"),
+        ("По" + nb + "1762 год", True, "после «По» nbsp запрещён"),
+        ("по 1762 год", False, "после «по» обычный пробел — верно"),
+    ]
+    for text, want_hit, comment in cases:
+        norm = cp.analyze(text)
+        hit = (bool(cp.p_nbsp_missing_after_one_letter(norm))
+               or bool(cp.p_nbsp_after_two_letter(norm)))
+        if hit != want_hit:
+            problems.append("nbsp-правило для %r дало ошибку=%s, ожидалось %s (%s)"
+                            % (text, hit, want_hit, comment))
+    return problems
+
+
 def check_source_ids() -> list:
     """Кнопка ID источника распознаётся только там,
     где ID есть (и не берёт лишних кнопок).
@@ -209,6 +260,13 @@ def main() -> None:
 
     mech = check_verbatim_fix()
     print("%s механика: --fix не трогает verbatim_fragments"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_nbsp_case()
+    print("%s механика: правила nbsp учитывают регистр букв"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)
