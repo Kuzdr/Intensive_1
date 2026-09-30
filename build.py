@@ -965,12 +965,16 @@ def edit_btns(area, key, name, value=''):
 
 # --------------------------------------------------------- источники прототипа
 
-# Числовой ID в адресе источника: Timepad (/event/12345/), Архэ, Timepad-Donational
-# и подобные. Возвращаем (id, подпись источника) или (None, имя хоста).
+# Числовой ID в адресе источника: «Элементы», ВДНХ, Timepad (/event/12345/),
+# Архэ, Timepad-Donational и подобные. Возвращаем (id, подпись источника)
+# или (None, имя хоста).
 def source_num_id(u):
     m = re.search(r'elementy\.ru/events/(\d+)', u or '')
     if m:
         return m.group(1), 'Элементы'
+    m = re.search(r'vdnh\.ru/events/(\d+)', u or '')
+    if m:
+        return m.group(1), 'ВДНХ'
     m = re.search(r'/event/(\d+)', u or '')
     if m:
         return m.group(1), 'Timepad'
