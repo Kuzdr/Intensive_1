@@ -15,7 +15,11 @@
 4. YAML-файлы упомянутых путей читаются (нет поломанной структуры);
 5. МЕХАНИКА `tools/check_prototype.py` не ломает дословные вставки:
    режим `--fix` не правит текст внутри `verbatim_fragments`
-   (регрессия 29.09.2026 — блок автора с «Элементов» расходился с оригиналом).
+   (регрессия 29.09.2026 — блок автора с «Элементов» расходился с оригиналом);
+6. МЕХАНИКА кнопки ID источника: `build.py` распознаёт числовой ID
+   в адресе сайта-источника и не берёт ID там, где его нет
+   («Элементы», ВДНХ, Timepad, Архэ — правило 30.09.2026, сайты
+   ВДНХ).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -142,6 +146,47 @@ def check_verbatim_fix() -> list:
     return problems
 
 
+def check_source_ids() -> list:
+    """Кнопка ID источника распознаётся только там,
+    где ID есть (и не берёт лишних кнопок).
+
+    Правило пользователя 30.09.2026: у сайтов ВДНХ есть
+    числовой ID в адресе, но кнопка его не была.
+    """
+    problems = []
+    path = os.path.join(ROOT, "build.py")
+    if not os.path.isfile(path):
+        return problems
+    import importlib.util
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)          # build.py импортирует protolib
+    spec = importlib.util.spec_from_file_location("_build_mech", path)
+    mod = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(mod)
+    except Exception as e:                   # noqa: BLE001
+        return ["build.py не импортируется: %s" % e]
+    cases = [
+        ("https://elementy.ru/events/449133/Ekskursiya_lektsiya",
+         ("449133", "Элементы")),
+        ("https://vdnh.ru/events/3930/", ("3930", "ВДНХ")),
+        ("https://cosmos-vdnh.timepad.ru/event/4190121/",
+         ("4190121", "Timepad")),
+        ("https://arche.ru/events/12345", ("12345", "Архэ")),
+    ]
+    for url, want in cases:
+        got = tuple(mod.source_num_id(url))
+        if got != want:
+            problems.append("source_num_id(%s) = %r, ожидалось %r"
+                            % (url, got, want))
+    for url in ("https://vdnh.ru/places/maket-kosmicheskogo-korablya-buran/",
+                "https://vdnh.ru/",
+                "https://polymus.ru/events/detail/novgorod"):
+        if mod.source_num_id(url)[0] is not None:
+            problems.append("source_num_id(%s) выдал лишний ID" % url)
+    return problems
+
+
 def main() -> None:
     if not os.path.isdir(SKILLS_DIR):
         print("нет каталога .opencode/skills")
@@ -164,6 +209,13 @@ def main() -> None:
 
     mech = check_verbatim_fix()
     print("%s механика: --fix не трогает verbatim_fragments"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_source_ids()
+    print("%s механика: кнопка ID источника"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)

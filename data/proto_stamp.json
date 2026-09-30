@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-30 16:34:12",
+  "date": "2026-09-30 18:27:19",
   "protos": {
     "0+-261006-Budanov": "prototype.json:10394:c961be9098cc|_state.json:-",
     "0+-261006-Gerasimov": "prototype.json:12125:8e97bc45a285|_state.json:-",
@@ -38,14 +38,19 @@
     "PM-261001-privody-msk": "prototype.json:11001:a99e6749d317|_state.json:-",
     "PM-261001-privody-novgorod": "prototype.json:11503:b63d4d54a29d|_state.json:-",
     "SPBU-261001-Mozg-i-ego-Ya": "prototype.json:16773:306d7e663753|_state.json:-",
+    "TP-4186310": "prototype.json:10181:7d063dbe316b|_state.json:-",
     "TP-4189525": "prototype.json:10663:263c3162ae0d|_state.json:-",
     "TP-4190121": "prototype.json:15860:5fcf424206ef|_state.json:-",
+    "TP-4190696": "prototype.json:10894:615cafdc3acc|_state.json:-",
+    "TP-4190703": "prototype.json:10372:f97f01207626|_state.json:-",
+    "TP-4190709": "prototype.json:9088:9fa67580bdef|_state.json:-",
     "TP-4200782": "prototype.json:14784:fd0e3fc59884|_state.json:-",
     "TP-4207864": "prototype.json:15811:a6bba3ce3b44|_state.json:-",
     "TP-4209493": "prototype.json:26933:41c09d50013b|_state.json:-",
     "TP-4213846": "prototype.json:15937:127fa4b42611|_state.json:-",
     "TP-4213914": "prototype.json:15423:ff69cdff0ee5|_state.json:-",
     "TP-4215931": "prototype.json:15680:fcebfee496a7|_state.json:-",
+    "TP-4226816": "prototype.json:14918:326b7a636743|_state.json:-",
     "VS-261007-butyagin-sady-semiramidy": "prototype.json:17338:949da483abe2|_state.json:-"
   }
 }
