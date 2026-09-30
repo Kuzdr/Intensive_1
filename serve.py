@@ -16,7 +16,7 @@
    агент). Конфликты не создаёт: пересборку пропускает, пока идёт обновление
    данных или только что была пересборка после действия с прототипом.
 """
-import os, re, json, threading, subprocess, sys, webbrowser, time as _time
+import os, re, json, threading, subprocess, sys, webbrowser, hashlib, time as _time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
@@ -28,22 +28,31 @@ PY = sys.executable
 PORT = int(os.environ.get('PORT', 8000))
 
 # Когда загружен этот код. Если файл сервера меняли ПОСЛЕ запуска, работающий
-# сервер — старый: в нём нет ни прохода по прототипам, ни счётчиков, ни охраны
-# скрытых. Именно на этом пользователь споткнулся дважды («ничего не изменилось»),
-# поэтому предупреждение показывается и в консоли, и в панели кнопки.
-PROC_START = _time.time()
-CODE_FILES = ('serve.py', 'build.py', 'protolib.py')
+# сервер — старый, и предупреждение показывается и в консоли, и в панели кнопки.
+# Сравниваем СОДЕРЖИМОЕ (хэш), а не время изменения: если файл переписан без
+# изменений (например, git-операцией), перезапуск не нужен, чтобы не было
+# ложных предупреждений. В набор входят только файлы, загруженные в ЭТОТ
+# процесс: serve.py (сам сервер) и protolib.py (импортируется). build.py сюда
+# НЕ входит — он запускается отдельным процессом при каждом обновлении
+# (run_step), поэтому его правки применяются при следующем нажатии «Обновить»
+# без перезапуска сервера (правило 02.10.2026).
+CODE_FILES = ('serve.py', 'protolib.py')
+
+def _code_sha(fn):
+    try:
+        with open(os.path.join(ROOT, fn), 'rb') as f:
+            return hashlib.sha256(f.read()).hexdigest()
+    except OSError:
+        return None
+
+BASE_SHA = {fn: _code_sha(fn) for fn in CODE_FILES}
 
 def stale_files():
-    """Файлы кода, изменённые после запуска этого процесса."""
+    """Файлы кода, изменившиеся ПОСЛЕ запуска этого процесса."""
     out = []
     for fn in CODE_FILES:
-        fp = os.path.join(ROOT, fn)
-        try:
-            if os.path.getmtime(fp) > PROC_START:
-                out.append(fn)
-        except OSError:
-            pass
+        if BASE_SHA[fn] and _code_sha(fn) != BASE_SHA[fn]:
+            out.append(fn)
     return out
 
 state = {
