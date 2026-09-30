@@ -304,6 +304,7 @@ ORGANIZER_NAMES = {
     'space-school.org': 'Твой сектор космоса',
     'lobachevskylab.timepad.ru': 'Парк науки ННГУ «Лобачевский Lab»',
     'polymus.ru': 'Политехнический музей',
+    'vsmysle.spb.ru': 'Сообщество «ВСмысле»',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')
