@@ -304,6 +304,8 @@ ORGANIZER_NAMES = {
     'space-school.org': 'Твой сектор космоса',
     'lobachevskylab.timepad.ru': 'Парк науки ННГУ «Лобачевский Lab»',
     'polymus.ru': 'Политехнический музей',
+    'vdnh.ru': 'ВДНХ',
+    'cosmos-vdnh.timepad.ru': 'ВДНХ',
     'vsmysle.spb.ru': 'Сообщество «ВСмысле»',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
