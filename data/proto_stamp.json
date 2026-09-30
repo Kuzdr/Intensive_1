@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-01 00:21:06",
+  "date": "2026-10-01 01:02:11",
   "protos": {
     "0+-261006-Budanov": "prototype.json:10394:c961be9098cc|_state.json:-",
     "0+-261006-Gerasimov": "prototype.json:12125:8e97bc45a285|_state.json:-",
@@ -52,10 +52,11 @@
     "TP-4215931": "prototype.json:15680:fcebfee496a7|_state.json:-",
     "TP-4226816": "prototype.json:14918:326b7a636743|_state.json:-",
     "VS-261004-mikhaylova-saundtrek": "prototype.json:11986:7b60cc451862|_state.json:-",
-    "VS-261007-butyagin-sady-semiramidy": "prototype.json:17338:949da483abe2|_state.json:-",
+    "VS-261007-butyagin-sady-semiramidy": "prototype.json:14972:008f4b7964ba|_state.json:-",
     "VS-261020-tims-multivselennaya": "prototype.json:12369:0f8af2bd0d4b|_state.json:-",
     "VS-261025-semikhatov-kvantovaya-teoriya-polya": "prototype.json:11566:ea8e86ba0e02|_state.json:-",
+    "VS-261030-alipov-smena-nastroeniya": "prototype.json:13538:6c8366906f2f|_state.json:-",
     "VS-261115-khoruzhaya-mozg": "prototype.json:13556:ae4bfd0f0286|_state.json:-",
-    "VS-261119-butyagin-artemida": "prototype.json:13748:9f37cb5f7729|_state.json:-"
+    "VS-261119-butyagin-artemida": "prototype.json:13887:c4fefd777126|_state.json:-"
   }
 }
