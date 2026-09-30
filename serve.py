@@ -699,9 +699,9 @@ if __name__ == '__main__':
     print('Сайт «Научный календарь»: http://localhost:%d' % PORT)
     print('Чтобы остановить сервер, закройте это окно (или нажмите Ctrl+C).')
     for f in stale_files():
-        print('ВНИМАНИЕ: файл %s изменён ПОСЛЕ запуска этого сервера.' % f)
-        print('          Значит сервер работает на старом коде — новое (например,')
-        print('          проход по прототипам при обновлении) не появится.')
+        print('ВНИМАНИЕ: файл %s изменился ПОСЛЕ запуска этого сервера.' % f)
+        print('          Сервер работает на старом коде — последние изменения')
+        print('          в нём не применятся.')
         print('          Перезапустите: Ctrl+C в этом окне, затем снова python serve.py')
     threading.Thread(target=watch_loop, daemon=True).start()
     threading.Timer(1.0, lambda: webbrowser.open('http://localhost:%d' % PORT)).start()
