@@ -738,11 +738,41 @@ def build_index():
     body = '\n'.join(body_parts)
     open(os.path.join(SITE, 'index.html'), 'w', encoding='utf-8').write(page('Календарь событий', body, 'events'))
 
+# Личные и региональные параметры в ссылках на билеты убираем: для покупки они
+# не нужны, а в ссылке выглядят как «хвост» (пример: ссылки Яндекс Афиши
+# ?clientKey=…&regionId=2). Функциональные параметры (?p=157145, ?agent_id=…,
+# ?text=… в картах, ?period=m) не трогаем — без них ссылка не работает.
+LINK_PARAM_BAD = re.compile(
+    r'^(?:amp;)?(?:clientKey|regionId|utm_[A-Za-z]+|yclid|ymclid|gclid|fbclid|_openstat|erid)=',
+    re.I)
+HREF_RE = re.compile(r'(href=")([^"]+)(")')
+
+
+def clean_url(u):
+    """Убрать личные/региональные/метки параметры из URL, остальные оставить."""
+    if not u or '?' not in u:
+        return u
+    base, _, query = u.partition('?')
+    amp = '&amp;' in query
+    sep = '&amp;' if amp else '&'
+    kept = [kv for kv in query.split('&') if kv and not LINK_PARAM_BAD.match(kv)]
+    if not kept:
+        return base
+    return base + '?' + sep.join(kept)
+
+
+def clean_links(html_text):
+    """То же самое, но для всех href="…" внутри готового HTML."""
+    if not html_text or '?' not in html_text:
+        return html_text
+    return HREF_RE.sub(lambda m: m.group(1) + clean_url(m.group(2)) + m.group(3), html_text)
+
+
 def render_memo(e, prefix):
     m = e.get('detail_html') or ''
     m = m.replace('\\', '/')
     m = m.replace('assets/img/', prefix + 'assets/img/')
-    return m
+    return clean_links(m)
 
 EVENT_JS = '<script src="../js/reload.js"></script>'
 
@@ -831,7 +861,7 @@ def event_page(e, i, n, prefix):
     reg = ''
     if e.get('reg_links'):
         links = ' · '.join(
-            f'<a href="{esc(l["href"])}" target="_blank" rel="noopener">{esc(l["text"])}</a>' for l in e['reg_links'])
+            f'<a href="{esc(clean_url(l["href"]))}" target="_blank" rel="noopener">{esc(l["text"])}</a>' for l in e['reg_links'])
         reg = f'<div class="reglinks"><span class="lbl">Регистрация:</span> {links}</div>'
     upd_src = ''
     if e.get('updated'):

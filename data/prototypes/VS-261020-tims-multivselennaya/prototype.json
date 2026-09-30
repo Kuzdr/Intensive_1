@@ -116,7 +116,7 @@
     {
       "n": "10",
       "name": "URL регистрации/покупки билета",
-      "value": "https://widget.afisha.yandex.ru/w/sessions/ticketsteam-9711@419959?clientKey=acfbfa99-7746-4e86-ae85-f6862b60f474&regionId=2\nhttps://soobshchestvo-vsmysle.timepad.ru/event/4202305/#register"
+      "value": "https://widget.afisha.yandex.ru/w/sessions/ticketsteam-9711@419959\nhttps://soobshchestvo-vsmysle.timepad.ru/event/4202305/#register"
     },
     {
       "n": "11",
@@ -141,7 +141,7 @@
   ],
   "desc_html": "<p class=\"small\"><b>Вторник, 20&nbsp;октября 2026&nbsp;года, 19:30, Санкт-Петербург, сообщество «ВСмысле» и&nbsp;ОНЛАЙН.</b></p>\n\n<p>Лекция <b><i>Георгия Тимса</i> «Мультивселенная: 6&nbsp;способов создать другую Вселенную»</b> с&nbsp;викториной</p>\n\n<KLBLOCK eltclub_authors_about/>\n\n<blockquote class=\"small\">\n\n<p><b>А&nbsp;что, если наша Вселенная&nbsp;— не единственная?</b></p>\n\n<p>Мы привыкли к&nbsp;мультивселенным. Они есть в&nbsp;комиксах и&nbsp;фильмах про супергероев, а&nbsp;фанаты разных произведений одного автора часто додумывают их самостоятельно. Но существуют ли мультивселенные в&nbsp;физике? Да! И&nbsp;их, как минимум, шесть видов: два в&nbsp;квантовой механике и&nbsp;четыре в&nbsp;релятивистской физике.</p>\n\n<p>На обзорной лекции поговорим об основных вариантах других вселенных в&nbsp;современной физике и&nbsp;о&nbsp;том, как можно было бы туда попасть.</p>\n\n<p>А&nbsp;если после разговора о&nbsp;параллельных мирах вам захочется проверить, насколько хорошо вы разбираетесь в&nbsp;нашей реальности, — не спешите уходить! Традиционно после выступления состоится командная викторина, а&nbsp;победители получат призы от сообщества ВСмысле.</p>\n\n<p>Приходите исследовать мультивселенную вместе с&nbsp;нами&nbsp;— и&nbsp;выяснить, в&nbsp;какой из них вы бы предпочли оказаться.</p>\n\n<p>Лекцию прочитает <b><i>Георгий Тимс</i></b>&nbsp;— <i>преподаватель, автор проекта «Физика для гуманитариев»</i>.</p>\n\n</blockquote>\n",
   "extra_html": [
-    "<p>Стоимость билета: <b>от 1000&nbsp;руб.</b> при покупке заранее; для участников <a href=\"https://t.me/vsmysle_subscription_bot\" target=\"_blank\">Клуба ВСмысле</a>&nbsp;— <b>от 750&nbsp;руб.</b> (регистрация через телеграм-бот). <a href=\"https://widget.afisha.yandex.ru/w/sessions/ticketsteam-9711@419959?clientKey=acfbfa99-7746-4e86-ae85-f6862b60f474&regionId=2&amp;regionId=2\" target=\"_blank\">Купить билет</a>.</p>",
+    "<p>Стоимость билета: <b>от 1000&nbsp;руб.</b> при покупке заранее; для участников <a href=\"https://t.me/vsmysle_subscription_bot\" target=\"_blank\">Клуба ВСмысле</a>&nbsp;— <b>от 750&nbsp;руб.</b> (регистрация через телеграм-бот). <a href=\"https://widget.afisha.yandex.ru/w/sessions/ticketsteam-9711@419959\" target=\"_blank\">Купить билет</a>.</p>",
     "<p>Будет организована онлайн-трансляция. Стоимость: <b>500&nbsp;руб.</b> <a href=\"https://soobshchestvo-vsmysle.timepad.ru/event/4202305/#register\" target=\"_blank\">Купить билет</a>.</p>",
     "<p><b>Адрес:</b> Санкт-Петербург, ул.&nbsp;Гороховая, д.&nbsp;47, Пространство SENO, двор G47, 3&nbsp;этаж, сообщество «ВСмысле».<br>\n<b>Проезд:</b> метро «Сенная площадь», «Спасская». <a href=\"https://yandex.ru/maps/-/CDehvSn-\" target=\"_blank\">Карта</a>.</p>",
     "<!-- @@@ -->",

@@ -114,7 +114,7 @@
     {
       "n": "10",
       "name": "URL регистрации/покупки билета",
-      "value": "https://widget.afisha.yandex.ru/w/sessions/ticketsteam-9711@312983?clientKey=acfbfa99-7746-4e86-ae85-f6862b60f474&regionId=2"
+      "value": "https://widget.afisha.yandex.ru/w/sessions/ticketsteam-9711@312983"
     },
     {
       "n": "11",
@@ -139,7 +139,7 @@
   ],
   "desc_html": "<p class=\"small\"><b>Воскресенье, 4&nbsp;октября 2026&nbsp;года, 15:00, Санкт-Петербург, сообщество «ВСмысле».</b></p>\n\n<p>Лекция <b><i>Ирины Михайловой</i> «Саундтрек Солнечной системы»</b></p>\n\n<KLBLOCK eltclub_authors_about/>\n\n<blockquote class=\"small\">\n\n<p>Космос&nbsp;— это музыка. И&nbsp;не только в&nbsp;фантазиях композиторов. Ученые преобразуют показания наземных и&nbsp;космических приборов в&nbsp;звук, и&nbsp;мы теперь можем слышать Вселенную. А&nbsp;музыканты внедряют ее звуки в&nbsp;свои произведения.</p>\n\n<p>Лекция «Саундтрек Солнечной системы» сочетает в&nbsp;себе научную точность и&nbsp;музыкальную фантазию.</p>\n\n<p>Мы поговорим о&nbsp;строении Солнечной системы и&nbsp;исследовании ее тел. Услышим настоящую музыку сфер. Послушаем, как звучит Солнце, насладимся песней Земли и&nbsp;других планет.</p>\n\n<p>Узнаем, что хотел бы сделать Мик Джаггер со своим камнем на Марсе. Порассуждаем о&nbsp;гипотетической жизни в&nbsp;подлёдных океанах спутников газовых гигантов. Послушаем полярные сияния Сатурна и&nbsp;ветры на Титане.</p>\n\n<p>Лекцию прочитает <b><i>Ирина Михайлова</i></b>&nbsp;— <i>популяризатор астрономии и&nbsp;музыкант, бывший лектор Санкт-Петербургского планетария и&nbsp;лауреат премии «Первая кафедра» в&nbsp;номинации «Всенаука» от центра «Архэ»</i>.</p>\n\n</blockquote>\n",
   "extra_html": [
-    "<p>Стоимость билета: <b>от 1000&nbsp;руб.</b> при покупке заранее; для участников <a href=\"https://t.me/vsmysle_subscription_bot\" target=\"_blank\">Клуба ВСмысле</a>&nbsp;— <b>от 750&nbsp;руб.</b> (регистрация через телеграм-бот). <a href=\"https://widget.afisha.yandex.ru/w/sessions/ticketsteam-9711@312983?clientKey=acfbfa99-7746-4e86-ae85-f6862b60f474&regionId=2&amp;regionId=2\" target=\"_blank\">Купить билет</a>.</p>",
+    "<p>Стоимость билета: <b>от 1000&nbsp;руб.</b> при покупке заранее; для участников <a href=\"https://t.me/vsmysle_subscription_bot\" target=\"_blank\">Клуба ВСмысле</a>&nbsp;— <b>от 750&nbsp;руб.</b> (регистрация через телеграм-бот). <a href=\"https://widget.afisha.yandex.ru/w/sessions/ticketsteam-9711@312983\" target=\"_blank\">Купить билет</a>.</p>",
     "<p><b>Адрес:</b> Санкт-Петербург, ул.&nbsp;Гороховая, д.&nbsp;47, Пространство SENO, двор G47, 3&nbsp;этаж, сообщество «ВСмысле».<br>\n<b>Проезд:</b> метро «Сенная площадь», «Спасская». <a href=\"https://yandex.ru/maps/-/CDehvSn-\" target=\"_blank\">Карта</a>.</p>",
     "<p class=\"small\">Информация о&nbsp;лекции <a href=\"https://vsmysle.spb.ru/community/afisha/lektsiya-saundtrek-solnechnoy-sistemy/\" target=\"_blank\">на сайте сообщества «ВСмысле»</a>.</p>",
     "<p class=\"small\">Сообщество «ВСмысле» <a href=\"https://vk.com/spbvsmysle\" target=\"_blank\">ВКонтакте</a>, <a href=\"http://t.me/vsmysle_spb\" target=\"_blank\">в&nbsp;Телеграме</a>.</p>"
