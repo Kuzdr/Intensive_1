@@ -303,6 +303,7 @@ ORGANIZER_NAMES = {
     'your-sector-of-space.timepad.ru': 'Твой сектор космоса',
     'space-school.org': 'Твой сектор космоса',
     'lobachevskylab.timepad.ru': 'Парк науки ННГУ «Лобачевский Lab»',
+    'polymus.ru': 'Политехнический музей',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')

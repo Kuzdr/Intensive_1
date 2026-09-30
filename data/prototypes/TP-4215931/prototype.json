@@ -20,7 +20,7 @@
  "url": "https://yeltsin.ru/affair/dmitrij-samofalov-ii-v-medicine/",
  "sources": [
   "https://yeltsin.ru/affair/dmitrij-samofalov-ii-v-medicine/",
-  "https://filial-eltsin-tsentra-v-m.timepad.ru/event/TP-4215931/"
+  "https://filial-eltsin-tsentra-v-m.timepad.ru/event/4215931/"
  ],
  "fields": [
   {
@@ -111,12 +111,12 @@
   {
    "n": "9",
    "name": "Источники",
-   "value": "https://yeltsin.ru/affair/dmitrij-samofalov-ii-v-medicine/\nhttps://filial-eltsin-tsentra-v-m.timepad.ru/event/TP-4215931/"
+   "value": "https://yeltsin.ru/affair/dmitrij-samofalov-ii-v-medicine/<br>https://filial-eltsin-tsentra-v-m.timepad.ru/event/4215931/"
   },
   {
    "n": "10",
    "name": "URL регистрации/покупки билета",
-   "value": "https://filial-eltsin-tsentra-v-m.timepad.ru/event/TP-4215931#register"
+   "value": "https://filial-eltsin-tsentra-v-m.timepad.ru/event/4215931#register"
   },
   {
    "n": "11",
@@ -141,10 +141,10 @@
  ],
  "desc_html": "<p class=\"small\"><b>Среда, 11&nbsp;ноября 2026&nbsp;года, 19:00–20:00, Москва, Филиал Ельцин Центра в&nbsp;Москве.</b></p>\n\n<p>Лекция <b><i>Дмитрия Самофалова</i> «ИИ в&nbsp;медицине»</b> из цикла Сколтеха «ИИ в&nbsp;усадьбе».</p>\n\n<KLBLOCK eltclub_authors_about/>\n\n<blockquote class=\"small\">\n\n<p>Искусственный интеллект уже стал не просто технологическим трендом, а&nbsp;рабочим инструментом практикующего врача: нейросети повышают разрешение МРТ и&nbsp;КТ-снимков, ускоряют расшифровку данных и&nbsp;помогают создавать синтетические наборы для обучения диагностических моделей, когда реальных клинических примеров не хватает. Как еще ИИ может помогать врачам? И может ли он мыслить не статистически, а&nbsp;клинически и&nbsp;рассуждать так, как это делает опытный врач?</p>\n\n<p><b>«ИИ в&nbsp;усадьбе»</b>&nbsp;— цикл лекций Сколтеха об искусственном интеллекте. Искусственный интеллект&nbsp;— уже не просто инструмент, а&nbsp;своеобразный «цифровой двойник» нашей цивилизации со всеми ее знаниями, предрассудками и&nbsp;пробелами.</p>\n\n<ol>\n<li>Алексей Зайцев. «Можно ли доверять ИИ?». 23&nbsp;сентября 2026.</li>\n<li>Александр Коротин. «Генеративный ИИ: за пределами ChatGPT». 7&nbsp;октября 2026.</li>\n<li>Евгений Миркес. «Проклятие и&nbsp;благословение ИИ». 21&nbsp;октября 2026.</li>\n<li>Дмитрий Самофалов. «ИИ в&nbsp;медицине». 11&nbsp;ноября 2026.</li>\n</ol>\n\n<p>Все спикеры курса&nbsp;— ученые Центра искусственного интеллекта Сколтеха.</p>\n\n<p>Лекцию прочитает <b><i>Дмитрий Самофалов</i></b>, <i>старший аналитик совместной с&nbsp;Университетом Шарджи биомедицинской лаборатории искусственного интеллекта (BIMAI-Lab) Центра ИИ Сколтеха</i>.</p>\n</blockquote>",
  "extra_html": [
-  "<p>Вход <b>свободный</b>. Необходима <a href=\"https://filial-eltsin-tsentra-v-m.timepad.ru/event/TP-4215931#register\" target=\"_blank\">предварительная регистрация</a>. 12+.</p>",
+  "<p>Вход <b>свободный</b>. Необходима <a href=\"https://filial-eltsin-tsentra-v-m.timepad.ru/event/4215931#register\" target=\"_blank\">предварительная регистрация</a>. 12+.</p>",
   "<p><b>Адрес:</b> Москва, ул.&nbsp;Малая&nbsp;Никитская, дом&nbsp;12, стр.&nbsp;1, Филиал Ельцин Центра в&nbsp;Москве. Усадьба Долгоруковых-Бобринских. Лекционный зал&nbsp;2, 1&nbsp;этаж.<br>\n<b>Проезд:</b> метро «Баррикадная», «Арбатская», «Пушкинская», «Тверская». <a href=\"https://yandex.ru/maps/-/CPAPMZ5V\" target=\"_blank\">Карта</a>.</p>",
   "<!-- @@@ -->",
-  "<p class=\"small\">Информация о&nbsp;лекции <a href=\"https://yeltsin.ru/affair/dmitrij-samofalov-ii-v-medicine/\" target=\"_blank\">на сайте Ельцин Центра</a>.<br>\nИнформация о&nbsp;лекции <a href=\"https://filial-eltsin-tsentra-v-m.timepad.ru/event/TP-4215931/\" target=\"_blank\">на TimePad</a>.</p>"
+  "<p class=\"small\">Информация о&nbsp;лекции <a href=\"https://yeltsin.ru/affair/dmitrij-samofalov-ii-v-medicine/\" target=\"_blank\">на сайте Ельцин Центра</a>.<br>\nИнформация о&nbsp;лекции <a href=\"https://filial-eltsin-tsentra-v-m.timepad.ru/event/4215931/\" target=\"_blank\">на TimePad</a>.</p>"
  ],
  "authors": [
   {
