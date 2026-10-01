@@ -572,9 +572,12 @@ PANEL = '''<div class="update-panel" id="update-panel-top" hidden>
     <div class="bar"><div class="bar-fill" id="up-bar"></div></div>
     <div class="bar-msg" id="up-msg"></div>
   </div>
+  <div class="update-actions update-actions-top" hidden>
+    <button type="button" class="tbtn sec" id="up-close-top" data-up-close>Закрыть</button>
+  </div>
   <div class="update-status"></div>
   <div class="update-actions" hidden>
-    <button type="button" class="tbtn sec" id="up-close">Закрыть</button>
+    <button type="button" class="tbtn sec" id="up-close" data-up-close>Закрыть</button>
   </div>
 </div>'''
 
@@ -584,9 +587,12 @@ PANEL_PAGE = '''<div class="update-panel" id="update-panel-%s" hidden>
     <div class="bar"><div class="bar-fill"></div></div>
     <div class="bar-msg"></div>
   </div>
+  <div class="update-actions update-actions-top" hidden>
+    <button type="button" class="tbtn sec" data-up-close>Закрыть</button>
+  </div>
   <div class="update-status"></div>
   <div class="update-actions" hidden>
-    <button type="button" class="tbtn sec">Закрыть</button>
+    <button type="button" class="tbtn sec" data-up-close>Закрыть</button>
   </div>
 </div>'''
 def toolbar_page(tag):
@@ -1601,6 +1607,8 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .update-panel[hidden] { display: none; }
 .update-status { margin-top: 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
 .update-actions { margin-top: 14px; display: flex; justify-content: flex-end; }
+/* «Закрыть» продублировано сверху: список отчёта бывает длинным. */
+.update-actions-top { margin-top: 0; margin-bottom: 0; }
 
 .bar { height: 14px; background: #ece4d0; border-radius: 7px; overflow: hidden; }
 .bar-fill { height: 100%; width: 0; background: #b07a2f; transition: width .4s ease; }
@@ -1762,9 +1770,13 @@ def build_toolbar_js():
     msg = box.querySelector('.bar-msg');
     counts = box.querySelector('.bar-counts');
     status = box.querySelector('.update-status');
-    actions = box.querySelector('.update-actions');
-    var cl = box.querySelector('.update-actions .tbtn');
-    if (cl && !cl.dataset.wired) { cl.dataset.wired = '1'; cl.addEventListener('click', hidePanel); }
+    actions = [].slice.call(box.querySelectorAll('.update-actions'));
+    wireClose(box, hidePanel);
+  }
+
+  /* Кнопка «Закрыть» в панели — сверху и снизу; прячем обе разом. */
+  function setActions(hidden) {
+    actions.forEach(function (a) { a.hidden = hidden; });
   }
 
   modal.hidden = true; // страховка: окно всегда закрыто при загрузке
@@ -1774,7 +1786,7 @@ def build_toolbar_js():
   function showProgress(m) {
     panel.hidden = false;
     status.hidden = true;
-    actions.hidden = true;
+    setActions(true);
     progress.hidden = false;
     setProgress(0, m || 'Начинаем обновление…');
   }
@@ -1795,7 +1807,7 @@ def build_toolbar_js():
     status.textContent = txt;
     status.style.color = isErr ? '#8c2f2f' : '#2e5d2e';
     status.hidden = false;
-    actions.hidden = false;
+    setActions(false);
     if (!isErr) {
       // Сохраняем статистику: страница сейчас перечитается целиком, а панель
       // с результатом должна остаться читаемой и после перезагрузки.
@@ -1814,20 +1826,24 @@ def build_toolbar_js():
   }
   // Кнопка «Закрыть» должна прятать ИМЕННО свою панель: панель показывается
   // ещё до нажатия «Обновить» (сохранённый результат, предупреждение), когда
-  // общая переменная panel ещё пустая.
-  function wireClose(box) {
-    var ac = box.querySelector('.update-actions');
-    if (!ac) return;
-    ac.hidden = false;
-    var b = ac.querySelector('.tbtn');
-    if (b && !b.dataset.wired) {
-      b.dataset.wired = '1';
-      b.addEventListener('click', function () {
-        box.hidden = true;
-        if (timer) { clearInterval(timer); timer = null; }
-        try { localStorage.removeItem(LAST); } catch (e) {}
-      });
-    }
+  // общая переменная panel ещё пустая. Кнопок две — сверху и снизу, обе
+  // включаются и обе прячут панель. onClose можно задать (иначе — свой обработчик).
+  function wireClose(box, onClose) {
+    var acs = [].slice.call(box.querySelectorAll('.update-actions'));
+    if (!acs.length) return;
+    acs.forEach(function (ac) { ac.hidden = false; });
+    var act = onClose || function () {
+      box.hidden = true;
+      if (timer) { clearInterval(timer); timer = null; }
+      try { localStorage.removeItem(LAST); } catch (e) {}
+    };
+    acs.forEach(function (ac) {
+      var b = ac.querySelector('.tbtn');
+      if (b && !b.dataset.wired) {
+        b.dataset.wired = '1';
+        b.addEventListener('click', act);
+      }
+    });
   }
   // Показать сохранённый результат прошлого обновления (после перезагрузки).
   function showLast() {
@@ -1872,6 +1888,17 @@ def build_toolbar_js():
     }
     wireClose(box);
   }
+  /* События «Элементов»: пишем, что добавилось и что изменилось (с ID и
+     названием) — по одному в строке, чтобы было видно, о чём речь. */
+  function evList(title, arr) {
+    var a = arr || [];
+    if (!a.length) return [];
+    var out = [title + ' (' + a.length + '):'];
+    a.forEach(function (e) {
+      out.push('  ' + (e.id || '?') + ' — ' + (e.title || '(без названия)'));
+    });
+    return out;
+  }
   function reportText(r) {
     if (!r) return 'Данные обновлены, отчёт не сохранился.';
     var lines = [];
@@ -1880,6 +1907,12 @@ def build_toolbar_js():
     lines.push('Добавлено: ' + (r.added || []).length
                + '   Изменено: ' + (r.changed || []).length
                + '   Удалено: ' + (r.removed || []).length);
+    var more = evList('Добавленные события', r.added)
+      .concat(evList('Изменённые события', r.changed));
+    if (more.length) {
+      lines.push('');
+      lines = lines.concat(more);
+    }
     return lines.join('\n');
   }
   function protoText(p) {
@@ -1893,21 +1926,22 @@ def build_toolbar_js():
                + ' (вами: ' + (p.hidden_user || []).length
                + ', лекция уже стоит на «Элементах»: ' + (p.hidden_dup || []).length + ')'
                + '   в архиве: ' + (p.archived || []).length);
-    if (ch.length) {
-      lines.push('Изменено с прошлого обновления: ' + ch.length + ' (' + ch.join(', ') + ')');
+    /* Подробности — только по тем прототипам, которые изменились с прошлого
+       обновления: полный список всех 60+ прототипов в отчёте не нужен. */
+    var pass = p.items_changed || (p.items || []).filter(function (it) {
+      return ch.indexOf(it.id) !== -1;
+    });
+    if (pass.length) {
+      lines.push('');
+      lines.push('Изменились с прошлого обновления (' + pass.length + '):');
+      pass.forEach(function (it) {
+        lines.push('  ' + it.id + ' — ' + it.status);
+      });
     } else {
       lines.push('Изменено с прошлого обновления: нет — все прототипы те же, что уехали на GitHub');
     }
     if (p.state_ok === false) {
       lines.push('ВНИМАНИЕ: ' + p.state_msg);
-    }
-    var pass = p.items || [];
-    if (pass.length) {
-      lines.push('');
-      lines.push('Проход по прототипам:');
-      pass.forEach(function (it) {
-        lines.push('  ' + it.id + ' — ' + it.status + ' (' + it.mark + ')');
-      });
     }
     return lines.join('\n');
   }
@@ -1961,7 +1995,7 @@ def build_toolbar_js():
       if (isLocal) { showConfirm(); return; }
       panel.hidden = false;
       progress.hidden = true;
-      actions.hidden = false;
+      setActions(false);
       status.style.color = '#444';
       status.textContent = 'Обновление работает только на локальном сервере.\n'
         + 'Запустите в терминале: python serve.py\n'
@@ -2160,12 +2194,20 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: выбор да�
       + ' ' + prep + introDays + ':';
 
     var blocks = inRange.map(function (e, i) {
+      /* Первая строка: дата, время, город, место с ценой и хвостом «и ОНЛАЙН».
+         Для полностью онлайн-события город пуст, место перенесено в скобки к
+         названию (собирает сборщик), поэтому здесь остаётся «ОНЛАЙН (цена)». */
       var p1 = [e.date.slice(8) + '.' + e.date.slice(5, 7)];
       if (e.time_start) p1.push(e.time_start);
       if (e.city) p1.push(e.city);
-      var loc = e.place;
-      if (e.price) loc += ' ' + e.price;
-      if (loc) p1.push(loc);
+      if (e.place) {
+        var loc = e.place;
+        if (e.price) loc += ' ' + e.price;
+        if (e.online) loc += ' ' + e.online;
+        p1.push(loc);
+      } else if (e.online) {
+        p1.push(e.price ? e.online + ' ' + e.price : e.online);
+      }
       var lines = [p1.join(', ')];
       if (e.lecturer) lines.push(bold(e.lecturer, html));
       var title = e.lecturer ? e.title : bold(e.title, html);
@@ -2500,22 +2542,24 @@ PROTOTYPES_JS = r'''
       box2.querySelector('[data-c="no"]').focus();
     });
   }
-  /* ESC закрывает окно. Если в нём были несохранённые изменения, нужно нажать
-     ESC дважды (второе нажатие показывает подсказку и закрывает без сохранения)
-     — иначе несохранённый текст пропал бы случайно. */
-  var escArmed = false;
+  /* ESC закрывает верхнее открытое окно — ровно тем же действием, что и его
+     кнопка «Закрыть»: кликаем по ней, поэтому в окне с несохранёнными
+     изменениями сначала появляется подтверждение отказа (как при клике мышью),
+     а не тихое закрытие. Окно подтверждения: ESC = «Отмена» (правки остаются). */
+  function escCloseBtn() {
+    if (ov2 && !ov2.hidden) return ov2.querySelector('[data-c="no"]');
+    if (ov && !ov.hidden) return box.querySelector('[data-x="cancel"]');
+    var m = document.querySelector('.modal-overlay:not([hidden])');
+    if (!m) return null;
+    /* пост в Телеграм, список организаторов, вопрос «Обновить данные?» */
+    return m.querySelector('#pp-close, #org-ok, [data-mp="cancel"]');
+  }
   document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape') { escArmed = false; return; }
-    if (ov2 && !ov2.hidden) { e.preventDefault(); ov2.hidden = true; box2.innerHTML = ''; return; }
-    if (!ov || ov.hidden) { escArmed = false; return; }
+    if (e.key !== 'Escape') return;
+    var b = escCloseBtn();
+    if (!b) return;
     e.preventDefault();
-    if (isDirty() && !escArmed) {
-      escArmed = true;
-      toast('В окне несохранённые изменения: ESC ещё раз — закрыть без сохранения');
-      return;
-    }
-    escArmed = false;
-    closeModal();
+    b.click();
   });
 
   // ------------------------------------------------------------------ сервер
@@ -2793,10 +2837,18 @@ PROTOTYPES_JS = r'''
       + '<div class="modal-actions">' + actions + '</div>',
       null);
     b.classList.add('modal-edit', 'modal-drag', 'modal-resize');
-    $('#pj-ta', b).value = value || '';
+    var origHtml = value || '';
+    $('#pj-ta', b).value = origHtml;
     $('#pj-ta', b).focus();
+    trackDirty(function () { return $('#pj-ta', b).value !== origHtml; });
     wireModal(b, function (x) {
-      if (x === 'cancel') return closeModal();
+      if (x === 'cancel') {
+        /* правка не сохранена — спрашиваем подтверждение (и при закрытии по ESC) */
+        if (!isDirty()) return closeModal();
+        return askConfirm('Закрыть без сохранения?',
+          'Правка HTML не будет сохранена — изменения пропадут.', 'Закрыть без сохранения')
+          .then(function (yes) { if (yes) closeModal(); });
+      }
       if (x === 'copy') { copyReport($('#pj-ta', b).value); return; }
       if (x === 'reset') {
         var orig = origValue(area, key);
@@ -3130,18 +3182,65 @@ PROTOTYPES_JS = r'''
 })();
 '''
 
+RE_ONLINE = re.compile(r'^(.*?)\s*\bи\s*ОНЛАЙН$', re.I)
+RE_ONLINE_ONLY = re.compile(r'^ОНЛАЙН$', re.I)
+
+# Развёрнутые названия площадок для тех случаев, когда площадка уезжает
+# в скобки к названию (полностью онлайн-событие). Берём из поля lectory
+# одноимённых событий; короткий вариант из place тоже годится.
+PLACE_FULL = {
+    'Лекторий «Архэ»': 'Научно-популярный лекторий «Архэ»',
+}
+
+def post_place_full(place):
+    return PLACE_FULL.get((place or '').strip(), (place or '').strip())
+
+def post_place(e):
+    """Разбирает первую строку поста на части.
+
+    «Элементы» хранят в поле city строку вида «Москва и ОНЛАЙН» (или просто
+    «ОНЛАЙН», если событие полностью онлайн). По правилу поста город идёт
+    первым, а «ОНЛАЙН» — в самый конец строки, через «и» без запятой:
+    «Москва, Лекторий … и ОНЛАЙН»; для полностью онлайн-события в первой
+    строке остаётся только «ОНЛАЙН (цена)», а площадка переносится в скобки
+    к названию, чтобы не потеряться.
+
+    Возвращает (город, хвост «и ОНЛАЙН»/«ОНЛАЙН»/'', площадка, дописанная
+    в скобки к названию)."""
+    city = (e.get('city') or '').strip()
+    place = clean_place(e.get('place') or '')
+    m = RE_ONLINE.match(city)
+    if m:
+        return m.group(1).strip(), 'и ОНЛАЙН', place, ''
+    if RE_ONLINE_ONLY.match(city):
+        return '', 'ОНЛАЙН', '', place
+    return city, '', place, ''
+
+def post_subtitle_with_place(e, place):
+    """Подзаголовок поста; для полностью онлайн-события дописываем в скобки
+    площадку: «(курс. Лекторий «Архэ»)»."""
+    sub = post_subtitle(e)
+    if not place:
+        return sub
+    place = post_place_full(place)
+    if sub:
+        return sub[:-1].rstrip() + '. ' + place + ')'   # sub кончается на ')'
+    return ' (' + place + ')'
+
 def build_post_js():
     post = []
     for e in evs:
+        city, online, place, sub_place = post_place(e)
         post.append({
             'date': e['date_iso'],
             'time_start': e.get('time_start') or '',
-            'city': e.get('city') or '',
-            'place': clean_place(e.get('place') or ''),
+            'city': city,
+            'place': place,
+            'online': online,
             'price': price_txt(e.get('price_short') or ''),
             'lecturer': e.get('lecturer') or '',
             'title': e.get('title') or '',
-            'subtitle': post_subtitle(e),
+            'subtitle': post_subtitle_with_place(e, sub_place),
             'url': (e.get('url') or '') + '?period=m&from=tg',
         })
     data = json.dumps(post, ensure_ascii=False, indent=1)

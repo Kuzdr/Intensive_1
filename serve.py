@@ -307,6 +307,7 @@ def proto_pass(evs=None, p0=62, p1=68, live=True):
             state['percent'] = p0 + (p1 - p0) * i // max(1, len(ids))
             state['message'] = 'Проход по прототипам (%d из %d): %s — %s' % (i, len(ids), pid, status)
             _time.sleep(0.12)          # чтобы проход был виден глазами
+
     hidden_total = len(set(hid_user) | set(hid_dup))
     print('ПРОТОТИПЫ: всего %d, изменено с прошлого обновления: %d; показано %d, '
           'скрыто %d (вами %d, дублей «Элементов» %d), в архиве %d'
@@ -314,11 +315,15 @@ def proto_pass(evs=None, p0=62, p1=68, live=True):
              len(set(hid_dup)), len(archived)))
     if not health_ok:
         print('ВНИМАНИЕ: ' + health_msg)
+    chset = set(changed)
     return {
         'total': len(ids), 'checked': len(ids), 'changed': changed,
         'shown': len(shown), 'hidden': hidden_total,
         'hidden_user': sorted(set(hid_user)), 'hidden_dup': sorted(set(hid_dup)),
         'archived': sorted(archived), 'items': items,
+        # в панель идёт только то, что изменилось: полный список прототипов
+        # пользователю при обновлении не нужен (консольный проход остаётся)
+        'items_changed': [it for it in items if it['id'] in chset],
         'state_ok': health_ok, 'state_msg': health_msg,
     }
 
