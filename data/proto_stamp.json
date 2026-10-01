@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-01 04:04:41",
+  "date": "2026-10-01 04:59:53",
   "protos": {
     "0+-261006-Budanov": "prototype.json:10394:c961be9098cc|_state.json:-",
     "0+-261006-Gerasimov": "prototype.json:12125:8e97bc45a285|_state.json:-",
@@ -50,15 +50,15 @@
     "TP-4213846": "prototype.json:15937:127fa4b42611|_state.json:-",
     "TP-4213914": "prototype.json:15423:ff69cdff0ee5|_state.json:-",
     "TP-4215931": "prototype.json:15680:fcebfee496a7|_state.json:-",
-    "TP-4224205": "prototype.json:13589:b9b5793c640a|_state.json:-",
+    "TP-4224205": "prototype.json:13762:3b01d34b9b6a|_state.json:-",
     "TP-4226816": "prototype.json:14880:617ddb3462a9|_state.json:-",
     "VD-3924": "prototype.json:11774:99d92a748e63|_state.json:-",
     "VS-261004-mikhaylova-saundtrek": "prototype.json:11855:2c70e3e74e9d|_state.json:-",
     "VS-261007-butyagin-sady-semiramidy": "prototype.json:14852:26337f85a6fc|_state.json:-",
     "VS-261020-tims-multivselennaya": "prototype.json:12238:c20cd9d07a39|_state.json:-",
-    "VS-261025-semikhatov-kvantovaya-teoriya-polya": "prototype.json:11417:663e0cc98872|_state.json:-",
-    "VS-261030-alipov-smena-nastroeniya": "prototype.json:13407:d5406cd04194|_state.json:-",
-    "VS-261115-khoruzhaya-mozg": "prototype.json:13425:88d532b30da2|_state.json:-",
-    "VS-261119-butyagin-artemida": "prototype.json:13756:2dbe3169e4de|_state.json:-"
+    "VS-261025-semikhatov-kvantovaya-teoriya-polya": "prototype.json:12089:65947e6347c5|_state.json:-",
+    "VS-261030-alipov-smena-nastroeniya": "prototype.json:14073:7a3fe8dbb253|_state.json:-",
+    "VS-261115-khoruzhaya-mozg": "prototype.json:14091:2c5efea38aed|_state.json:-",
+    "VS-261119-butyagin-artemida": "prototype.json:14210:e3dcab89079e|_state.json:-"
   }
 }

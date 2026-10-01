@@ -682,9 +682,41 @@ def week_counts_line(days):
         parts.append('%s: %d' % (fmt_date_short(d.isoformat()), counts[d]))
     return '. '.join(parts) + ('.' if parts else '')
 
+def ru_plural(n, one, few, many):
+    """Число с русским словом: 1 событие, 2 события, 5 событий."""
+    n = abs(int(n))
+    if n % 10 == 1 and n % 100 != 11:
+        return '%d %s' % (n, one)
+    if 2 <= n % 10 <= 4 and not 12 <= n % 100 <= 14:
+        return '%d %s' % (n, few)
+    return '%d %s' % (n, many)
+
+
+def tally_html(n_el, n_proto):
+    """Сколько событий и прототипов выведено на главной (без учёта фильтров).
+
+    Показываем только то, чего на самом деле есть: нет прототипов — не пишем
+    про них, нет событий — не пишем про события, нет ни того, ни другого — не
+    показываем строку вовсе. Значение пересчитывает скрипт на странице, когда
+    меняются фильтры (см. applyFilter в prototypes.js).
+    """
+    parts = []
+    if n_el:
+        parts.append(ru_plural(n_el, 'событие', 'события', 'событий'))
+    if n_proto:
+        parts.append(ru_plural(n_proto, 'прототип', 'прототипа', 'прототипов'))
+    if not parts:
+        return ''
+    return ('<p class="tally" id="tally">Сейчас на странице: <b>%s</b>.</p>'
+            % esc(', '.join(parts)))
+
+
 def build_index():
+    n_el = sum(1 for e in items if e.get('kind') != 'proto')
+    n_proto = sum(1 for e in items if e.get('kind') == 'proto' and not e.get('hidden'))
     head = ['<h1>Календарь событий</h1>',
-            '<p class="intro">Предстоящие научно-популярные лекции, встречи и круглые столы. Открывайте событие, чтобы узнать подробности и стоимость.</p>',
+            '<p class="intro">Предстоящие научно-популярные лекции, встречи и круглые столы. Подробности и стоимость — внутри.</p>',
+            tally_html(n_el, n_proto),
             TOOLBAR,
             PANEL]
     by_month = {}
@@ -1062,14 +1094,65 @@ def source_cell_btns(p, f):
     (правка, копирование и — если у источника есть числовой ID — копирование ID).
     Список источников общий с блоком «Источники» внизу страницы, поэтому
     правка здесь меняет тот же список."""
-    srcs = p.get('sources') or ([p['url']] if p.get('url') else [])
-    lines = []
+    return ''.join(src_cell_btns(u, i) for i, u in enumerate(proto_sources(p)))
+
+
+def proto_sources(p):
+    """Список источников прототипа (поле 9 и блок внизу страницы)."""
+    return p.get('sources') or ([p['url']] if p.get('url') else [])
+
+
+def src_cell_btns(u, i):
+    return source_btns('source', str(i), 'ссылку на источник', u)
+
+
+def source_rows(p, f):
+    """Поле 9 «Источники» — таблицей: своя строка на КАЖДЫЙ источник,
+    свои кнопки напротив своего адреса (кнопки не уезжают под значение)."""
+    srcs = proto_sources(p)
+    rows = []
     for i, u in enumerate(srcs):
-        lines.append('<div class="src-line"><a href="%s" target="_blank" rel="noopener">%s</a>%s</div>'
-                     % (esc(u), esc(u), source_btns('source', str(i), 'ссылку на источник', u)))
-    if not lines:
-        lines.append('<div class="src-line">—</div>')
-    return ''.join(lines)
+        rows.append('<tr class="ftable-src-row"><td class="fname">%s</td>'
+                    '<td class="fval src-url"><a href="%s" target="_blank" rel="noopener">%s</a></td>'
+                    '<td class="fbtns-cell">%s</td></tr>'
+                    % (esc(f['name']) if i == 0 else '', esc(u), esc(u), src_cell_btns(u, i)))
+    if not rows:
+        rows.append('<tr class="ftable-src-row"><td class="fname">%s</td>'
+                    '<td class="fval">—</td><td class="fbtns-cell"></td></tr>' % esc(f['name']))
+    return rows
+
+
+def reg_urls(p):
+    """Ссылки на регистрацию из поля 10 — по одной на строку."""
+    f = next((f for f in PL.fields(p) if f['n'] == '10'), None)
+    return PL.reg_parts((f or {}).get('value') or '')
+
+
+def reg_rows(p, f):
+    """Поле 10 «URL регистрации/покупки билета» — таблицей: своя строка на
+    КАЖДУЮ ссылку и свой набор кнопок напротив неё. Если ссылок несколько,
+    рядом показываем подпись из reg_labels («билет на лекцию»,
+    «билет на трансляцию»): подпись нужна только для показа на странице
+    прототипа, в значение поля и в буфер обмена она не попадает."""
+    urls = reg_urls(p)
+    labels = list(p.get('reg_labels') or [])
+    rows = []
+    for i, u in enumerate(urls):
+        lab = labels[i].strip() if i < len(labels) else ''
+        if i == 0:
+            name = '%s: %s' % (f['name'], lab) if lab else f['name']
+        else:
+            name = lab or 'ссылка на регистрацию %d' % (i + 1)
+        rows.append('<tr class="ftable-reg-row"><td class="fname">%s</td>'
+                    '<td class="fval src-url"><a href="%s" target="_blank" rel="noopener">%s</a></td>'
+                    '<td class="fbtns-cell">%s</td></tr>'
+                    % (esc(name), esc(u), esc(u),
+                       edit_btns('reg', str(i), 'ссылку на регистрацию %d' % (i + 1), u)))
+    if not rows:
+        rows.append('<tr class="ftable-reg-row"><td class="fname">%s</td>'
+                    '<td class="fval">—</td><td class="fbtns-cell"></td></tr>' % esc(f['name']))
+    return rows
+
 
 def proto_page(e, prefix):
     p = e['proto']
@@ -1096,16 +1179,22 @@ def proto_page(e, prefix):
     # --- автор(ы): блок с «Элементов» показываем целиком (имя, фото, описание),
     #     без кнопок правки; для нового автора — поля 7.1–7.4. См. author_blocks.
     author = author_blocks(p, prefix)
-    # --- дополнительная информация
+    # --- дополнительная информация: таблица, у каждого абзаца свои кнопки
+    #     напротив самого абзаца (иначе кнопки уезжают под текст)
     extras = p.get('extra_html') or []
     ex_rows = []
     for i, x in enumerate(extras):
         xh = x.replace('\\', '/')
-        ex_rows.append('<div class="exrow"><div class="exbar">%s</div><div class="exview">%s</div></div>'
-                       % (edit_btns('extra', str(i), 'Дополнительная информация, абзац %d' % (i + 1), x), xh))
+        ex_rows.append('<tr class="exrow"><td class="fname">Абзац %d</td>'
+                       '<td class="fval exview">%s</td>'
+                       '<td class="fbtns-cell">%s</td></tr>'
+                       % (i + 1, xh,
+                          edit_btns('extra', str(i),
+                                    'Дополнительная информация, абзац %d' % (i + 1), x)))
     extra_blk = ''
     if extras:
-        extra_blk = '<div class="fblock">%s</div>' % ''.join(ex_rows)
+        extra_blk = ('<div class="fblock"><table class="ftable ftable-extra">%s</table></div>'
+                     % ''.join(ex_rows))
     # --- формальные поля: компактная таблица без заголовка, номеров и
     #     пометок «только для справки»; значение показываем как есть (без тегов),
     #     HTML-код остаётся в кнопках.
@@ -1117,10 +1206,13 @@ def proto_page(e, prefix):
             continue
         no_edit = f['n'] in PL.NO_EDIT
         if f['n'] == '9':
-            # у поля «Источники» кнопки свои — по одному набору на источник
-            frows.append('<tr class="ftable-src-row"><td class="fname">%s</td>'
-                         '<td class="fval" colspan="2">%s</td></tr>'
-                         % (esc(f['name']), source_cell_btns(p, f)))
+            # у поля «Источники» кнопки свои — по одному набору на источник,
+            # и своя строка таблицы на каждый источник
+            frows.extend(source_rows(p, f))
+            continue
+        if f['n'] == '10':
+            # ссылки на регистрацию: по строке и своему набору кнопок на каждую
+            frows.extend(reg_rows(p, f))
             continue
         frows.append('<tr class="%s"><td class="fname">%s</td><td class="fval">%s</td>'
                     '<td class="fbtns-cell">%s</td></tr>' % (
@@ -1133,7 +1225,7 @@ def proto_page(e, prefix):
     notes_blk = ''
     if notes:
         notes_blk = '<div class="fblock"><div class="pnotes">%s</div></div>' % nl2br(H.escape(notes))
-    srcs = p.get('sources') or ([p['url']] if p.get('url') else [])
+    srcs = proto_sources(p)
     src_rows = []
     for i, u in enumerate(srcs):
         src_rows.append('<tr><td class="fname">%s</td><td class="fval src-url">'
@@ -1253,7 +1345,11 @@ a:hover { color: #02334d; }
 
 .content { padding-top: 18px; padding-bottom: 40px; }
 h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
-.intro { color: #555; margin: 0 0 18px; max-width: 720px; }
+/* .intro — без ограничения ширины: фраза вводная должна умещаться в одну
+   строку колонки (колонка ~820px при .wrap 1080px). */
+.intro { color: #555; margin: 0 0 18px; }
+.tally { color: #6a643f; font-size: 13px; margin: -10px 0 14px; }
+.tally b { color: #4a3b1f; }
 
 .month { font: normal 26px/1.2 Georgia, serif; color: #8a7040; border-bottom: 1px solid #ddd5c3; padding-bottom: 6px; margin: 26px 0 14px; }
 
@@ -1407,9 +1503,8 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .ptitle .ptag { display: inline-block; background: #a3311f; color: #fff; border-radius: 3px; font: bold 12px/1.4 Arial, sans-serif; padding: 1px 7px; vertical-align: 3px; margin-right: 6px; }
 .ptitle .psub { font: 13px/1.4 Arial, sans-serif; color: #6f6a52; margin-top: 3px; }
 .ptitle .pwho { font: italic 15px/1.4 Georgia, serif; color: #4a3f28; margin-top: 6px; }
-.ftable-src-row .fval { line-height: 2.1; }
-.src-line { margin: 0; }
-.src-line .fbtns { margin-left: 8px; }
+.ftable-src-row .fval, .ftable-reg-row .fval { line-height: 1.45; }
+.ftable-src-row .src-url a, .ftable-reg-row .src-url a { overflow-wrap: anywhere; }
 .fb-who { font: italic 15px/1.4 Georgia, serif; color: #4a3f28; margin: 0 0 8px; }
 .ptop .pbtns { flex-direction: row; margin-top: 0; }
 .pflag { flex: 1 1 100%; background: #fdf3e3; border: 1px solid #e0c9a2; border-radius: 4px; padding: 7px 10px; font-size: 13px; color: #6b4c14; margin-top: 8px; }
@@ -1431,9 +1526,9 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .usernotes.in-card .usernote { font-size: 13px; padding: 6px 10px; margin-bottom: 6px; }
 .fblock { background: #fff; border: 1px solid #ddd5c3; border-radius: 4px; padding: 12px 16px; margin-bottom: 14px; }
 .fb-t { font: bold 15px/1.3 Georgia, serif; color: #4a3b1f; margin-bottom: 8px; }
-/* полоса кнопок блока: прижата вправо, без заголовка */
-.fbar, .exbar { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-bottom: 6px; }
-.fbar:empty, .exbar:empty { display: none; }
+/* полоса кнопок блока описания: прижата вправо, без заголовка */
+.fbar { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-bottom: 6px; }
+.fbar:empty { display: none; }
 .itemblock.memo.pdesc { border: none; padding: 0; background: transparent; }
 /* полный блок об авторе (автор уже есть на «Элементах»): фото, имя, описание */
 .author-full .aname { margin: 0 0 10px; font: 700 17px/1.4 Georgia, "Times New Roman", serif; }
@@ -1442,9 +1537,11 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .pphoto { margin: 0 0 10px; }
 .pphoto img { display: block; border: 1px solid #ddd5c3; }
 .pphoto .phint { font-size: 12px; color: #8a8270; margin-top: 3px; }
-.exrow { border-top: 1px solid #eee7d8; padding: 8px 0; }
-.exrow:first-of-type { border-top: none; }
-.exview p { margin: 6px 0; }
+/* «Дополнительная информация» — таблица: абзац и его кнопки в одной строке */
+.ftable-extra .fname { width: 96px; }
+.ftable-extra .fval { line-height: 1.5; }
+.ftable-extra .exview p { margin: 0 0 6px; }
+.ftable-extra .exview p:last-child { margin-bottom: 0; }
 .pnotes { font-size: 13.5px; color: #333; }
 .psrc { font-size: 12.5px; color: #6a643f; margin: 4px 0 14px; }
 .psrc a { overflow-wrap: anywhere; }
@@ -2616,7 +2713,7 @@ PROTOTYPES_JS = r'''
       }
       w.setAttribute('data-text', value);
       var row = w.closest ? w.closest('tr') : null;
-      var bar = w.closest ? w.closest('.fbar, .exbar') : null;
+      var bar = w.closest ? w.closest('.fbar') : null;
       if (area === 'desc') {
         var fb = bar ? bar.closest('.fblock') : null;
         var dv = fb ? $('.pdesc', fb) : null;
@@ -2624,16 +2721,16 @@ PROTOTYPES_JS = r'''
         return;
       }
       if (area === 'extra') {
-        /* у каждого абзаца доп. информации своя строка .exrow */
-        var er = bar ? bar.closest('.exrow') : null;
-        var xv = er ? $('.exview', er) : null;
+        /* у каждого абзаца доп. информации своя строка таблицы .exrow */
+        var er = w.closest ? (w.closest('.exrow') || w.closest('tr')) : null;
+        var xv = er ? ($('.exview', er) || $('.fval', er)) : null;
         if (xv) xv.innerHTML = klToView(value);
         return;
       }
-      if (area === 'source') {
-        var line = w.closest ? w.closest('.src-line') : null;
+      if (area === 'reg' || area === 'source') {
+        /* ссылка лежит в своей строке таблицы: <tr><td class="fval"><a …></td><td …></tr> */
         var cell = row ? row.querySelector('.fval') : null;
-        var a = (line && line.querySelector('a')) || (cell && cell.querySelector('a'));
+        var a = cell ? cell.querySelector('a') : null;
         if (a) { a.setAttribute('href', value); a.textContent = value; }
         else if (cell) cell.textContent = value || '—';
         return;
@@ -2848,6 +2945,29 @@ PROTOTYPES_JS = r'''
       return p[2] + '.' + p[1] + ': ' + cnt[d];
     }).join('. ') + '.';
   }
+  /* Счётчик «сейчас на странице»: пересчитываем при каждой смене фильтров,
+     иначе он показывал бы число из файла и путал после фильтрации. */
+  function plural(n, one, few, many) {
+    var a = Math.abs(n), m = a % 10, h = a % 100;
+    if (m === 1 && h !== 11) return one;
+    if (m >= 2 && m <= 4 && (h < 12 || h > 14)) return few;
+    return many;
+  }
+  function setTally() {
+    var box = $('#tally');
+    if (!box) return;
+    var nEl = 0, nPr = 0;
+    $$('.event', main).forEach(function (it) {
+      if (it.hidden) return;
+      if (it.getAttribute('data-kind') === 'proto') nPr++; else nEl++;
+    });
+    var parts = [];
+    if (nEl) parts.push(nEl + ' ' + plural(nEl, 'событие', 'события', 'событий'));
+    if (nPr) parts.push(nPr + ' ' + plural(nPr, 'прототип', 'прототипа', 'прототипов'));
+    if (!parts.length) { box.hidden = true; box.innerHTML = ''; return; }
+    box.hidden = false;
+    box.innerHTML = 'Сейчас на странице: <b>' + parts.join(', ') + '</b>.';
+  }
   /* Прячет невидимые события, пересчитывает счётчики дней в неделях, прячет
      пустые недели и месяцы и правит оглавление. */
   function applyFilter() {
@@ -2892,6 +3012,7 @@ PROTOTYPES_JS = r'''
     }
     var none = $('#v-empty');
     if (none) none.hidden = any;
+    setTally();
   }
 
   // организаторы: восстанавливаем сохранённый выбор до первого расчёта.

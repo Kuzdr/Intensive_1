@@ -397,12 +397,61 @@ def parse_author_key(key):
     return 0, s
 
 
+def reg_parts(value):
+    """Ссылки из поля 10 — по одной на строку.
+
+    В поле 10 ссылки разделяются переводом строки, а в части прототипов —
+    тегом <br>: считаем оба варианта и отдаём список ссылок.
+    """
+    val = (value or '').replace('\\n', '\n')
+    val = re.sub(r'<br\s*/?>', '\n', val, flags=re.I)
+    return [x.strip() for x in val.split('\n') if x.strip()]
+
+
+def set_reg(pid, key, value):
+    """Меняет ОДНУ ссылку в поле 10 «URL регистрации/покупки билета».
+
+    key — номер ссылки (с 0). Пустая строка удаляет ссылку, key == число
+    ссылок добавляет новую в конец. Подписи (reg_labels) — только для
+    показа на странице прототипа, в значение поля они не попадают, поэтому
+    при удалении ссылки подпись убирается, чтобы не съехать.
+    """
+    p = load(pid)
+    hit = [f for f in p.get('fields') or [] if f.get('n') == '10']
+    if not hit:
+        raise KeyError('нет поля 10')
+    parts = reg_parts(hit[0].get('value'))
+    labels = list(p.get('reg_labels') or [])
+    i = int(key)
+    value = (value or '').strip()
+    if i == len(parts):
+        if not value:
+            raise KeyError('нечего добавлять')
+        parts.append(value)
+    elif not (0 <= i < len(parts)):
+        raise KeyError('нет ссылки %s' % key)
+    elif not value:
+        parts.pop(i)
+        if i < len(labels):
+            labels.pop(i)
+    else:
+        parts[i] = value
+    hit[0]['value'] = '\n'.join(parts)
+    if labels:
+        p['reg_labels'] = labels
+    else:
+        p.pop('reg_labels', None)
+    save(pid, p)
+    return p
+
+
 def set_value(pid, area, key, value):
     """Меняет одно значение в prototype.json.
 
-    area: 'fields' | 'desc' | 'extra' | 'author_fields' | 'author_block' | 'source'
+    area: 'fields' | 'desc' | 'extra' | 'author_fields' | 'author_block' |
+          'source' | 'reg'
     key:  номер формального поля / индекс абзаца доп. информации /
-          номер поля описания автора
+          номер поля описания автора / номер ссылки в поле 10
     """
     p = load(pid)
     if area == 'fields':
@@ -441,6 +490,8 @@ def set_value(pid, area, key, value):
                     f['value'] = '<br>'.join(lst)
                     break
         p['sources'] = lst
+    elif area == 'reg':
+        return set_reg(pid, key, value)
     elif area in ('author_fields', 'author_block'):
         aus = authors_list(p)
         i, sub = parse_author_key(key)
