@@ -22,7 +22,10 @@
     "https://vsmysle.spb.ru/community/afisha/lektsiya-aleksandra-butyagina-7-chudes-sveta-khram-artemidy-v-efese/",
     "https://soobshchestvo-vsmysle.timepad.ru/event/4192474/"
   ],
-  "reg_labels": ["билет на лекцию", "билет на онлайн-трансляцию"],
+  "reg_labels": [
+    "билет на лекцию",
+    "билет на онлайн-трансляцию"
+  ],
   "fields": [
     {
       "n": "0",
@@ -142,10 +145,10 @@
   ],
   "desc_html": "<p class=\"small\"><b>Четверг, 19&nbsp;ноября 2026&nbsp;года, 19:30, Санкт-Петербург, сообщество «ВСмысле» и&nbsp;ОНЛАЙН.</b></p>\n\n<p>Лекция <b><i>Александра Бутягина</i> «7&nbsp;чудес света. Храм Артемиды в&nbsp;Эфесе»</b>.</p>\n\n<KLBLOCK eltclub_authors_about/>\n\n<blockquote class=\"small\">\n\n<p>Греческий город Эфес на побережье Малой Азии был одним из крупнейших греческих городов, а&nbsp;впоследствии одной из жемчужин Римской империи.</p>\n\n<p>Знаменитый храм богини охоты Артемиды окружала слава выдающегося архитектурного сооружения, а&nbsp;также многочисленные легенды. Мы познакомимся с&nbsp;ними и&nbsp;с&nbsp;результатами археологических раскопок, которые смогли открыть много интересного в&nbsp;истории этого замечательного культового сооружения. Конечно, не обойдется и&nbsp;без знаменитого Герострата, которого должны были забыть, но не забыли.</p>\n\n<p>Мы познакомимся с&nbsp;основами строительства греческих храмов и&nbsp;попробуем выяснить, почему именно эфесский был самым знаменитым. Кроме того, не без нашего внимания останется драматическая история раскопок, как и&nbsp;сам город Эфес, развалины которого привлекают множество туристов каждый год.</p>\n\n<p>Лекцию прочитает <b><i>Александр Бутягин</i></b>&nbsp;— <i>историк и&nbsp;археолог, специалист по античному наследию Северного Причерноморья</i>.</p>\n\n</blockquote>\n",
   "extra_html": [
-    "<p>Стоимость билета: <b>1500&nbsp;руб.</b> при покупке заранее, для участников <a href=\"https://t.me/vsmysle_subscription_bot\" target=\"_blank\">Клуба ВСмысле</a>&nbsp;— <b>1125&nbsp;руб.</b> (регистрация через телеграм-бот). <a href=\"https://widget.afisha.yandex.ru/w/sessions/ticketsteam-9711@398445\" target=\"_blank\">Купить билет</a>.<br>\nСтоимость участия при оплате на месте в&nbsp;полтора раза выше, чем при онлайн-оплате.</p>",
-    "<p>Будет организована онлайн-трансляция. Стоимость: <b>600&nbsp;руб.</b> <a href=\"https://soobshchestvo-vsmysle.timepad.ru/event/4192474/#register\" target=\"_blank\">Купить билет</a>.<br>\nТрансляция пройдет по закрытой ссылке в&nbsp;группе Сообщества <a href=\"https://vk.com/spbvsmysle\" target=\"_blank\">ВКонтакте</a>. Ссылка на чат с&nbsp;трансляциями придет в&nbsp;письме за час до начала события.</p>",
-    "<p><b>Адрес:</b> Санкт-Петербург, ул.&nbsp;Гороховая, д.&nbsp;47, Пространство SENO, двор G47, 3&nbsp;этаж, сообщество «ВСмысле».<br>\n<b>Проезд:</b> метро «Сенная площадь», «Спасская». <a href=\"https://yandex.ru/maps/-/CDehvSn-\" target=\"_blank\">Карта</a>.</p>",
-    "<p class=\"small\">Информация о&nbsp;лекции <a href=\"https://vsmysle.spb.ru/community/afisha/lektsiya-aleksandra-butyagina-7-chudes-sveta-khram-artemidy-v-efese/\" target=\"_blank\">на сайте сообщества «ВСмысле»</a>.<br><br>\n\nИнформация об онлайн-трансляции лекции <a href=\"https://soobshchestvo-vsmysle.timepad.ru/event/4192474/\" target=\"_blank\">на TimePad</a>.</p>",
+    "<p>Стоимость билета: <b>1500&nbsp;руб.</b> при покупке заранее, для участников <a href=\"https://t.me/vsmysle_subscription_bot\" target=\"_blank\">Клуба ВСмысле</a>&nbsp;— <b>1125&nbsp;руб.</b> (регистрация через телеграм-бот). <a href=\"https://widget.afisha.yandex.ru/w/sessions/ticketsteam-9711@398445\" target=\"_blank\">Купить билет</a>.<br>\n\nСтоимость участия при оплате на месте в&nbsp;полтора раза выше, чем при онлайн-оплате.</p>",
+    "<p>Будет организована онлайн-трансляция. Стоимость: <b>600&nbsp;руб.</b> <a href=\"https://soobshchestvo-vsmysle.timepad.ru/event/4192474/#register\" target=\"_blank\">Купить билет</a>.<br>\n\nТрансляция пройдет по закрытой ссылке в&nbsp;группе Сообщества <a href=\"https://vk.com/spbvsmysle\" target=\"_blank\">ВКонтакте</a>. Ссылка на чат с&nbsp;трансляциями придет в&nbsp;письме за час до начала события.</p>",
+    "<p><b>Адрес:</b> Санкт-Петербург, ул.&nbsp;Гороховая, д.&nbsp;47, Пространство SENO, двор G47, 3&nbsp;этаж, сообщество «ВСмысле».<br>\n\n<b>Проезд:</b> метро «Сенная площадь», «Спасская». <a href=\"https://yandex.ru/maps/-/CDehvSn-\" target=\"_blank\">Карта</a>.</p>",
+    "<p class=\"small\">Информация о&nbsp;лекции <a href=\"https://vsmysle.spb.ru/community/afisha/lektsiya-aleksandra-butyagina-7-chudes-sveta-khram-artemidy-v-efese/\" target=\"_blank\">на сайте сообщества «ВСмысле»</a>.<br>\n\n<br>\n\nИнформация об онлайн-трансляции лекции <a href=\"https://soobshchestvo-vsmysle.timepad.ru/event/4192474/\" target=\"_blank\">на TimePad</a>.</p>",
     "<p class=\"small\">Сообщество «ВСмысле» <a href=\"https://vk.com/spbvsmysle\" target=\"_blank\">ВКонтакте</a>, <a href=\"http://t.me/vsmysle_spb\" target=\"_blank\">в&nbsp;Телеграме</a>.</p>"
   ],
   "authors": [

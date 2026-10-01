@@ -3,6 +3,7 @@
 import os, re, json, datetime, html as H, shutil
 from urllib.parse import urlparse
 import protolib as PL
+import orderlib as ORD
 
 if hasattr(__import__('sys').stdout, 'reconfigure'):
     import sys
@@ -23,7 +24,8 @@ def progress(pct, msg):
     print('PROGRESS:%d:%s' % (pct, msg), flush=True)
 
 evs = json.load(open(DATA, encoding='utf-8'))
-evs.sort(key=lambda e: (e['date_iso'], e['time_start'] or '99:99'))
+# порядок как на «Элементах»: дата, время, затем поле ord (см. orderlib)
+evs.sort(key=ORD.ord_key)
 for e in evs:
     e['kind'] = 'el'
     e['hidden'] = False
@@ -276,7 +278,7 @@ def load_prototypes():
             PROTO_SUMMARY['shown'] += 1
             print('  ПРОТОТИП %s — в списке на сайте' % pid)
         items.append(it)
-    items.sort(key=lambda e: (e['date_iso'], e.get('time_start') or '99:99'))
+    items.sort(key=ORD.proto_key)
     return notes
 
 def proto_lectorium(p):
@@ -1913,6 +1915,16 @@ def build_toolbar_js():
       lines.push('');
       lines = lines.concat(more);
     }
+    var moved = r.order_changed || [];
+    if (moved.length) {
+      lines.push('');
+      lines.push('ПОРЯДОК НА «ЭЛЕМЕНТАХ»: ' + moved.length
+                 + ' событий поменяли место в один день и час (порядок на сайте исправлен)');
+      moved.forEach(function (c) {
+        lines.push('· ' + (c.date || '') + ', ' + (c.time || '') + ' — было '
+                   + c.was + ', стало ' + c.now + ': ' + (c.title || ''));
+      });
+    }
     return lines.join('\n');
   }
   function protoText(p) {
@@ -1968,7 +1980,9 @@ def build_toolbar_js():
           var extra = s.commit ? '\nКоммит: ' + s.commit : '';
           var pr = protoText(s.proto_report);
           var busy = (s.report && (s.report.added.length || s.report.changed.length
-                                   || s.report.removed.length)) || s.commit || !!pr;
+                                   || s.report.removed.length
+                                   || (s.report.order_changed || []).length))
+                     || s.commit || !!pr;
           var head = s.counts_line ? s.counts_line + '\n' : '';
           // Сервер запущен ДО последних правок кода — часть возможностей в нём
           // просто отсутствует. Это и была причина «ничего не изменилось».
@@ -2172,9 +2186,10 @@ POST_JS = r'''/* Кнопка «Пост в Телеграм»: выбор да�
     var inRange = POST_EVENTS.filter(function (e) {
       return e.date >= from && e.date <= to;
     }).sort(function (a, b) {
-      return a.date === b.date
-        ? ((a.time_start || '99:99') < (b.time_start || '99:99') ? -1 : 1)
-        : (a.date < b.date ? -1 : 1);
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+      var ta = a.time_start || '99:99', tb = b.time_start || '99:99';
+      if (ta !== tb) return ta < tb ? -1 : 1;
+      return (a.ord || 1000000) - (b.ord || 1000000);
     });
     var days = [];
     inRange.forEach(function (e) {
@@ -3234,6 +3249,7 @@ def build_post_js():
         post.append({
             'date': e['date_iso'],
             'time_start': e.get('time_start') or '',
+            'ord': e.get('ord') or 0,
             'city': city,
             'place': place,
             'online': online,

@@ -666,12 +666,51 @@ def fix_document_text(text: str, fragments=None) -> tuple:
     return apply_fixes(text, fragments)
 
 
+# Канон «Доп.информации»: после <br> — РОВНО одна пустая строка, то есть
+# <br>\n\n и сразу за ней текст (либо конец строки). Всё остальное — лишние
+# пустые строки, пробелы в конце строки или текст сразу после <br>.
+# Правка съедает все пробелы и переводы строк после <br> и ставит канон,
+# поэтому повторный запуск ничего не меняет.
+BR_BAD = re.compile(r"<br>(?!\n\n(?:[^\n]|\Z))[ \t]*(?:\r?\n[ \t]*)*")
+
+
+def fix_br_blank(text: str) -> tuple:
+    """После каждого <br> в «Доп.информации» — пустая строка (правило скилла).
+
+    <br> — это перенос строки ВНУТРИ абзаца, а не разделитель блоков, поэтому
+    в исходнике после него читается продолжение того же абзаца. Пустая строка
+    после <br> ничего не меняет в HTML, но делает исходник читаемым.
+
+    Возвращает (текст, сколько_исправлено).
+    """
+    return BR_BAD.subn("<br>\n\n", text)
+
+
+def check_br_blank(proto: dict, sel=None) -> list:
+    """Ошибки «после <br> нет пустой строки» по блокам extra_html."""
+    out = []
+    blocks = proto.get("extra_html")
+    if not isinstance(blocks, list):
+        return out
+    if sel is not None and not sel_block(sel, "extra"):
+        return out
+    for i, b in enumerate(blocks, 1):
+        if not isinstance(b, str):
+            continue
+        n = len(BR_BAD.findall(b))
+        if n:
+            out.append(("ОШИБКА",
+                        "после <br> нет ровно одной пустой строки (блок %d, %d шт.) — "
+                        "добавьте пустую строку или запустите с --fix" % (i, n)))
+    return out
+
+
 def fix_proto_values(proto: dict, sel=None) -> tuple:
     """Применяет автоправки к строковым значениям prototype.json.
 
     Возвращает (новый_дикt, сколько_полей_изменено). Правки применяются к
     каждому значению ОТДЕЛЬНО (как и проверка по полям), чтобы не задевать
-    границы между полями в склеенном тексте.
+    границы между полями в склеенном текке.
 
     sel — выборка --only: None — правим всё, иначе только выбранные области
     и номера полей (частичная правка).
@@ -709,7 +748,14 @@ def fix_proto_values(proto: dict, sel=None) -> tuple:
             p2[key] = fix_str(p2[key])
     extra = p2.get("extra_html")
     if isinstance(extra, list) and want_block("extra", "extra_html"):
-        p2["extra_html"] = [fix_str(x) for x in extra]
+        fixed = []
+        for x in extra:
+            if isinstance(x, str):
+                x, n = fix_br_blank(fix_str(x))
+                if n:
+                    changed += 1
+            fixed.append(x)
+        p2["extra_html"] = fixed
     for a in p2.get("authors") or []:
         want = sel is None or sel_block(sel, "authors")
         if want and "name" in a:
@@ -1072,6 +1118,10 @@ def main() -> None:
             (hard if level == "ОШИБКА" else warns).append(
                 ("1e", msg, "", msg, display)
             )
+    if json_mode:
+        # «Доп.информация»: после каждого <br> — пустая строка (правило скилла)
+        for level, msg in check_br_blank(proto, sel):
+            hard.append(("1f", msg, "", msg, display))
 
     # Слова для проверки «ё» из tools/yo_words.txt (пополняемый список)
     try:

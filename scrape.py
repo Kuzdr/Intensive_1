@@ -7,6 +7,8 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 import requests
 
+import orderlib as ORD
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(ROOT, 'data')
 IMG_DIR = os.path.join(ROOT, 'site', 'assets', 'img')
@@ -44,6 +46,7 @@ def parse_list_page():
         if not urld:
             continue
         href, eid, slug = urld.group(1), urld.group(2), urld.group(3)
+
         city = re.search(r'''<div class="sublink">([^<]+)</div>''', p)
         place = re.search(r"<div class='sublink'>([^<]+)</div>", p)
         pret = re.search(r"<div class='pretitle'>(.*?)</div>", p, re.S)
@@ -66,6 +69,7 @@ def parse_list_page():
             dot = d + '.' + mo
         events.append({
             'id': eid,
+            'pos': len(events),
             'slug': slug,
             'href': href,
             'url': 'https://elementy.ru' + href,
@@ -391,6 +395,9 @@ def reload_ids(ids):
         progress(85, 'Обновлено: %s' % (f.get('title') or '')[:40])
 
     new_events = [by_id[e['id']] for e in old if e['id'] in by_id]
+    # список афиши здесь не перечитываем, поэтому ord остаётся прежним —
+    # перечитываем только ради порядка сортировки в файле
+    new_events.sort(key=ORD.ord_key)
     with open(os.path.join(DATA_DIR, 'events.json'), 'w', encoding='utf-8') as f:
         json.dump(new_events, f, ensure_ascii=False, indent=1)
     report = {'date': today, 'added': [], 'changed': changed, 'removed': [],
@@ -417,7 +424,12 @@ def main():
 
     today = datetime.date.today().isoformat()
     fresh = events
+    # порядок на «Элементах»: ord по позиции в афише, внутри каждой пары
+    # дата+время. Считаем ДО слияния, чтобы старые записи получили свежий
+    # порядок, даже если описание события не менялось.
+    ORD.assign_order(fresh)
     fresh_by_id = {e['id']: e for e in fresh}
+    fresh_ord = {e['id']: e['ord'] for e in fresh}
     old_by_id = {e['id']: e for e in load_old_events()}
 
     new_events, added, changed, removed = [], [], [], []
@@ -449,7 +461,11 @@ def main():
             added.append({'id': f['id'], 'title': f.get('title')})
             new_events.append(f)
 
-    new_events.sort(key=lambda e: (e['date_iso'], e['time_start'] or '99:99'))
+    new_events.sort(key=ORD.ord_key)
+    # «Элементы» могли переставить события внутри одной даты-времени — сообщаем
+    order_changed = ORD.diff_order(old_by_id, fresh_by_id, fresh_ord)
+    for ev in new_events:
+        ev.pop('pos', None)  # позиция в афише — только для расчёта ord
     with open(os.path.join(DATA_DIR, 'events.json'), 'w', encoding='utf-8') as f:
         json.dump(new_events, f, ensure_ascii=False, indent=1)
 
@@ -458,12 +474,25 @@ def main():
         'added': added,
         'changed': changed,
         'removed': removed,
+        'order_changed': order_changed,
         'total': len(new_events),
     }
     write_report(report)
 
     print('REPORT: добавлено %d, изменено %d, удалено %d, всего событий %d'
           % (len(added), len(changed), len(removed), len(new_events)))
+    if order_changed:
+        print('REPORT: «Элементы» переставили %d событий внутри одной даты-времени:'
+              % len(order_changed))
+        for c in order_changed:
+            print('  %s %s: %s было %d, стало %d — %s'
+                  % (c['date'], c['time'], c['id'], c['was'], c['now'],
+                     (c.get('title') or '')[:50]))
+    problems = ORD.check_order(new_events)
+    if problems:
+        print('REPORT: ОШИБКА ПОРЯДКА (нужна правка):')
+        for p in problems:
+            print('  ' + p)
     progress(100, 'Данные обновлены.')
 
 if __name__ == '__main__':
