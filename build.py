@@ -1870,6 +1870,8 @@ def build_toolbar_js():
       st.style.color = '#2e5d2e';
       st.hidden = false;
     }
+    // Чтобы кнопка (i) умела показать это ещё раз уже после перезагрузки.
+    lastInfo = {t: 'ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ (' + d.t + ')\n\n' + d.x, e: false};
     wireClose(box);
   }
   // Предупреждение сразу при загрузке страницы: сервер работает на коде,
@@ -2016,39 +2018,30 @@ def build_toolbar_js():
   var btnLastInfo = document.getElementById('btn-lastinfo');
   if (btnLastInfo) {
     btnLastInfo.addEventListener('click', function () {
-      if (lastInfo) {
-        var box = panel || document.getElementById('update-panel-top');
-        if (box) {
-          panel = box;
-          progress = box.querySelector('.update-progress');
-          bar = box.querySelector('.bar-fill');
-          msg = box.querySelector('.bar-msg');
-          counts = box.querySelector('.bar-counts');
-          status = box.querySelector('.update-status');
-          actions = [].slice.call(box.querySelectorAll('.update-actions'));
-          wireClose(box, hidePanel);
-        }
-        if (!panel) {
-          panel = document.getElementById('update-panel-top');
-        }
-        if (panel) {
-          panel.hidden = false;
-        }
-        if (status) {
-          status.textContent = lastInfo.e ? 'Ошибка' : 'Готово';
-          status.className = 'status ' + (lastInfo.e ? 'err' : 'ok');
-        }
-        if (msg) {
-          msg.innerHTML = (lastInfo.t || '').replace(/\n/g, '<br>');
-        }
-        if (progress) progress.hidden = true;
-        setActions(false);
-        if (panel && panel.scrollIntoView) {
-          panel.scrollIntoView({behavior: 'smooth', block: 'start'});
-        }
-      } else {
+      if (!lastInfo) {
         alert('Информация о последнем обновлении ещё не появлялась.');
+        return;
       }
+      var box = document.getElementById('update-panel-top') || document.querySelector('.update-panel');
+      if (!box) return;
+      panel = box;
+      progress = box.querySelector('.update-progress');
+      bar = box.querySelector('.bar-fill');
+      msg = box.querySelector('.bar-msg');
+      counts = box.querySelector('.bar-counts');
+      status = box.querySelector('.update-status');
+      actions = [].slice.call(box.querySelectorAll('.update-actions'));
+      wireClose(box, hidePanel);
+      box.hidden = false;
+      if (progress) progress.hidden = true;
+      if (counts) counts.hidden = true;
+      if (status) {
+        status.textContent = lastInfo.t || '';
+        status.style.color = lastInfo.e ? '#8c2f2f' : '#2e5d2e';
+        status.hidden = false;
+      }
+      setActions(false);
+      if (box.scrollIntoView) box.scrollIntoView({behavior: 'smooth', block: 'start'});
     });
   }
   btns.forEach(function (btn) {
