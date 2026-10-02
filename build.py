@@ -2014,7 +2014,6 @@ def build_toolbar_js():
     }).catch(function () {});
   }
 
-  
   var btnLastInfo = document.getElementById('btn-lastinfo');
   if (btnLastInfo) {
     btnLastInfo.addEventListener('click', function () {
@@ -2041,7 +2040,6 @@ def build_toolbar_js():
         status.hidden = false;
       }
       setActions(false);
-      if (box.scrollIntoView) box.scrollIntoView({behavior: 'smooth', block: 'start'});
     });
   }
   btns.forEach(function (btn) {
