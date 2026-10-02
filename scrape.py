@@ -472,7 +472,17 @@ def main():
             added.append({'id': f['id'], 'title': f.get('title')})
             new_events.append(f)
 
+    # Свежий порядок «Элементов» применяем ко ВСЕМ событиям, включая те,
+    # чьи описания не изменились: иначе у них остался бы старый ord и после
+    # перестановки на «Элементах» появились бы дубли (одно место — дважды).
+    for ev in new_events:
+        oid = ev.get('id')
+        if oid in fresh_ord:
+            ev['ord'] = fresh_ord[oid]
+
     new_events.sort(key=ORD.ord_key)
+    # «Элементы» могли переставить события внутри одной даты-времени — сообщаем
+    order_changed = ORD.diff_order(old_by_id, fresh_by_id, fresh_ord)
     # Самый большой номер события на «Элементах» в последнем обновлении
     max_el_id = 0
     for e in new_events:
@@ -484,6 +494,20 @@ def main():
                     max_el_id = vid
         except Exception:
             pass
+    for ev in new_events:
+        ev.pop('pos', None)  # позиция в афише — только для расчёта ord
+    with open(os.path.join(DATA_DIR, 'events.json'), 'w', encoding='utf-8') as f:
+        json.dump(new_events, f, ensure_ascii=False, indent=1)
+
+    report = {
+        'date': today,
+        'added': added,
+        'changed': changed,
+        'removed': removed,
+        'order_changed': order_changed,
+        'max_el_id': max_el_id,
+        'total': len(new_events),
+    }
     write_report(report)
 
     print('REPORT: добавлено %d, изменено %d, удалено %d, всего событий %d'

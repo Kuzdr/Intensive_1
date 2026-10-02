@@ -1779,9 +1779,10 @@ def build_toolbar_js():
     btnLast = document.getElementById('btn-lastinfo');
   }
 
-  /* Кнопка (i) — информация о последнем обновлении */
-  
-  
+  /* Кнопка «Закрыть» в панели — сверху и снизу; прячем обе разом. */
+  function setActions(hidden) {
+    actions.forEach(function (a) { a.hidden = hidden; });
+  }
 
   modal.hidden = true; // страховка: окно всегда закрыто при загрузке
 
@@ -1908,13 +1909,12 @@ def build_toolbar_js():
     if (!r) return 'Данные обновлены, отчёт не сохранился.';
     var lines = [];
     lines.push('СОБЫТИЯ «ЭЛЕМЕНТЫ»');
-      lines.push('Всего в календаре: ' + (r.total || 0));
+    lines.push('Всего в календаре: ' + (r.total || 0));
     if (r.max_el_id != null && r.max_el_id !== undefined) {
       lines.push('Макс. ID на «Элементах» (последнее обновление): ' + r.max_el_id);
     } else {
       lines.push('Макс. ID на «Элементах» (последнее обновление): —');
     }
-
     lines.push('Добавлено: ' + (r.added || []).length
                + '   Изменено: ' + (r.changed || []).length
                + '   Удалено: ' + (r.removed || []).length);

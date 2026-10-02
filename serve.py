@@ -357,6 +357,13 @@ def git_publish(report, proto_report=None, kind='pipeline'):
                 len(proto_report.get('hidden_dup') or []))
         if proto_report.get('archived'):
             msg += '; в архиве %d' % len(proto_report['archived'])
+    # Перестановки внутри одного дня и часа: «Элементы» иногда меняет порядок
+    # таких событий, и мы обязаны это повторить у себя.
+    moved = report.get('order_changed') or []
+    if moved:
+        msg += '; порядок «Элементов» изменён: %d (%s)' % (
+            len(moved), ', '.join(
+                '%s %s' % (x.get('date'), x.get('time')) for x in moved[:5]))
     # Самый большой номер события на «Элементах» в последнем обновлении
     m = report.get('max_el_id')
     if m:
