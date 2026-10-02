@@ -1780,44 +1780,8 @@ def build_toolbar_js():
   }
 
   /* Кнопка (i) — информация о последнем обновлении */
-  var btnLastInfo = document.getElementById('btn-lastinfo');
-  if (btnLastInfo) {
-    btnLastInfo.addEventListener('click', function () {
-      if (lastInfo) {
-        var box = panel || document.getElementById('update-panel-top');
-        if (box) {
-          panel = box;
-          progress = box.querySelector('.update-progress');
-          bar = box.querySelector('.bar-fill');
-          msg = box.querySelector('.bar-msg');
-          counts = box.querySelector('.bar-counts');
-          status = box.querySelector('.update-status');
-          actions = [].slice.call(box.querySelectorAll('.update-actions'));
-          wireClose(box, hidePanel);
-        }
-        if (!panel) {
-          panel = document.getElementById('update-panel-top');
-        }
-        if (panel) {
-          panel.hidden = false;
-        }
-        if (status) {
-          status.textContent = lastInfo.e ? 'Ошибка' : 'Готово';
-          status.className = 'status ' + (lastInfo.e ? 'err' : 'ok');
-        }
-        if (msg) {
-          msg.innerHTML = (lastInfo.t || '').replace(/\n/g, '<br>');
-        }
-        if (progress) progress.hidden = true;
-        setActions(false);
-        if (panel && panel.scrollIntoView) {
-          panel.scrollIntoView({behavior: 'smooth', block: 'start'});
-        }
-      } else {
-        alert('Информация о последнем обновлении ещё не появлялась.');
-      }
-    });
-  }
+  
+  
 
   modal.hidden = true; // страховка: окно всегда закрыто при загрузке
 
@@ -2048,6 +2012,45 @@ def build_toolbar_js():
     }).catch(function () {});
   }
 
+  
+  var btnLastInfo = document.getElementById('btn-lastinfo');
+  if (btnLastInfo) {
+    btnLastInfo.addEventListener('click', function () {
+      if (lastInfo) {
+        var box = panel || document.getElementById('update-panel-top');
+        if (box) {
+          panel = box;
+          progress = box.querySelector('.update-progress');
+          bar = box.querySelector('.bar-fill');
+          msg = box.querySelector('.bar-msg');
+          counts = box.querySelector('.bar-counts');
+          status = box.querySelector('.update-status');
+          actions = [].slice.call(box.querySelectorAll('.update-actions'));
+          wireClose(box, hidePanel);
+        }
+        if (!panel) {
+          panel = document.getElementById('update-panel-top');
+        }
+        if (panel) {
+          panel.hidden = false;
+        }
+        if (status) {
+          status.textContent = lastInfo.e ? 'Ошибка' : 'Готово';
+          status.className = 'status ' + (lastInfo.e ? 'err' : 'ok');
+        }
+        if (msg) {
+          msg.innerHTML = (lastInfo.t || '').replace(/\n/g, '<br>');
+        }
+        if (progress) progress.hidden = true;
+        setActions(false);
+        if (panel && panel.scrollIntoView) {
+          panel.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
+      } else {
+        alert('Информация о последнем обновлении ещё не появлялась.');
+      }
+    });
+  }
   btns.forEach(function (btn) {
     btn.addEventListener('click', function () {
       usePanel(btn);
