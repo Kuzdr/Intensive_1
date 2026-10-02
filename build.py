@@ -1969,7 +1969,7 @@ def build_toolbar_js():
   function startUpdate() {
     hideModal();
     try { localStorage.removeItem(LAST); } catch (e) {}
-    showProgress();
+    lastInfo = null;    showProgress();
     fetch('/api/update', { method: 'POST' }).then(function (res) {
       if (res.status === 409) { showResult('Обновление уже идёт.', true); return; }
       timer = setInterval(poll, 700);
