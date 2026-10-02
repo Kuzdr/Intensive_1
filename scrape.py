@@ -398,10 +398,21 @@ def reload_ids(ids):
     # список афиши здесь не перечитываем, поэтому ord остаётся прежним —
     # перечитываем только ради порядка сортировки в файле
     new_events.sort(key=ORD.ord_key)
+    # Самый большой номер события на «Элементах» в последнем обновлении
+    max_el_id = 0
+    for e in new_events:
+        eid = e.get('id')
+        try:
+            if eid is not None and str(eid).isdigit():
+                vid = int(eid)
+                if vid > max_el_id:
+                    max_el_id = vid
+        except Exception:
+            pass
     with open(os.path.join(DATA_DIR, 'events.json'), 'w', encoding='utf-8') as f:
         json.dump(new_events, f, ensure_ascii=False, indent=1)
     report = {'date': today, 'added': [], 'changed': changed, 'removed': [],
-              'missing': missing, 'total': len(new_events)}
+              'missing': missing, 'max_el_id': max_el_id, 'total': len(new_events)}
     write_report(report)
     print('REPORT: перезагружено %d, без изменений %d, всего событий %d'
           % (len(changed), n - len(changed) - len(missing), len(new_events)))
@@ -462,21 +473,17 @@ def main():
             new_events.append(f)
 
     new_events.sort(key=ORD.ord_key)
-    # «Элементы» могли переставить события внутри одной даты-времени — сообщаем
-    order_changed = ORD.diff_order(old_by_id, fresh_by_id, fresh_ord)
-    for ev in new_events:
-        ev.pop('pos', None)  # позиция в афише — только для расчёта ord
-    with open(os.path.join(DATA_DIR, 'events.json'), 'w', encoding='utf-8') as f:
-        json.dump(new_events, f, ensure_ascii=False, indent=1)
-
-    report = {
-        'date': today,
-        'added': added,
-        'changed': changed,
-        'removed': removed,
-        'order_changed': order_changed,
-        'total': len(new_events),
-    }
+    # Самый большой номер события на «Элементах» в последнем обновлении
+    max_el_id = 0
+    for e in new_events:
+        eid = e.get('id')
+        try:
+            if eid is not None and str(eid).isdigit():
+                vid = int(eid)
+                if vid > max_el_id:
+                    max_el_id = vid
+        except Exception:
+            pass
     write_report(report)
 
     print('REPORT: добавлено %d, изменено %d, удалено %d, всего событий %d'

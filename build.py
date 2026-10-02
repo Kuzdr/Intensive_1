@@ -545,6 +545,7 @@ def page(title, body, active, prefix='', extra_js=''):
 
 TOOLBAR = '''<div class="toolbar">
   <button type="button" class="tbtn js-update" data-panel="update-panel-top" title="Пересобрать данные с сайта «Элементов» и опубликовать изменения">Обновить данные</button>
+  <button type="button" class="tbtn" id="btn-lastinfo" title="Информация о последнем обновлении" style="width: 28px; height: 28px; border-radius: 50%; padding: 0; line-height: 1;">i</button>
   <button type="button" class="tbtn js-post" title="Составить пост в Телеграм по событиям календаря">Пост в Телеграм</button>
   <div class="toolbar-view" id="view-switch">
     <label><input type="radio" name="vmode" value="all" checked> всё</label>
@@ -1756,7 +1757,8 @@ def build_toolbar_js():
   var timer = null;
   // активная панель — та, что под нажатой кнопкой (кнопок может быть две)
   var cur = null;
-  var panel = null, progress = null, bar = null, msg = null, status = null, actions = null, counts = null;
+  var panel = null, progress = null, bar = null, msg = null, status = null,
+      actions = null, counts = null, lastInfo = null, btnLast = null;
   // Результат последнего обновления переживает перезагрузку страницы: иначе
   // статистику (сколько событий, сколько прототипов, что изменилось) не
   // успеваешь прочитать — страница перечитывается сразу после успеха.
@@ -1774,11 +1776,47 @@ def build_toolbar_js():
     status = box.querySelector('.update-status');
     actions = [].slice.call(box.querySelectorAll('.update-actions'));
     wireClose(box, hidePanel);
+    btnLast = document.getElementById('btn-lastinfo');
   }
 
-  /* Кнопка «Закрыть» в панели — сверху и снизу; прячем обе разом. */
-  function setActions(hidden) {
-    actions.forEach(function (a) { a.hidden = hidden; });
+  /* Кнопка (i) — информация о последнем обновлении */
+  var btnLastInfo = document.getElementById('btn-lastinfo');
+  if (btnLastInfo) {
+    btnLastInfo.addEventListener('click', function () {
+      if (lastInfo) {
+        var box = panel || document.getElementById('update-panel-top');
+        if (box) {
+          panel = box;
+          progress = box.querySelector('.update-progress');
+          bar = box.querySelector('.bar-fill');
+          msg = box.querySelector('.bar-msg');
+          counts = box.querySelector('.bar-counts');
+          status = box.querySelector('.update-status');
+          actions = [].slice.call(box.querySelectorAll('.update-actions'));
+          wireClose(box, hidePanel);
+        }
+        if (!panel) {
+          panel = document.getElementById('update-panel-top');
+        }
+        if (panel) {
+          panel.hidden = false;
+        }
+        if (status) {
+          status.textContent = lastInfo.e ? 'Ошибка' : 'Готово';
+          status.className = 'status ' + (lastInfo.e ? 'err' : 'ok');
+        }
+        if (msg) {
+          msg.innerHTML = (lastInfo.t || '').replace(/\n/g, '<br>');
+        }
+        if (progress) progress.hidden = true;
+        setActions(false);
+        if (panel && panel.scrollIntoView) {
+          panel.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
+      } else {
+        alert('Информация о последнем обновлении ещё не появлялась.');
+      }
+    });
   }
 
   modal.hidden = true; // страховка: окно всегда закрыто при загрузке
@@ -1809,6 +1847,7 @@ def build_toolbar_js():
     status.textContent = txt;
     status.style.color = isErr ? '#8c2f2f' : '#2e5d2e';
     status.hidden = false;
+    lastInfo = {t: txt || '', e: !!isErr};
     setActions(false);
     if (!isErr) {
       // Сохраняем статистику: страница сейчас перечитается целиком, а панель
@@ -1905,7 +1944,13 @@ def build_toolbar_js():
     if (!r) return 'Данные обновлены, отчёт не сохранился.';
     var lines = [];
     lines.push('СОБЫТИЯ «ЭЛЕМЕНТЫ»');
-    lines.push('Всего в календаре: ' + (r.total || 0));
+      lines.push('Всего в календаре: ' + (r.total || 0));
+    if (r.max_el_id != null && r.max_el_id !== undefined) {
+      lines.push('Макс. ID на «Элементах» (последнее обновление): ' + r.max_el_id);
+    } else {
+      lines.push('Макс. ID на «Элементах» (последнее обновление): —');
+    }
+
     lines.push('Добавлено: ' + (r.added || []).length
                + '   Изменено: ' + (r.changed || []).length
                + '   Удалено: ' + (r.removed || []).length);
