@@ -9,7 +9,7 @@
 
 Использование (PowerShell):
 
-    python -X utf8 tools\\check_prototype.py data\\prototypes\\<ID>\\prototype.json
+    python -X utf8 tools\\check_prototype.py --json data\\prototypes\\<ID>\\prototype.json
 
     python -X utf8 tools\\check_prototype.py prototype.txt
 
