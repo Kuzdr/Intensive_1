@@ -1,9 +1,10 @@
 {
-  "date": "2026-10-06 16:30:00",
+  "date": "2026-10-06 21:47:04",
   "protos": {
     "0+-261006-Budanov": "prototype.json:10820:524282cc5f76|_state.json:-",
     "0+-261006-Gerasimov": "prototype.json:12551:9f26e4e41520|_state.json:-",
     "0+-261007-Ozherelyeva": "prototype.json:8347:ec9ebc226b96|_state.json:-",
+    "0+-261009-Gopko": "prototype.json:12553:408becd4beb1|_state.json:-",
     "MM-261007-reshetun-msk-oserdce": "prototype.json:11913:cc2ae2b763c7|_state.json:-",
     "MM-261010-reshetun-spb-oserdce": "prototype.json:11569:fc2d8b96aef8|_state.json:-",
     "MM-261010-yoklmn-fest": "prototype.json:17116:1a4517096219|_state.json:-",
