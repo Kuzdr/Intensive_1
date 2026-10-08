@@ -238,6 +238,44 @@ def check_source_ids() -> list:
     return problems
 
 
+def check_yo_mertvec() -> list:
+    """«мертвец» — НИКОГДА не через «ё» (правило пользователя 07.10.2026).
+
+    Ударение на последний слог («мертвЕц», «мертвецА») — ё взяться
+    неоткуда. Проверяем обе стороны: слово с «ё» ловится как ошибка
+    (и автоправится --fix в «е»), слово без «ё» — не трогается.
+    """
+    problems = []
+    path = os.path.join(ROOT, "tools", "check_prototype.py")
+    if not os.path.isfile(path):
+        return problems
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_cp_mertvec", path)
+    cp = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(cp)
+    except Exception as e:                       # noqa: BLE001
+        return ["tools/check_prototype.py не импортируется: %s" % e]
+
+    cases = [
+        ("В клетке лежал мёртвец", True, "«мёртвец» с ё — ошибка"),
+        ("Мёртвец лежал в клетке", True, "«Мёртвец» с заглавной — ошибка"),
+        ("мёртвеца", True, "форма «мёртвеца» с ё — ошибка"),
+        ("мертвец в клетке", False, "«мертвец» без ё — верно, не трогаем"),
+        ("мертвеца", False, "«мертвеца» без ё — верно"),
+        ("мертвецА", False, "«мертвецА» без ё — верно"),
+    ]
+    for text, want_hit, comment in cases:
+        hit = bool(cp.p_invariant_yo(cp.analyze(text)))
+        if hit != want_hit:
+            problems.append("инвариант «мёртвец» для %r дал срабатывание=%s, "
+                            "ожидалось %s (%s)" % (text, hit, want_hit, comment))
+    fixed, _n = cp.apply_fixes("Мёртвец", None)
+    if "ё" in fixed or "Мертвец" not in fixed:
+        problems.append("--fix не убрал «ё» из «Мёртвец» (стало %r)" % fixed)
+    return problems
+
+
 def main() -> None:
     if not os.path.isdir(SKILLS_DIR):
         print("нет каталога .opencode/skills")
@@ -274,6 +312,13 @@ def main() -> None:
 
     mech = check_source_ids()
     print("%s механика: кнопка ID источника"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_yo_mertvec()
+    print("%s механика: «мертвец» никогда не через «ё»"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)
