@@ -1,7 +1,6 @@
 {
-  "date": "2026-10-08 05:20:33",
+  "date": "2026-10-10 07:09:33",
   "protos": {
-    "0+-261009-Gopko": "prototype.json:12553:408becd4beb1|_state.json:-",
     "MM-261010-reshetun-spb-oserdce": "prototype.json:11569:fc2d8b96aef8|_state.json:-",
     "MM-261010-yoklmn-fest": "prototype.json:17116:1a4517096219|_state.json:-",
     "MM-261011-alipov-spb-mozg": "prototype.json:8820:8df7bd696123|_state.json:-",
@@ -33,9 +32,9 @@
     "TP-4215931": "prototype.json:16138:691a72bfcc21|_state.json:-",
     "TP-4219628": "prototype.json:18140:7a5a371aa686|_state.json:-",
     "TP-4219640": "prototype.json:17357:07bf1f077053|_state.json:-",
-    "TP-4220408": "prototype.json:17542:2f08e413e6c9|_state.json:-",
     "TP-4224205": "prototype.json:13763:204fb45a9419|_state.json:-",
     "TP-4226816": "prototype.json:14882:d2653e376a90|_state.json:-",
+    "TP-4231062": "prototype.json:14538:f8a83a998c35|_state.json:-",
     "TP-4231686": "prototype.json:16249:97227f2a5703|_state.json:-",
     "TP-4231825": "prototype.json:10649:b820eaf50fe5|_state.json:-",
     "TP-4232538": "prototype.json:15608:c15503e85e30|_state.json:-",
