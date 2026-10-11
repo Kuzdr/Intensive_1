@@ -310,6 +310,8 @@ ORGANIZER_NAMES = {
     'cosmos-vdnh.timepad.ru': 'ВДНХ',
     'vsmysle.spb.ru': 'Сообщество «ВСмысле»',
     'bio-fact.timepad.ru': 'БИО-ФАКТ',
+    'pryamaya.ru': 'Прямая речь',
+    'www.pryamaya.ru': 'Прямая речь',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')
