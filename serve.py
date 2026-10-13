@@ -27,6 +27,11 @@ SITE = os.path.join(ROOT, 'site')
 PY = sys.executable
 PORT = int(os.environ.get('PORT', 8000))
 
+# Жёсткие пределы на шаги обновления (сек): защита от «зависания» навсегда,
+# когда сайт-источник не отвечает. См. run_step (правило 13.10.2026).
+SCRAPE_LIMIT = int(os.environ.get('SCRAPE_LIMIT', 300))
+BUILD_LIMIT = int(os.environ.get('BUILD_LIMIT', 240))
+
 # Когда загружен этот код. Если файл сервера меняли ПОСЛЕ запуска, работающий
 # сервер — старый, и предупреждение показывается и в консоли, и в панели кнопки.
 # Сравниваем СОДЕРЖИМОЕ (хэш), а не время изменения: если файл переписан без
@@ -104,11 +109,29 @@ def load_report():
             pass
     return None
 
-def run_step(name, cmd, p0, p1):
-    """Запускает дочерний процесс и читает его строки PROGRESS:pct:msg."""
+def run_step(name, cmd, p0, p1, limit=None):
+    """Запускает дочерний процесс и читает его строки PROGRESS:pct:msg.
+
+    `limit` — жёсткий предел в секундах: если сайт-источник завис (elementy.ru
+    принимает соединение, но не отвечает годами — `timeout` в requests считается
+    между порциями данных и потому не спасает), мы сами останавливаем шаг.
+    Иначе обновление висело бы вечно, а кнопка «Обновить данные» была бы
+    заблокирована навсегда (правило 13.10.2026).
+    """
     state['stage'] = name
     pr = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                           encoding='utf-8', errors='replace', bufsize=1, text=True)
+    timed_out = {'v': False}
+    if limit:
+        def _kill():
+            _time.sleep(limit)
+            if pr.poll() is None:
+                timed_out['v'] = True
+                try:
+                    pr.kill()
+                except Exception:
+                    pass
+        threading.Thread(target=_kill, daemon=True).start()
     tail = []
     for line in iter(pr.stdout.readline, ''):
         line = line.rstrip('\n')
@@ -122,6 +145,12 @@ def run_step(name, cmd, p0, p1):
     err = (pr.stderr or '')
     stderr_txt = err.read() if hasattr(err, 'read') else str(err)
     rc = pr.wait()
+    if timed_out['v']:
+        state['error'] = ('Превышено время ожидания шага «%s» (%d с) — обычно так '
+                          'бывает, когда сайт-источник (elementy.ru) недоступен или '
+                          'отвечает слишком медленно. Обновление остановлено, можно '
+                          'попробовать снова позже.' % (name, limit))
+        return 1
     if rc != 0:
         state['error'] = ('\n'.join(tail[-8:]) + '\n' + stderr_txt[-600:]).strip()
     return rc
@@ -433,7 +462,8 @@ def run_pipeline():
 
         # --- ШАГ 2. СОБЫТИЯ «ЭЛЕМЕНТЫ» ------------------------------------
         state['stage'] = 'scrape'
-        if run_step('scrape', [PY, os.path.join('scrape.py')], 16, 70) != 0:
+        if run_step('scrape', [PY, os.path.join('scrape.py')], 16, 70,
+                    limit=SCRAPE_LIMIT) != 0:
             state['stage'] = 'error'
             state['message'] = 'Ошибка при сборе данных'
             return
@@ -457,7 +487,8 @@ def run_pipeline():
                           'message': 'Изменений нет — ни события, ни прототипы '
                                      'не менялись с прошлого обновления.'})
             return
-        if run_step('build', [PY, os.path.join('build.py')], 70, 86) != 0:
+        if run_step('build', [PY, os.path.join('build.py')], 70, 86,
+                    limit=BUILD_LIMIT) != 0:
             state['stage'] = 'error'
             state['message'] = 'Ошибка при сборке сайта'
             return
@@ -483,8 +514,11 @@ def run_pipeline():
 
 def rebuild_site():
     """Пересборка сайта после действия с прототипом."""
-    p = subprocess.run([PY, os.path.join('build.py')], cwd=ROOT, capture_output=True,
-                       text=True, encoding='utf-8', errors='replace')
+    try:
+        p = subprocess.run([PY, os.path.join('build.py')], cwd=ROOT, capture_output=True,
+                           text=True, encoding='utf-8', errors='replace', timeout=BUILD_LIMIT)
+    except subprocess.TimeoutExpired:
+        return False, ('Сборка сайта не завершилась за %d с и была остановлена.' % BUILD_LIMIT)
     if p.returncode != 0:
         return False, ((p.stdout or '') + (p.stderr or ''))[-900:]
     watch['last_rebuild'] = _time.time()
@@ -574,9 +608,13 @@ def reload_event(eid):
     ev = next((x for x in evs if str(x.get('id')) == str(eid)), None)
     if ev is None:
         return False, 'событие %s не найдено в data/events.json' % eid, False
-    p = subprocess.run([PY, os.path.join(ROOT, 'scrape.py'), '--ids', str(eid)],
-                       cwd=ROOT, capture_output=True, text=True,
-                       encoding='utf-8', errors='replace')
+    try:
+        p = subprocess.run([PY, os.path.join(ROOT, 'scrape.py'), '--ids', str(eid)],
+                           cwd=ROOT, capture_output=True, text=True,
+                           encoding='utf-8', errors='replace', timeout=SCRAPE_LIMIT)
+    except subprocess.TimeoutExpired:
+        return False, ('«Элементы» не ответили за %d с — скачивание остановлено. '
+                       'Попробуйте позже.' % SCRAPE_LIMIT), False
     if p.returncode != 0:
         return False, 'не удалось скачать событие: %s' % ((p.stderr or '')[-300:]), False
     try:

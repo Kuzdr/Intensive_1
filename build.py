@@ -819,7 +819,7 @@ def render_memo(e, prefix):
     m = m.replace('assets/img/', prefix + 'assets/img/')
     return clean_links(m)
 
-EVENT_JS = '<script src="../js/reload.js"></script>'
+EVENT_JS = '<script src="../js/reload.js"></script>\n<script src="../js/toolbar.js"></script>'
 
 # Кнопка «Перезагрузить с «Элементов»» на странице события. Отдельный файл:
 # страница события почти не имеет скриптов, а prototypes.js на ней не нужен.
@@ -1305,7 +1305,12 @@ def build_calendar():
     js = 'window.EVENTS = ' + json.dumps(js_events, ensure_ascii=False) + ';'
     open(os.path.join(JS_DIR, 'events.js'), 'w', encoding='utf-8').write(js)
 
-    body = '''<div class="calwrap">
+    body = '''<div id="update-progress-global" class="update-progress" hidden>
+  <div class="bar-counts"></div>
+  <div class="bar"><div class="bar-fill" id="upg-bar"></div></div>
+  <div class="bar-msg" id="upg-msg"></div>
+</div>
+<div class="calwrap">
   <div class="calhead">
     <button id="cal-prev" type="button">‹</button>
     <div id="cal-title" class="cal-title"></div>
@@ -1315,16 +1320,12 @@ def build_calendar():
     <thead><tr><th>Пн</th><th>Вт</th><th>Ср</th><th>Чт</th><th>Пт</th><th>Сб</th><th>Вс</th></tr></thead>
     <tbody></tbody>
   </table>
-  <div id="update-progress-global" class="update-progress" hidden>
-    <div class="bar-counts"></div>
-    <div class="bar"><div class="bar-fill" id="upg-bar"></div></div>
-    <div class="bar-msg" id="upg-msg"></div>
-  </div>
   <div class="calhint">Дни с событиями подсвечены — кликните по дате, чтобы увидеть события дня.</div>
   <div class="calperiod" id="cal-period"></div>
 </div>
 <script src="js/events.js"></script>
-<script src="js/calendar.js"></script>'''
+<script src="js/calendar.js"></script>
+<script src="js/toolbar.js"></script>'''
     open(os.path.join(SITE, 'calendar.html'), 'w', encoding='utf-8').write(
         page('Календарь', body, 'calendar'))
 
@@ -1772,11 +1773,17 @@ def build_toolbar_js():
   var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
   var SNAPSHOT = '/*SNAPSHOT*/';
 
-  /* Глобальный прогресс: показывается вверху ЛЮБОЙ страницы, даже если кнопки
-     «Обновить» на ней нет (страницы событий и прототипов). При загрузке страницы
-     спрашиваем сервер: если обновление уже идёт — включаем полосу. */
+  var btns = [].slice.call(document.querySelectorAll('.js-update'));
+  var modal = document.getElementById('modal-update');
+  var hasPanel = !!(btns.length && modal);
+
+  /* Глобальный прогресс: показывается вверху страницы, если на ней НЕТ своей
+     панели под кнопкой «Обновить» (страницы событий, прототипов, календарь).
+     На главной есть панель под кнопкой — там глобальная полоса не нужна,
+     иначе получается ДВА индикатора. При загрузке страницы спрашиваем сервер:
+     если обновление уже идёт — включаем полосу. */
   var gTimer = null;
-  function gEl() { return document.getElementById('update-progress-global'); }
+  function gEl() { return hasPanel ? null : document.getElementById('update-progress-global'); }
   function showProgressGlobal(m) {
     var g = gEl(); if (!g) return;
     g.hidden = false;
@@ -1810,13 +1817,10 @@ def build_toolbar_js():
     }).catch(function () {});
   }
   function watchRunning() {
-    if (!isLocal || !gEl()) return;
+    if (!isLocal) return;
     fetch('/api/update/status').then(function (r) { return r.json(); }).then(function (s) {
       if (!s || !s.running) return;
-      showProgressGlobal(s.message);
-      setProgressGlobal(s.percent, s.message);
-      setCountsGlobal(s.counts_line || '');
-      if (btns.length && modal) {
+      if (hasPanel) {
         usePanel(btns[0]);
         panel.hidden = false;
         progress.hidden = false;
@@ -1824,15 +1828,15 @@ def build_toolbar_js():
         setCounts(s.counts_line || '');
         setActions(true);
         if (!timer) timer = setInterval(poll, 700);
-      } else if (!gTimer) {
-        gTimer = setInterval(gPoll, 700);
+      } else {
+        showProgressGlobal(s.message);
+        setProgressGlobal(s.percent, s.message);
+        setCountsGlobal(s.counts_line || '');
+        if (!gTimer) gTimer = setInterval(gPoll, 700);
       }
     }).catch(function () {});
   }
 
-  var btns = [].slice.call(document.querySelectorAll('.js-update'));
-  var modal = document.getElementById('modal-update');
-  var hasPanel = !!(btns.length && modal);
   var ok = hasPanel ? modal.querySelector('[data-mp="ok"]') : null;
   var cancel = hasPanel ? modal.querySelector('[data-mp="cancel"]') : null;
   var timer = null;
