@@ -765,12 +765,12 @@ def build_index():
     if not lec:
         lec = '<div class="modal-hint">Прототипов пока нет.</div>'
     body_parts = [*head,
+                  '<div id="update-progress-global" class="update-progress" hidden>\n  <div class="bar-counts"></div>\n  <div class="bar"><div class="bar-fill" id="upg-bar"></div></div>\n  <div class="bar-msg" id="upg-msg"></div>\n</div>',
                   '<div class="idxbody">',
                   build_toc(sections),
                   '<div class="idxmain">',
                   '\n'.join(main),
                   '</div>',
-                  '<div id="update-progress-global" class="update-progress" hidden>\n  <div class="bar-counts"></div>\n  <div class="bar"><div class="bar-fill" id="upg-bar"></div></div>\n  <div class="bar-msg" id="upg-msg"></div>\n</div>',
                   '<div class="v-empty" id="v-empty" hidden>По этим условиям ничего не нашлось. '
                   'Попробуйте включить «показать скрытые» или выбрать других организаторов.</div>',
                   '</div>',
@@ -1637,6 +1637,9 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .bar-msg { margin-top: 6px; font-size: 13px; color: #6a643f; }
 .bar-counts { margin-bottom: 8px; padding: 7px 10px; background: #f6f4ec; border: 1px solid #e3ded0; border-radius: 4px; font-size: 13.5px; font-weight: 600; color: #333; }
 
+/* Глобальный прогресс обновления: показывается вверху любой страницы. */
+#update-progress-global { width: 100%; margin: 10px 0 16px; padding: 12px 14px; background: #fff; border: 1px solid #ddd5c3; border-radius: 6px; }
+
 /* footer */
 .footer { background: #efe9da; border-top: 1px solid #d8d2c4; margin-top: 30px; padding: 18px 0 26px; font-size: 12.5px; color: #6a643f; }
 .footer .source a { color: #4a3b1f; }
@@ -1766,13 +1769,72 @@ def build_toolbar_js():
     js = r'''/* Кнопка «Обновить данные»: вопрос «Да/Нет», прогресс и результат — в панели под кнопкой.
    После успешного обновления страница перечитывается целиком (location.reload). */
 (function () {
-  var btns = [].slice.call(document.querySelectorAll('.js-update'));
-  var modal = document.getElementById('modal-update');
-  if (!btns.length || !modal) return;
-  var ok = modal.querySelector('[data-mp="ok"]');
-  var cancel = modal.querySelector('[data-mp="cancel"]');
   var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
   var SNAPSHOT = '/*SNAPSHOT*/';
+
+  /* Глобальный прогресс: показывается вверху ЛЮБОЙ страницы, даже если кнопки
+     «Обновить» на ней нет (страницы событий и прототипов). При загрузке страницы
+     спрашиваем сервер: если обновление уже идёт — включаем полосу. */
+  var gTimer = null;
+  function gEl() { return document.getElementById('update-progress-global'); }
+  function showProgressGlobal(m) {
+    var g = gEl(); if (!g) return;
+    g.hidden = false;
+    var c = g.querySelector('.bar-counts'), msg = g.querySelector('.bar-msg'), b = g.querySelector('.bar-fill');
+    if (c) c.hidden = false;
+    if (msg) msg.textContent = m || 'Обновление…';
+    if (b) b.style.width = '0%';
+  }
+  function setProgressGlobal(p, m) {
+    var g = gEl(); if (!g) return;
+    var msg = g.querySelector('.bar-msg'), b = g.querySelector('.bar-fill');
+    if (msg) msg.textContent = m || '';
+    if (b) b.style.width = Math.round(p || 0) + '%';
+  }
+  function setCountsGlobal(line) {
+    var g = gEl(); if (!g) return;
+    var c = g.querySelector('.bar-counts');
+    if (c) { c.textContent = line || ''; c.hidden = !line; }
+  }
+  function hideProgressGlobal() { var g = gEl(); if (g) g.hidden = true; }
+  function gPoll() {
+    fetch('/api/update/status').then(function (r) { return r.json(); }).then(function (s) {
+      if (!s || !s.running) {
+        hideProgressGlobal();
+        if (gTimer) { clearInterval(gTimer); gTimer = null; }
+        return;
+      }
+      showProgressGlobal(s.message);
+      setProgressGlobal(s.percent, s.message);
+      setCountsGlobal(s.counts_line || '');
+    }).catch(function () {});
+  }
+  function watchRunning() {
+    if (!isLocal || !gEl()) return;
+    fetch('/api/update/status').then(function (r) { return r.json(); }).then(function (s) {
+      if (!s || !s.running) return;
+      showProgressGlobal(s.message);
+      setProgressGlobal(s.percent, s.message);
+      setCountsGlobal(s.counts_line || '');
+      if (btns.length && modal) {
+        usePanel(btns[0]);
+        panel.hidden = false;
+        progress.hidden = false;
+        setProgress(s.percent, s.message || '');
+        setCounts(s.counts_line || '');
+        setActions(true);
+        if (!timer) timer = setInterval(poll, 700);
+      } else if (!gTimer) {
+        gTimer = setInterval(gPoll, 700);
+      }
+    }).catch(function () {});
+  }
+
+  var btns = [].slice.call(document.querySelectorAll('.js-update'));
+  var modal = document.getElementById('modal-update');
+  var hasPanel = !!(btns.length && modal);
+  var ok = hasPanel ? modal.querySelector('[data-mp="ok"]') : null;
+  var cancel = hasPanel ? modal.querySelector('[data-mp="cancel"]') : null;
   var timer = null;
   // активная панель — та, что под нажатой кнопкой (кнопок может быть две)
   var cur = null;
@@ -1803,7 +1865,7 @@ def build_toolbar_js():
     actions.forEach(function (a) { a.hidden = hidden; });
   }
 
-  modal.hidden = true; // страховка: окно всегда закрыто при загрузке
+  if (hasPanel) modal.hidden = true; // страховка: окно всегда закрыто при загрузке
 
   function showConfirm() { modal.hidden = false; }
   function hideModal() { modal.hidden = true; }
@@ -1812,6 +1874,7 @@ def build_toolbar_js():
     status.hidden = true;
     setActions(true);
     progress.hidden = false;
+    showProgressGlobal(m || 'Начинаем обновление…');
     setProgress(0, m || 'Начинаем обновление…');
   }
   function setProgress(p, m) {
@@ -1826,6 +1889,8 @@ def build_toolbar_js():
   }
   function showResult(txt, isErr) {
     if (timer) { clearInterval(timer); timer = null; }
+    if (gTimer) { clearInterval(gTimer); gTimer = null; }
+    hideProgressGlobal();
     panel.hidden = false;
     progress.hidden = true;
     status.textContent = txt;
@@ -1846,7 +1911,9 @@ def build_toolbar_js():
   }
   function hidePanel() {
     panel.hidden = true;
+    hideProgressGlobal();
     if (timer) { clearInterval(timer); timer = null; }
+    if (gTimer) { clearInterval(gTimer); gTimer = null; }
     try { localStorage.removeItem(LAST); } catch (e) {}
   }
   // Кнопка «Закрыть» должна прятать ИМЕННО свою панель: панель показывается
@@ -2002,6 +2069,8 @@ def build_toolbar_js():
     fetch('/api/update/status').then(function (r) { return r.json(); }).then(function (s) {
       setProgress(s.percent, s.message || '');
       setCounts(s.counts_line || '');
+      setProgressGlobal(s.percent, s.message || '');
+      setCountsGlobal(s.counts_line || '');
       if (!s.running) {
         if (timer) { clearInterval(timer); timer = null; }
         if (s.error) {
@@ -2076,15 +2145,19 @@ def build_toolbar_js():
       status.hidden = false;
     });
   });
-  ok.addEventListener('click', startUpdate);
-  cancel.addEventListener('click', hideModal);
+  if (hasPanel) {
+    ok.addEventListener('click', startUpdate);
+    cancel.addEventListener('click', hideModal);
+  }
   // Сразу после загрузки спрашиваем сервер: не запущен ли он на старом коде.
   if (isLocal) {
     fetch('/api/update/status').then(function (r) { return r.json(); })
       .then(function (s) { if (s && s.stale && s.stale.length) showStale(s.stale); })
       .catch(function () {});
   }
-  showLast();
+  if (hasPanel) showLast();
+  // Если обновление уже идёт — показываем глобальную полосу на любой странице.
+  watchRunning();
 })();
 '''.replace('/*SNAPSHOT*/', snap)
     open(os.path.join(JS_DIR, 'toolbar.js'), 'w', encoding='utf-8').write(js)
