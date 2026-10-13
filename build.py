@@ -770,6 +770,7 @@ def build_index():
                   '<div class="idxmain">',
                   '\n'.join(main),
                   '</div>',
+                  '<div id="update-progress-global" class="update-progress" hidden>\n  <div class="bar-counts"></div>\n  <div class="bar"><div class="bar-fill" id="upg-bar"></div></div>\n  <div class="bar-msg" id="upg-msg"></div>\n</div>',
                   '<div class="v-empty" id="v-empty" hidden>По этим условиям ничего не нашлось. '
                   'Попробуйте включить «показать скрытые» или выбрать других организаторов.</div>',
                   '</div>',
@@ -911,6 +912,11 @@ def event_page(e, i, n, prefix):
     if e.get('updated'):
         upd_src = f'<div class="upd-src">Обновлено: {esc(e.get("updated_at", ""))}</div>'
     return f'''<div class="crumb"><a href="../index.html">Календарь событий</a> » <span>{esc(e['title'] or '')}</span></div>
+<div id="update-progress-global" class="update-progress" hidden>
+  <div class="bar-counts"></div>
+  <div class="bar"><div class="bar-fill" id="upg-bar"></div></div>
+  <div class="bar-msg" id="upg-msg"></div>
+</div>
   <div class="detailblk">
     {render_memo(e, '../')}
   </div>
@@ -1253,6 +1259,11 @@ def proto_page(e, prefix):
     who_html = ('<div class="pwho">%s: %s</div>'
                 % ('Авторы' if len(proto_authors(p)) > 1 else 'Автор', esc(who))) if who else ''
     return f'''<div class="crumb"><a href="../index.html">Календарь событий</a> » <span>прототип: {esc(e['id'])}</span></div>
+<div id="update-progress-global" class="update-progress" hidden>
+  <div class="bar-counts"></div>
+  <div class="bar"><div class="bar-fill" id="upg-bar"></div></div>
+  <div class="bar-msg" id="upg-msg"></div>
+</div>
 <div class="ptop" data-id="{esc(e['id'])}">
   <div class="ptitle"><span class="ptag">прототип</span> {esc(e['title'] or '')}<div class="psub">{esc(fmt_date_num(e['date_iso']))} · {esc(e['weekday'])} · {esc(fmt_time(e) or '')} · {esc(e['city'] or '')}</div>{who_html}</div>
   {proto_actions(e, 'page')}
@@ -1304,6 +1315,11 @@ def build_calendar():
     <thead><tr><th>Пн</th><th>Вт</th><th>Ср</th><th>Чт</th><th>Пт</th><th>Сб</th><th>Вс</th></tr></thead>
     <tbody></tbody>
   </table>
+  <div id="update-progress-global" class="update-progress" hidden>
+    <div class="bar-counts"></div>
+    <div class="bar"><div class="bar-fill" id="upg-bar"></div></div>
+    <div class="bar-msg" id="upg-msg"></div>
+  </div>
   <div class="calhint">Дни с событиями подсвечены — кликните по дате, чтобы увидеть события дня.</div>
   <div class="calperiod" id="cal-period"></div>
 </div>
