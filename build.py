@@ -1090,6 +1090,9 @@ def source_num_id(u):
     m = re.search(r'arche\.ru/events/(\d+)', u or '')
     if m:
         return m.group(1), 'Архэ'
+    m = re.search(r'post_type=tribe_events&(?:amp;)?p=(\d+)', u or '')
+    if m:
+        return m.group(1), 'Архэ'
     m = re.search(r'timepad\.ru/(\d{5,})', u or '')
     if m:
         return m.group(1), 'Timepad'

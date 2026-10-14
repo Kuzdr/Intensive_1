@@ -224,6 +224,8 @@ def check_source_ids() -> list:
         ("https://cosmos-vdnh.timepad.ru/event/4190121/",
          ("4190121", "Timepad")),
         ("https://arche.ru/events/12345", ("12345", "Архэ")),
+        ("https://arhe.msk.ru/?post_type=tribe_events&p=157528",
+         ("157528", "Архэ")),
     ]
     for url, want in cases:
         got = tuple(mod.source_num_id(url))
@@ -232,6 +234,7 @@ def check_source_ids() -> list:
                             % (url, got, want))
     for url in ("https://vdnh.ru/places/maket-kosmicheskogo-korablya-buran/",
                 "https://vdnh.ru/",
+                "https://arhe.msk.ru/",
                 "https://polymus.ru/events/detail/novgorod"):
         if mod.source_num_id(url)[0] is not None:
             problems.append("source_num_id(%s) выдал лишний ID" % url)
