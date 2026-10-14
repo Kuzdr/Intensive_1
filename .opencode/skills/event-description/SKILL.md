@@ -1034,7 +1034,8 @@ TP-4219485 и по опубликованным лекциям Попова 4506
   отдельная бесплатная лекция);
 - Филиал Ельцин Центра в Москве — `reference/extra/eltsin-filial.md`;
 - Medio Modo — `reference/extra/mediomodo.md`;
-- ВДНХ — `reference/extra/vdnh.md`.
+- ВДНХ — `reference/extra/vdnh.md`;
+- «Лекторий юного географа» (геогр. ф-т МГУ) — `reference/extra/yunogo-geografa.md`.
 
 Нового лектория в списке нет? Собери образец по опубликованному событию
 этого организатора на «Элементах» и допиши его в
