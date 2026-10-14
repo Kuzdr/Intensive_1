@@ -16,6 +16,7 @@ SITE = os.path.join(ROOT, 'site')
 EVENT_DIR = os.path.join(SITE, 'event')
 JS_DIR = os.path.join(SITE, 'js')
 CSS_DIR = os.path.join(SITE, 'css')
+IMG_DIR = os.path.join(SITE, 'assets', 'img')
 os.makedirs(EVENT_DIR, exist_ok=True)
 os.makedirs(JS_DIR, exist_ok=True)
 os.makedirs(CSS_DIR, exist_ok=True)
@@ -964,20 +965,48 @@ def proto_lecturers(p):
     return ', '.join(names[:-1]) + ' и ' + names[-1]
 
 
-def proto_photo(a, p, prefix):
-    """Фото автора из источника (пусто, если фото нет).
+def author_photo_file(a, p):
+    """Имя подготовленного файла 120×150 (поле 7.6) — если файл есть на диске.
 
-    Подписи под фото НЕ выводим: пользователь просил убрать её вообще
-    (решение от 28.09.2026) — ни на странице прототипа, ни в HTML-фрагменте.
+    Файлы лежат в `site/assets/img/` (этот раздел хранится в git). Если файла
+    нет — возвращаем пусто, чтобы не показывать битую картинку.
     """
-    src = (a.get('photo') or '').strip()
-    if not src:
+    fn = ''
+    for f in a.get('fields') or []:
+        if str(f.get('n')) == '7.6':
+            fn = str(f.get('value') or '').strip()
+            break
+    if not fn:
+        fn = str(p.get('photo_file') or '').strip()
+    if not fn or not os.path.isfile(os.path.join(IMG_DIR, fn)):
         return ''
-    if not re.match(r'^(https?:)?//', src):
-        src = prefix + src
-    return ('<div class="pphoto"><img src="%s" alt="%s" style="max-width:600px;height:auto">'
-            '</div>') % (
-                esc(src), esc(a.get('name') or p.get('lecturer') or 'автор'))
+    return fn
+
+
+def proto_photo(a, p, prefix):
+    """Фото автора: исходное (ключ `photo`) и рядом — файл 120×150 (поле 7.6).
+
+    Оба показываем ОТДЕЛЬНО от описания (правило 13.10.2026): в тексте описания
+    фото нет. Подписей под фото НЕ выводим (решение 28.09.2026). Если `photo`
+    уже указывает на тот же файл 120×150, второй раз не дублируем.
+    """
+    name = a.get('name') or p.get('lecturer') or 'автор'
+    src = (a.get('photo') or '').strip()
+    parts = []
+    if src:
+        href = src if re.match(r'^(https?:)?//', src) else prefix + src
+        parts.append('<div class="pphoto"><img src="%s" alt="%s" '
+                     'style="max-width:600px;height:auto"></div>'
+                     % (esc(href), esc(name)))
+    fn = author_photo_file(a, p)
+    if fn and not src.endswith('/' + fn) and src != fn:
+        parts.append('<div class="pphoto ph120"><img src="%s" alt="%s" '
+                     'style="width:120px;height:150px" '
+                     'title="Файл 120×150 для базы «Элементов»"></div>'
+                     % (esc(prefix + 'assets/img/' + fn), esc(name)))
+    if not parts:
+        return ''
+    return '<div class="pphotos">%s</div>' % ''.join(parts)
 
 
 def author_block_full(a, p, prefix, show_who=False):
@@ -1563,8 +1592,11 @@ h1 { font: normal 30px/1.2 Georgia, serif; color: #3a2f16; margin: 4px 0 6px; }
 .author-full .aname { margin: 0 0 10px; font: 700 17px/1.4 Georgia, "Times New Roman", serif; }
 .author-full p:last-child { margin-bottom: 0; }
 .klblock { font: 12px/1.4 Consolas, "Courier New", monospace; color: #8a7040; background: #f3efdc; border: 1px dashed #c8bb8f; border-radius: 3px; padding: 0 4px; }
+.pphotos { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; margin: 0 0 10px; }
+.pphotos .pphoto { margin: 0; }
 .pphoto { margin: 0 0 10px; }
 .pphoto img { display: block; border: 1px solid #ddd5c3; }
+.pphoto.ph120 img { width: 120px; height: 150px; }
 .pphoto .phint { font-size: 12px; color: #8a8270; margin-top: 3px; }
 /* «Дополнительная информация» — таблица: абзац и его кнопки в одной строке */
 .ftable-extra .fname { width: 96px; }
