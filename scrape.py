@@ -234,6 +234,77 @@ def parse_detail(event):
 def clean_amt(a):
     return re.sub(r'\s+', ' ', a).strip()
 
+def clean_num(a):
+    """Сумма без хвостовой пунктуации: «60.» → «60», «1 200» → «1 200»."""
+    return re.sub(r'\s+', ' ', a).strip().rstrip('.,').strip()
+
+# Иностранные валюты (кроме российского рубля): (обозначение в тексте, код).
+# Российский рубль обрабатывается ниже как «руб.». Иностранную валюту пишем
+# КОДОМ (NIS, BYN, KZT, EUR, …) — так просил пользователь 15.10.2026: на сайте
+# и в Телеграме знак валюты (₪, € и т.п.) непонятен, а код однозначен.
+# Флаг word=True — «словесное» обозначение (евро, тенге, шекель): его находим,
+# только если рядом стоит ценовое слово, чтобы не спутать с прозой
+# (например, «до евро и современных проблем»).
+FOREIGN_CURRENCIES = [
+    (r'₪|\bNIS\b|\bILS\b', 'NIS'),
+    (r'шекел\w*', 'NIS', True),
+    (r'₸|\bKZT\b', 'KZT'),
+    (r'тенге|тенг[аеи]\b', 'KZT', True),
+    (r'€|\bEUR\b', 'EUR'),
+    (r'евро\b', 'EUR', True),
+    (r'\bUSD\b|\$', 'USD'),
+    (r'доллар\w*', 'USD', True),
+    (r'£|\bGBP\b', 'GBP'),
+    (r'фунт\w*', 'GBP', True),
+    (r'₴|\bUAH\b', 'UAH'),
+    (r'гривн\w*', 'UAH', True),
+    (r'\bBYN\b|\bBr\b', 'BYN'),
+    (r'бел\.?\s*руб\w*|белорусск\w*\s+руб\w*', 'BYN', True),
+    (r'\bPLN\b', 'PLN'),
+    (r'злот\w*', 'PLN', True),
+    (r'₺|\bTRY\b', 'TRY'),
+    (r'лир\w*', 'TRY', True),
+    (r'\bCHF\b', 'CHF'),
+    (r'франк\w*', 'CHF', True),
+    (r'\bHUF\b', 'HUF'),
+    (r'форинт\w*', 'HUF', True),
+    (r'\bRON\b', 'RON'),
+    (r'леев|лея|лей\b', 'RON', True),
+    (r'\bBGN\b', 'BGN'),
+    (r'лев[аоы]?\b', 'BGN', True),
+    (r'\bRSD\b', 'RSD'),
+    (r'динар\w*', 'RSD', True),
+]
+
+# ценовое слово рядом со «словесной» валютой («стоимость 30 евро»)
+_PRICE_CONTEXT = re.compile(r'стоимост|цен|билет|вход|оплат|участи|стоят|руб|[:—–-]', re.I)
+
+def foreign_price(text):
+    """Цена в иностранной валюте → «N КОД» (правило пользователя 15.10.2026).
+
+    Понимает «60 ₪», «₪ 60», «60 NIS», «от 80 шекелей», «30 €», «50 тенге»,
+    «25 бел. руб.», «20 фунтов» и т.п. Возвращает сумму с кодом валюты
+    (NIS, BYN, KZT, EUR …), а не со знаком."""
+    if not text:
+        return None
+    for row in FOREIGN_CURRENCIES:
+        token, code = row[0], row[1]
+        if len(row) > 2:  # словесное обозначение — нужен ценовой контекст
+            for m in re.finditer(r'(от\s*)?(\d[\d\s\u00a0.,]*?)\s*(?:%s)' % token, text, re.I):
+                before = text[max(0, m.start(2) - 45):m.start(2)]
+                if _PRICE_CONTEXT.search(before):
+                    return ('От ' if m.group(1) else '') + clean_num(m.group(2)) + ' ' + code
+            continue
+        # сумма перед обозначением валюты: «60 ₪», «от 80 €»
+        m = re.search(r'(от\s*)?(\d[\d\s\u00a0.,]*?)\s*(?:%s)' % token, text)
+        if m:
+            return ('От ' if m.group(1) else '') + clean_num(m.group(2)) + ' ' + code
+        # обозначение валюты перед суммой: «₪ 60», «€ 30»
+        m = re.search(r'(?:%s)\s*(\d[\d\s\u00a0.,]*)' % token, text)
+        if m:
+            return clean_num(m.group(1)) + ' ' + code
+    return None
+
 def amount_value(a):
     """Числовое значение суммы для сравнения цен (900, 2 900, 1.5 тыс → 1500)."""
     s = clean_amt(a).replace('\u00a0', ' ').replace(' ', '')
@@ -248,6 +319,10 @@ def amount_value(a):
 
 def short_price(text):
     low = text.lower()
+    # цена в иностранной валюте (шекель, тенге, евро …) — до разбора «руб.»
+    fp = foreign_price(text)
+    if fp:
+        return fp
     # убедиться, что «бесплатно/вход свободный» — без денежной суммы
     # главная цена — фраза «Стоимость билета/участия/билетов: ...»
     m_off = re.search(r'стоимость\s+(?:билета|участия|билетов)\s*:?\s*(от\s*)?(\d[\d\s\u00a0.,]*?)\s*(?:до\s*(\d[\d\s\u00a0.,]*?)\s*)?руб', text, re.I)

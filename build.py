@@ -93,17 +93,37 @@ def clean_place(s):
     """Убрать инициалы людей из названий площадок: «им. Н. А. Некрасова» → «им. Некрасова»."""
     return re.sub(r'\b([А-ЯЁ])\.\s*([А-ЯЁ])\.\s*', '', s or '').strip()
 
+# Знаки валют → как пишем на сайте и в Телеграме (правило пользователя 15.10.2026):
+# российский рубль — «руб.», прочие — КОДОМ (NIS, KZT, EUR, GBP, USD …).
+CUR_SIGN = {
+    '₽': 'руб.', '₪': 'NIS', '₸': 'KZT', '€': 'EUR', '£': 'GBP',
+    '₴': 'UAH', '₺': 'TRY', '₾': 'GEL', '₼': 'AZN', '₹': 'INR',
+    '$': 'USD',
+}
+CUR_CODE = r'(руб\.?|NIS|KZT|EUR|USD|GBP|UAH|BYN|PLN|TRY|CHF|HUF|RON|BGN|RSD)'
+
+def fix_currency(s):
+    """Знак валюты → код/слово: ₪ → NIS, € → EUR, ₽ → руб. (правило 15.10.2026)."""
+    if not s:
+        return s
+    for sign, code in CUR_SIGN.items():
+        s = s.replace(sign, code)
+    return s
+
 def price_txt(p):
     p = (p or '').strip()
     if not p:
         return ''
     if 'бесплатно' in p.lower():
         return '(бесплатно)'
-    # убираем пробелы между группами цифр: «10 000» → «10000» (только в посте)
-    t = re.sub(r'(?<=\d)\s+(?=\d)', '', p).replace('₽', 'руб.').strip()
+    # убираем пробелы между группами цифр: «10 000» → «10000» (только в посте);
+    # знак валюты → код: ₽ → «руб.», ₪ → «NIS», € → «EUR» (правило 15.10.2026)
+    t = fix_currency(re.sub(r'(?<=\d)\s+(?=\d)', '', p)).strip()
     # диапазон «от X до Y руб.» → «от X руб.» (только нижняя граница)
     if re.search(r'\sдо\s', t, flags=re.I):
-        t = re.split(r'\sдо\s', t, maxsplit=1, flags=re.I)[0].strip() + ' руб.'
+        head = re.split(r'\sдо\s', t, maxsplit=1, flags=re.I)[0].strip()
+        mc = re.search(CUR_CODE, t, re.I)
+        t = head + (' ' + mc.group(1) if mc else ' руб.')
     t = re.sub(r'\s{2,}', ' ', t).strip()
     if t and t[0].isupper():
         t = t[0].lower() + t[1:]
@@ -818,6 +838,8 @@ def render_memo(e, prefix):
     m = e.get('detail_html') or ''
     m = m.replace('\\', '/')
     m = m.replace('assets/img/', prefix + 'assets/img/')
+    # знак валюты → код/слово: ₪ → NIS, € → EUR, ₽ → руб. (правило 15.10.2026)
+    m = fix_currency(m)
     return clean_links(m)
 
 EVENT_JS = '<script src="../js/reload.js"></script>\n<script src="../js/toolbar.js"></script>'
