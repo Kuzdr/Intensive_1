@@ -46,7 +46,7 @@ SKILLS_DIR = os.path.join(ROOT, ".opencode", "skills")
 
 # Пути, которые ищем в тексте SKILL.md (локальные, не URL)
 PATH_TOKEN = re.compile(
-    r"(?:tools|reference|data|\.opencode)[/\\][A-Za-z0-9_.\-/\\]+"
+    r"(?:tools|reference|data|\.opencode)[/\\][A-Za-z0-9_.+\-/\\]+"
 )
 # Символы, которые не могут стоять в конце пути (мусор из предложения)
 TRAIL = ".,;:()\"'`*«»"
