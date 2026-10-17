@@ -173,7 +173,7 @@ def parse_detail(event):
             if s and price_kws.search(s):
                 price_sentences.append(s)
     price_raw = ' '.join(price_sentences)
-    price_short = short_price(' '.join(paras_text))
+    price_short = short_price(' '.join(paras_text), event.get('city'), event.get('place'))
 
     # --- аннотация (blockquote) ---
     bq = re.search(r'<blockquote[^>]*>(.*?)</blockquote>', memo_clean, re.S)
@@ -276,34 +276,134 @@ FOREIGN_CURRENCIES = [
     (r'динар\w*', 'RSD', True),
 ]
 
+# Страна/город события → ожидаемая валюта цены (правило пользователя
+# 15.10.2026: цена, если она не в руб., должна соответствовать валюте страны,
+# где проходит событие). У «Элементов» иностранные события указывают страну
+# прямо в поле города («Израиль»), а российские — город («Москва»). Незнакомое
+# место считаем Россией (валюта — рубль).
+LOCATION_CURRENCY = {
+    'россия': 'RUB',
+    'израиль': 'NIS', 'хайфа': 'NIS', 'тель-авив': 'NIS', 'иерусалим': 'NIS',
+    'казахстан': 'KZT', 'алматы': 'KZT', 'астана': 'KZT',
+    'беларусь': 'BYN', 'белоруссия': 'BYN', 'минск': 'BYN',
+    'украина': 'UAH', 'киев': 'UAH',
+    'сша': 'USD', 'америка': 'USD',
+    'великобритания': 'GBP', 'англия': 'GBP', 'лондон': 'GBP',
+    'турция': 'TRY', 'стамбул': 'TRY',
+    'польша': 'PLN', 'варшава': 'PLN',
+    'швейцария': 'CHF', 'цюрих': 'CHF',
+    'венгрия': 'HUF', 'будапешт': 'HUF',
+    'румыния': 'RON', 'бухарест': 'RON',
+    'болгария': 'BGN', 'софия': 'BGN',
+    'сербия': 'RSD', 'белград': 'RSD',
+    'германия': 'EUR', 'франция': 'EUR', 'италия': 'EUR', 'испания': 'EUR',
+    'португалия': 'EUR', 'нидерланды': 'EUR', 'бельгия': 'EUR', 'австрия': 'EUR',
+    'ирландия': 'EUR', 'греция': 'EUR', 'финляндия': 'EUR', 'эстония': 'EUR',
+    'латвия': 'EUR', 'литва': 'EUR', 'словакия': 'EUR', 'словения': 'EUR',
+    'хорватия': 'EUR', 'мальта': 'EUR', 'кипр': 'EUR', 'люксембург': 'EUR',
+}
+
+# Площадки-университеты: если цена не указана — событие считаем бесплатным
+# (правило пользователя 15.10.2026, пример — Европейский университет, 450726).
+UNIVERSITY_MARKERS = ('университет', 'мгу', 'спбгу', 'нгу', 'вшэ', 'мгимо',
+                      'рудн', 'мфти', 'мгту', 'мгюа', 'мгпу')
+
+# «множитель» после суммы — это не цена, а оборот прозы: «бюджет $ 2 млрд».
+_MAGNITUDE = re.compile(
+    r'\s*(?:млрд|млн|тыс|трлн|миллиард\w*|миллион\w*|тысяч\w*'
+    r'|billion|million|trillion|bln|bn|mln)\b', re.I)
+
+# коды валют, которые встречаются в итоговой цене («60 NIS», «от 30 EUR»)
+_CUR_CODE = re.compile(r'\b(NIS|KZT|EUR|USD|GBP|UAH|BYN|PLN|TRY|CHF|HUF|RON|BGN|RSD)\b')
+
 # ценовое слово рядом со «словесной» валютой («стоимость 30 евро»)
 _PRICE_CONTEXT = re.compile(r'стоимост|цен|билет|вход|оплат|участи|стоят|руб|[:—–-]', re.I)
 
-def foreign_price(text):
+def event_currency(city, place):
+    """Ожидаемая валюта цены по стране события (правило пользователя 15.10.2026)."""
+    blob = ('%s %s' % (city or '', place or '')).lower().replace('ё', 'е')
+    blob = re.sub(r'онлайн', ' ', blob)
+    for name, cur in LOCATION_CURRENCY.items():
+        if name in blob:
+            return cur
+    return 'RUB'
+
+def is_university(city, place):
+    """True, если событие проходит в вузе (тогда отсутствие цены = бесплатно)."""
+    blob = ('%s %s' % (city or '', place or '')).lower().replace('ё', 'е')
+    return any(m in blob for m in UNIVERSITY_MARKERS)
+
+def foreign_price(text, country_cur=None):
     """Цена в иностранной валюте → «N КОД» (правило пользователя 15.10.2026).
 
     Понимает «60 ₪», «₪ 60», «60 NIS», «от 80 шекелей», «30 €», «50 тенге»,
     «25 бел. руб.», «20 фунтов» и т.п. Возвращает сумму с кодом валюты
-    (NIS, BYN, KZT, EUR …), а не со знаком."""
+    (NIS, BYN, KZT, EUR …), а не со знаком.
+
+    country_cur — ожидаемая валюта страны события (см. event_currency): цена
+    принимается ТОЛЬКО в этой валюте, иначе это оборот прозы («бюджет $ 2 млрд»).
+    """
     if not text:
         return None
     for row in FOREIGN_CURRENCIES:
         token, code = row[0], row[1]
+        if country_cur and code != country_cur:
+            continue
         if len(row) > 2:  # словесное обозначение — нужен ценовой контекст
             for m in re.finditer(r'(от\s*)?(\d[\d\s\u00a0.,]*?)\s*(?:%s)' % token, text, re.I):
+                if _MAGNITUDE.match(text, m.end()):
+                    continue
                 before = text[max(0, m.start(2) - 45):m.start(2)]
                 if _PRICE_CONTEXT.search(before):
                     return ('От ' if m.group(1) else '') + clean_num(m.group(2)) + ' ' + code
             continue
         # сумма перед обозначением валюты: «60 ₪», «от 80 €»
         m = re.search(r'(от\s*)?(\d[\d\s\u00a0.,]*?)\s*(?:%s)' % token, text)
-        if m:
+        if m and not _MAGNITUDE.match(text, m.end()):
             return ('От ' if m.group(1) else '') + clean_num(m.group(2)) + ' ' + code
         # обозначение валюты перед суммой: «₪ 60», «€ 30»
         m = re.search(r'(?:%s)\s*(\d[\d\s\u00a0.,]*)' % token, text)
-        if m:
+        if m and not _MAGNITUDE.match(text, m.end()):
             return clean_num(m.group(1)) + ' ' + code
     return None
+
+def price_currency(ps):
+    """Код валюты итоговой цены: «руб.» → RUB, «60 NIS» → NIS, иначе None."""
+    if not ps:
+        return None
+    if re.search(r'рубл|руб\b|₽', ps, re.I):
+        return 'RUB'
+    m = _CUR_CODE.search(ps)
+    return m.group(1) if m else None
+
+def check_price_country(events):
+    """Проверка: не-рублёвая цена должна соответствовать стране события.
+
+    Правило пользователя 15.10.2026. Возвращает список проблем (пусто — всё ок):
+    1) итоговая цена в валюте, не совпадающей со страной события;
+    2) в тексте есть цена в иностранной валюте, но страна её не подтверждает —
+       возможно, цену отбросили зря (пора уточнить таблицу `LOCATION_CURRENCY`).
+    """
+    probs = []
+    for e in events:
+        city, place = e.get('city'), e.get('place')
+        want = event_currency(city, place)
+        ps = (e.get('price_short') or '').strip()
+        if ps and not re.search(r'бесплатн|по билетам', ps, re.I):
+            pc = price_currency(ps)
+            if pc and pc != want:
+                probs.append('%s «%s»: цена «%s» (%s), а по стране «%s» ожидается %s'
+                             % (e.get('id'), (e.get('title') or '')[:50], ps, pc,
+                                city or '?', want))
+                continue
+        txt = e.get('detail_text') or ''
+        fp_any = foreign_price(txt, None)
+        if fp_any and not foreign_price(txt, want):
+            probs.append('%s «%s»: в тексте цена «%s», а по стране «%s» ожидается '
+                         '%s — проверьте страну' % (e.get('id'),
+                                                    (e.get('title') or '')[:50],
+                                                    fp_any, city or '?', want))
+    return probs
 
 def amount_value(a):
     """Числовое значение суммы для сравнения цен (900, 2 900, 1.5 тыс → 1500)."""
@@ -317,10 +417,11 @@ def amount_value(a):
         v *= 1000
     return int(round(v))
 
-def short_price(text):
+def short_price(text, city=None, place=None):
     low = text.lower()
-    # цена в иностранной валюте (шекель, тенге, евро …) — до разбора «руб.»
-    fp = foreign_price(text)
+    # цена в иностранной валюте (шекель, тенге, евро …) — до разбора «руб.»;
+    # принимаем ТОЛЬКО валюту страны события (правило пользователя 15.10.2026)
+    fp = foreign_price(text, event_currency(city, place))
     if fp:
         return fp
     # убедиться, что «бесплатно/вход свободный» — без денежной суммы
@@ -338,6 +439,9 @@ def short_price(text):
             m_ticket = re.search(r'вход\s+по\s+билетам\s+([^.;\n]{2,40})', low)
             if m_ticket:
                 return 'По билетам ' + m_ticket.group(1).strip()
+            # вуз без указанной цены — считаем бесплатным (правило 15.10.2026)
+            if is_university(city, place):
+                return 'Бесплатно'
             return None
         off_pref, off_amt, off_to = moneys[0][0], moneys[0][1], None
 
@@ -598,6 +702,11 @@ def main():
     if problems:
         print('REPORT: ОШИБКА ПОРЯДКА (нужна правка):')
         for p in problems:
+            print('  ' + p)
+    price_problems = check_price_country(new_events)
+    if price_problems:
+        print('REPORT: ПРОВЕРКА ЦЕН (валюта ≠ стране события):')
+        for p in price_problems:
             print('  ' + p)
     progress(100, 'Данные обновлены.')
 
