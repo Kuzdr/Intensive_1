@@ -22,7 +22,13 @@
    ВДНХ);
 7. МЕХАНИКА правил nbsp: списки однобуквенных и двухбуквенных слов
    проверяются ВСЕХ регистров, включая заглавные «В тени…», «А вы…»
-   (регрессия 30.09.2026, прототипы TP-4190696 и TP-4190703).
+   (регрессия 30.09.2026, прототипы TP-4190696 и TP-4190703);
+8. МЕХАНИКА абзацев описания: между блоками (</p>, </ul>, </blockquote>
+   и следующим блочным тегом) обязана быть пустая строка — слитный
+   `</p><p>` склеивает абзацы (урок TP-4211635, 19.10.2026);
+9. МЕХАНИКА фото автора: у автора с on_elementy=true поле photo
+   обязано быть заполнено (урок TP-4211635: на опубликованной странице
+   у автора не было фото).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -279,6 +285,76 @@ def check_yo_mertvec() -> list:
     return problems
 
 
+def _load_cp(tag: str):
+    """Импортирует tools/check_prototype.py; (модуль, problems)."""
+    path = os.path.join(ROOT, "tools", "check_prototype.py")
+    if not os.path.isfile(path):
+        return None, ["нет tools/check_prototype.py"]
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(tag, path)
+    cp = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(cp)
+    except Exception as e:                   # noqa: BLE001
+        return None, ["tools/check_prototype.py не импортируется: %s" % e]
+    return cp, []
+
+
+def check_block_breaks() -> list:
+    """Между блоками </p>/</ul>/</blockquote> и следующим блочным тегом
+    обязана быть пустая строка (урок TP-4211635, 19.10.2026: описание
+    без деления на абзацы — внутри blockquote стояло `</p><p>` слитно).
+    Ловим слитный `</p><p>` и один перенос `</p>\\n<p`."""
+    cp, problems = _load_cp("_cp_blocks")
+    if cp is None:
+        return problems
+    cases = [
+        ("<p>Один.</p><p>Два.</p>", True, "абзацы слитно"),
+        ("<p>Один.</p>\n<p>Два.</p>", True, "между абзацами один перенос"),
+        ("<p>Один.</p>\n\n<p>Два.</p>", False, "пустая строка — верно"),
+        ("</p>\n\n<ul>\n<li>Раз</li>\n<li>Два</li>\n</ul>\n\n<p>Три.</p>",
+         False, "список с переносами — верно"),
+        ("</p>\n\n<ul><li>Раз</li><li>Два</li></ul>", False,
+         "слитные элементы списка — не абзацы, не наша проверка"),
+        ("</p><ul>", True, "список приклеен к абзацу"),
+        ("</ul><p>", True, "абзац приклеен к списку"),
+        ("<blockquote class=\"small\">\n\n<p>Аннотация.</p>\n\n<p>Ещё.</p>\n\n</blockquote>",
+         False, "blockquote с пустыми строками — верно"),
+        ("</p>\n\n<blockquote><p>Аннотация.</p></blockquote>", False,
+         "blockquote после пустой строки — верно"),
+    ]
+    for text, want_hit, comment in cases:
+        hit = bool(cp.p_block_breaks(text))
+        if hit != want_hit:
+            problems.append("проверка абзацев для %r дала срабатывание=%s, "
+                            "ожидалось %s (%s)" % (text, hit, want_hit, comment))
+    return problems
+
+
+def check_author_photo() -> list:
+    """У автора с on_elementy=true фото обязано быть заполнено
+    (урок TP-4211635, 19.10.2026: опубликованная страница — без фото)."""
+    cp, problems = _load_cp("_cp_aphoto")
+    if cp is None:
+        return problems
+    cases = [
+        ({"authors": [{"name": "X", "on_elementy": True, "photo": ""}]},
+         True, "on_elementy без фото"),
+        ({"authors": [{"name": "X", "on_elementy": True,
+                       "photo": "https://elementy.ru/images/eltevents/x_100.jpg"}]},
+         False, "on_elementy с фото"),
+        ({"authors": [{"name": "Y", "on_elementy": False, "photo": ""}]},
+         False, "новый автор без фото — не этот пункт"),
+        ({"authors": []}, False, "авторов нет"),
+    ]
+    for proto, want_hit, comment in cases:
+        hit = bool(cp.author_photo_problems(proto))
+        if hit != want_hit:
+            problems.append("проверка фото автора для %r дала срабатывание=%s, "
+                            "ожидалось %s (%s)" % (proto, hit, want_hit, comment))
+    return problems
+
+
 def main() -> None:
     if not os.path.isdir(SKILLS_DIR):
         print("нет каталога .opencode/skills")
@@ -322,6 +398,20 @@ def main() -> None:
 
     mech = check_yo_mertvec()
     print("%s механика: «мертвец» никогда не через «ё»"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_block_breaks()
+    print("%s механика: пустая строка между абзацами описания"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_author_photo()
+    print("%s механика: фото автора при on_elementy"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)

@@ -399,6 +399,44 @@ def p_nbsp_around_en_dash(t: str):
     return [m for m in pat.finditer(t)]
 
 
+_BLOCK_OPEN = r"(?:<(?:p|ul|ol|blockquote)(?=[\s>])|<KLBLOCK)"
+_BLOCK_CLOSE = r"(?:</p>|</ul>|</ol>|</blockquote>)"
+_P_BLOCK_SLITO = re.compile(_BLOCK_CLOSE + _BLOCK_OPEN)
+_P_BLOCK_ONE_NL = re.compile(_BLOCK_CLOSE + r"\n" + _BLOCK_OPEN)
+
+
+def p_block_breaks(t: str):
+    """Между блоками (</p>, </ul>, </ol>, </blockquote>) и следующим
+    блочным тегом обязана быть ПУСТАЯ строка (\\n\\n): иначе абзацы
+    склеиваются при разборе по пустым строкам — описание выходит без
+    деления на абзацы (урок TP-4211635, 19.10.2026: внутри blockquote
+    стояло `</p><p>` слитно). Ловим обе поломки: слитно и один перенос.
+    Внутри списка (`<ul>\\n<li>`, между `</li>` и `<li>`) пустая строка
+    не нужна — один перенос там норма, наши правила туда не заходят.
+    """
+    hits = [m for m in _P_BLOCK_SLITO.finditer(t)]
+    hits += [m for m in _P_BLOCK_ONE_NL.finditer(t)]
+    hits.sort(key=lambda m: m.start())
+    return hits
+
+
+def author_photo_problems(proto) -> list:
+    """Фото автора обязательно, если автор уже есть на «Элементах»
+    (on_elementy): блок «Об авторе» без фото неполон (урок TP-4211635,
+    19.10.2026 — на опубликованной странице у автора не было фото).
+    Фото копируется дословно с «Элементов» (URL вида
+    https://elementy.ru/images/eltevents/…_100.jpg)."""
+    out = []
+    if not isinstance(proto, dict):
+        return out
+    for a in proto.get("authors") or []:
+        if a.get("on_elementy") and not str(a.get("photo") or "").strip():
+            out.append(
+                "у автора «%s» on_elementy=true, но пусто фото — "
+                "копировать с «Элементов» дословно" % (a.get("name") or "?"))
+    return out
+
+
 def p_invariant_yo(t: str):
     hits = []
     for w in YO_INVARIANTS:
@@ -1093,6 +1131,10 @@ def main() -> None:
         emit("4", "nbsp ПОСЛЕ «—» — нельзя", m)
     for m in p_nbsp_around_en_dash(t):
         emit("5", "nbsp рядом с тире-интервалом «–» — нельзя", m)
+    for m in p_block_breaks(t):
+        emit("1i", "нет пустой строки между блоками — абзацы склеятся "
+             "(после </p>/</ul>/</blockquote> перед блочным тегом нужен "
+             "\\n\\n, не слитно и не одним переносом)", m)
     for m in p_invariant_yo(t):
         emit("6", "«ё» в слове-инварианте — убрать", m)
     for m in p_notes_yo_audit(t):
@@ -1141,6 +1183,10 @@ def main() -> None:
         # «Доп.информация»: после каждого <br> — пустая строка (правило скилла)
         for level, msg in check_br_blank(proto, sel):
             hard.append(("1f", msg, "", msg, display))
+    if json_mode and isinstance(proto, dict):
+        # Автор с on_elementy обязан иметь фото (урок TP-4211635)
+        for msg in author_photo_problems(proto):
+            hard.append(("7a", msg, "", msg, display))
 
     # Слова для проверки «ё» из tools/yo_words.txt (пополняемый список)
     try:
