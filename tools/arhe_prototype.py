@@ -119,6 +119,8 @@ def build_fields(ev, cfg, venue, today_dt):
     fields.append(P.field("10", "URL регистрации/покупки билета", cfg.get("registration", "")))
     fields.append(P.field("11", "Стоимость", P.nbsp_normalize(cfg.get("price", "")) or "—"))
     fields.append(P.field("12", "Возрастные ограничения", cfg.get("age") or reg.get("age") or "—"))
+    if venue.get("address"):
+        fields.append(P.field("13", "Адрес", P.nbsp_normalize(venue["address"])))
     fields.append(P.field("14", "Аудитория", cfg.get("audience") or "Для всех"))
     return fields
 
