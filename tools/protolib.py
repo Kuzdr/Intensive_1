@@ -183,7 +183,7 @@ def nbsp_normalize(t, skip_verbatim=False):
 
     def fix(chunk):
         chunk = re.sub(r"(?<![%s])([%s]) (?=[%s])" % (CYR, ONE_LETTER, CYR),
-                       r"\1&nbsp;", chunk)
+                       r"\1&nbsp;", chunk, flags=re.IGNORECASE)
         chunk = re.sub(r"([%s0-9»)]+) —" % CYR, r"\1&nbsp;—", chunk)
         chunk = chunk.replace("—&nbsp;", "— ")
         chunk = re.sub(r"(?<![А-ЯЁ])([А-ЯЁ])\. ([А-ЯЁ])\.", r"\1.&nbsp;\2.", chunk)
