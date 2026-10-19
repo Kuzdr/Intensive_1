@@ -10,3 +10,4 @@ data/update_state.json
 .idea/
 Thumbs.db
 _tmp/
+tools/tmp_*.py
