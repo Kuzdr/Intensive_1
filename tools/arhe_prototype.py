@@ -99,9 +99,9 @@ def build_fields(ev, cfg, venue, today_dt):
         sub = "%s. Лекция&nbsp;%d" % (course["name"], course["n"])
     else:
         gen = cfg.get("author_gen") or ""
-        line = "%s %s «%s»" % (cfg.get("type", "Лекция"), gen, title)
-        line4 = line
-        sub = "Научно-популярный лекторий «Архэ»"
+        line4 = (" ".join(x for x in [cfg.get("type", "Лекция"), gen, "«%s»" % title] if x)).replace("  ", " ")
+        sub = cfg.get("sub") or "Научно-популярный лекторий «Архэ»"
+        line = "%s<br>%s" % (sub, line4) if sub else line4
     fields.append(P.field("3", "Полный заголовок с подзаголовком", line))
     fields.append(P.field("4", "Полный заголовок без подзаголовка", line4))
     fields.append(P.field("5", "Название лекции", title))
