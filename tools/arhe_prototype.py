@@ -222,7 +222,7 @@ def build(cfg, today_dt=None):
         "types": cfg.get("types") or ["Лекция"],
         "topics": cfg.get("topics") or [],
         "price_short": cfg.get("price_short", ""),
-        "annot": P.nbsp_normalize(cfg.get("annot", "")),
+        "annot": cfg.get("annot", ""),
         "url": cfg.get("url") or cfg["registration"] or cfg["sources"][0],
         "sources": cfg["sources"],
         "fields": build_fields(ev, cfg, venue, today_dt),
