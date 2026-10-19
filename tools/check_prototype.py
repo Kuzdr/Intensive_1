@@ -9,11 +9,13 @@
 
 Использование (PowerShell):
 
-    python -X utf8 tools\\check_prototype.py --json data\\prototypes\\<ID>\\prototype.json
+    python -X utf8 tools\\check_prototype.py data\\prototypes\\<ID>\\prototype.json
 
     python -X utf8 tools\\check_prototype.py prototype.txt
 
-Первый способ — основной: скрипт сам собирает текст ИЗ prototype.json
+Первый способ — основной: файл .json скрипт сам разбирает как прототип
+(автоопределение по расширению; ключ --json принимается, но не обязателен),
+собирает текст ИЗ prototype.json
 (все формальные поля, заголовок, аннотация карточки, описание, доп. информация,
 блок автора) и дополнительно проверяет поле 1 «Привязка» по формуле.
 Второй — для проверки текста, набранного в чат.
@@ -1015,11 +1017,17 @@ def main() -> None:
     json_mode = False
     proto = None
     if args[0] in ("--json", "-j"):
-        json_mode = True
         if len(args) < 2:
             print("укажите путь к prototype.json")
             sys.exit(2)
-        with io.open(args[1], encoding="utf-8") as f:
+        args = [args[1]] + args[2:]
+    # Файл .json разбираем ВСЕГДА как JSON-прототип, даже без --json:
+    # иначе он читается как сырой текст, и кавычки/эскейпы JSON дают
+    # сотни ложных срабатываний (урок 19.10.2026). --json оставлен
+    # для совместимости со старыми командами.
+    if args[0].endswith(".json"):
+        json_mode = True
+        with io.open(args[0], encoding="utf-8") as f:
             proto = json.load(f)
         if sel is not None:
             print("ЧАСТИЧНАЯ ПРОВЕРКА (--only %s): берём только выбранные поля. "
@@ -1028,12 +1036,12 @@ def main() -> None:
         if fix_mode:
             proto, n_fields = fix_proto_values(proto, sel)
             if n_fields:
-                with io.open(args[1], "w", encoding="utf-8") as fw:
+                with io.open(args[0], "w", encoding="utf-8") as fw:
                     json.dump(proto, fw, ensure_ascii=False, indent=2)
                 orig = proto_text(proto, sel)
-                print("--fix: авто-правки в %d полях %s" % (n_fields, args[1]))
+                print("--fix: авто-правки в %d полях %s" % (n_fields, args[0]))
             else:
-                print("--fix: авто-правок не потребовалось: %s" % args[1])
+                print("--fix: авто-правок не потребовалось: %s" % args[0])
     else:
         orig = load(args[0])
         if fix_mode:
