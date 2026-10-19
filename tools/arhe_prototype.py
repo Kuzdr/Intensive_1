@@ -70,17 +70,24 @@ def build_fields(ev, cfg, venue, today_dt):
     city = venue["city"]
     short = venue["short"]
     online = venue.get("online", False)
+    online_only = venue.get("online_only", False)
     lectory = cfg.get("lectory") or "Лекторий Культурно-просветительского центра «Архэ»"
     course = cfg.get("course")  # {n, name, author_gen}
 
-    place2 = "%s, %s%s" % (city, short, " и&nbsp;ОНЛАЙН" if online else "")
-    short_online = "%s%s" % (short, " и&nbsp;ОНЛАЙН" if online else "")
+    if online_only:
+        place2 = "ОНЛАЙН"
+        short_online = "ОНЛАЙН"
+        city_date = ""
+    else:
+        place2 = "%s, %s%s" % (city, short, " и&nbsp;ОНЛАЙН" if online else "")
+        short_online = "%s%s" % (short, " и&nbsp;ОНЛАЙН" if online else "")
+        city_date = city
     fields = []
     fields.append(P.field("0", "ID события", cfg["id"]))
     fields.append(P.field("1", "Привязка", P.binding(ev["date_iso"], ev["time_start"])))
     dates = []
     P.date_fields(dates, ev["date_iso"], ev["time_start"], ev["time_end"],
-                  city, short_online, today_dt)
+                  city_date, short_online, today_dt)
     day7 = dates.pop()          # «7» ставится позже, после 6.4
     fields += dates
 
@@ -127,7 +134,8 @@ def para(s):
 def build_desc(ev, cfg, venue):
     online = venue.get("online", False)
     parts = [P.lead_field({}, ev["date_iso"], ev["time_start"], ev["time_end"],
-                          venue["city"], venue["short"], online)]
+                          venue["city"], venue["short"], online,
+                          venue.get("online_only", False))]
     if cfg.get("intro"):
         parts.append(para(cfg["intro"]))
     parts.append("<KLBLOCK eltclub_authors_about/>")
@@ -151,10 +159,11 @@ def build_extra(ev, cfg, venue):
     out = []
     if cfg.get("price_extra"):
         out.append(para(cfg["price_extra"]))
-    if cfg.get("registration"):
+    if cfg.get("registration") and not cfg.get("registration_embedded"):
         out.append('<p><a href="%s" target="_blank">Регистрация и&nbsp;оплата</a>.</p>'
                    % cfg["registration"])
-    out.append(venue["addr_html"])
+    if venue.get("addr_html"):
+        out.append(venue["addr_html"])
     if cfg.get("contacts"):
         out.append(para(cfg["contacts"]))
     out.append("<!-- @@@ -->")
@@ -205,8 +214,9 @@ def build(cfg, today_dt=None):
         "time_start": ev["time_start"],
         "time_end": ev["time_end"],
         "city": venue["city"],
-        "place": "%s, %s%s" % (venue["city"], venue["short"],
-                               " и ОНЛАЙН" if venue.get("online") else ""),
+        "place": "ОНЛАЙН" if venue.get("online_only") else "%s, %s%s" % (
+            venue["city"], venue["short"],
+            " и ОНЛАЙН" if venue.get("online") else ""),
         "lecturer": cfg.get("lecturer") or (cfg.get("authors") or [{}])[0].get("name", ""),
         "title": P.nbsp_normalize(cfg["title"]),
         "types": cfg.get("types") or ["Лекция"],

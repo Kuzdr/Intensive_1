@@ -298,8 +298,11 @@ def date_fields(fields, date_iso, time_start, time_end, city, place_short, today
     """Добавляет поля 2, 2.1–2.4, 7 — механические даты/время."""
     dt = d(date_iso)
     nxt = dt + datetime.timedelta(days=1)
-    fields.append(field("2", "Дата события", "%s, %s, %s, %s" % (
-        dt.strftime("%d.%m.%Y"), city, place_short, time_start)))
+    parts = [dt.strftime("%d.%m.%Y")]
+    if city:
+        parts.append(city)
+    parts += [place_short, time_start]
+    fields.append(field("2", "Дата события", ", ".join(parts)))
     fields.append(field("2.1", "Начало события", ru_date(dt)))
     fields.append(field("2.2", "Время начала", time_start))
     fields.append(field("2.3", "Поставить", ru_date(today_dt)))
@@ -309,15 +312,16 @@ def date_fields(fields, date_iso, time_start, time_end, city, place_short, today
         weekday_ru(dt), dt.day, MONTHS[dt.month - 1], dt.year, tr)))
 
 
-def lead_field(fields, date_iso, time_start, time_end, city, place, online):
+def lead_field(fields, date_iso, time_start, time_end, city, place, online,
+               online_only=False):
     """Первое поле описания — абзац-шапка <p class="small">."""
     dt = d(date_iso)
     place_head = place if online else re.sub(r" и&nbsp;ОНЛАЙН$", "", place)
     onl = " и&nbsp;ОНЛАЙН" if online else ""
-    return '<p class="small"><b>%s, %d&nbsp;%s %d&nbsp;года, %s, %s, %s%s.</b></p>' % (
-        weekday_ru(dt), dt.day, MONTHS[dt.month - 1], dt.year,
-        ("%s–%s" % (time_start, time_end)) if time_end else time_start,
-        city, place_head, onl)
+    tr = "%s–%s" % (time_start, time_end) if time_end else time_start
+    where = "ОНЛАЙН" if online_only else "%s, %s%s" % (city, place_head, onl)
+    return '<p class="small"><b>%s, %d&nbsp;%s %d&nbsp;года, %s, %s.</b></p>' % (
+        weekday_ru(dt), dt.day, MONTHS[dt.month - 1], dt.year, tr, where)
 
 
 def author_new_fields(name, block_html, photo):
