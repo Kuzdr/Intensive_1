@@ -192,6 +192,7 @@ def nbsp_normalize(t, skip_verbatim=False):
                        r"\1.&nbsp;", chunk)
         chunk = re.sub(r"(?<=[0-9]) (?=[А-Яа-яЁё])", "&nbsp;", chunk)
         chunk = re.sub(r"(?<=Лекция) (?=[0-9])", "&nbsp;", chunk)
+        chunk = re.sub(r"(Лекция&nbsp;[0-9]+)&nbsp;", r"\1 ", chunk)
         rom = "|".join(sorted(ROMAN, key=len, reverse=True))
         chunk = re.sub(r"(?<=[%s0-9]) (%s)\b" % (CYR, rom), "&nbsp;\\1", chunk)
         chunk = re.sub(r"\b(%s) " % rom, "\\1&nbsp;", chunk)

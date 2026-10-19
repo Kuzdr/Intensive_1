@@ -92,11 +92,14 @@ def build_fields(ev, cfg, venue, today_dt):
     fields += dates
 
     if course:
-        line = "«%s»<br>Лекция&nbsp;%d курса %s «%s»" % (
-            title, course["n"], course["author_gen"], course["name"])
-        line4 = "«%s». Лекция&nbsp;%d курса %s «%s»" % (
-            title, course["n"], course["author_gen"], course["name"])
-        sub = "%s. Лекция&nbsp;%d" % (course["name"], course["n"])
+        course_name = P.nbsp_normalize(course["name"])
+        qtitle = title if title.startswith("«") else "«%s»" % title
+        line = "%s<br>Лекция&nbsp;%d курса %s «%s»" % (
+            qtitle, course["n"], course["author_gen"], course_name)
+        tail_dot = "" if qtitle[-1:] in "?!." else "."
+        line4 = "%s%s Лекция&nbsp;%d курса %s «%s»" % (
+            qtitle, tail_dot, course["n"], course["author_gen"], course_name)
+        sub = "%s. Лекция&nbsp;%d" % (course_name, course["n"])
     else:
         gen = cfg.get("author_gen") or ""
         line4 = (" ".join(x for x in [cfg.get("type", "Лекция"), gen, "«%s»" % title] if x)).replace("  ", " ")
@@ -222,7 +225,7 @@ def build(cfg, today_dt=None):
         "types": cfg.get("types") or ["Лекция"],
         "topics": cfg.get("topics") or [],
         "price_short": cfg.get("price_short", ""),
-        "annot": cfg.get("annot", ""),
+        "annot": P.nbsp_normalize(cfg.get("annot", "")),
         "url": cfg.get("url") or cfg["registration"] or cfg["sources"][0],
         "sources": cfg["sources"],
         "fields": build_fields(ev, cfg, venue, today_dt),
