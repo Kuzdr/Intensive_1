@@ -296,21 +296,27 @@ def field(n, name, value):
 
 
 def date_fields(fields, date_iso, time_start, time_end, city, place_short, today_dt):
-    """Добавляет поля 2, 2.1–2.4, 7 — механические даты/время."""
+    """Добавляет поля 2, 2.1–2.4, 7 — механические даты/время.
+
+    Для чисто-онлайн событий (place_short == «ОНЛАЙН», без офлайн-площадки)
+    к времени добавляется пометка «(мск)» (правило пользователя 20.10.2026).
+    """
     dt = d(date_iso)
     nxt = dt + datetime.timedelta(days=1)
+    online_only = (place_short == "ОНЛАЙН" and not city)
+    msk = " (мск)" if online_only else ""
     parts = [dt.strftime("%d.%m.%Y")]
     if city:
         parts.append(city)
-    parts += [place_short, time_start]
+    parts += [place_short, time_start + msk]
     fields.append(field("2", "Дата события", ", ".join(parts)))
     fields.append(field("2.1", "Начало события", ru_date(dt)))
-    fields.append(field("2.2", "Время начала", time_start))
+    fields.append(field("2.2", "Время начала", time_start + msk))
     fields.append(field("2.3", "Поставить", ru_date(today_dt)))
     fields.append(field("2.4", "Снять", ru_date(nxt)))
     tr = "%s–%s" % (time_start, time_end) if time_end else time_start
-    fields.append(field("7", "Дата и время", "%s, %d&nbsp;%s %d&nbsp;года, %s" % (
-        weekday_ru(dt), dt.day, MONTHS[dt.month - 1], dt.year, tr)))
+    fields.append(field("7", "Дата и время", "%s, %d&nbsp;%s %d&nbsp;года, %s%s" % (
+        weekday_ru(dt), dt.day, MONTHS[dt.month - 1], dt.year, tr, msk)))
 
 
 def lead_field(fields, date_iso, time_start, time_end, city, place, online,
@@ -319,7 +325,8 @@ def lead_field(fields, date_iso, time_start, time_end, city, place, online,
     dt = d(date_iso)
     place_head = place if online else re.sub(r" и&nbsp;ОНЛАЙН$", "", place)
     onl = " и&nbsp;ОНЛАЙН" if online else ""
-    tr = "%s–%s" % (time_start, time_end) if time_end else time_start
+    msk = " (мск)" if online_only else ""
+    tr = "%s–%s%s" % (time_start, time_end, msk) if time_end else time_start + msk
     where = "ОНЛАЙН" if online_only else "%s, %s%s" % (city, place_head, onl)
     return '<p class="small"><b>%s, %d&nbsp;%s %d&nbsp;года, %s, %s.</b></p>' % (
         weekday_ru(dt), dt.day, MONTHS[dt.month - 1], dt.year, tr, where)
