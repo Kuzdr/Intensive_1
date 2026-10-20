@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-20 19:46:42",
+  "date": "2026-10-21 00:34:17",
   "protos": {
     "MM-261023-liberman-msk": "prototype.json:11140:c5843a5239c9|_state.json:-",
     "MM-261024-donskov-msk": "prototype.json:10320:c541ef8c1fe0|_state.json:-",
@@ -47,7 +47,6 @@
     "TP-4229521": "prototype.json:14586:031f3c13a87d|_state.json:-",
     "TP-4231686": "prototype.json:16249:97227f2a5703|_state.json:-",
     "TP-4232561": "prototype.json:12190:e1a3be480b31|_state.json:-",
-    "TP-4238558": "prototype.json:14328:175317e0f0a5|_state.json:-",
     "TP-4246779": "prototype.json:15053:cf7a5fda4d43|_state.json:-",
     "TP-4246786": "prototype.json:15082:063573d871db|_state.json:-",
     "TP-4247514": "prototype.json:14742:25ff1bfd9403|_state.json:-",
@@ -64,7 +63,6 @@
     "TP-4258041": "prototype.json:13086:222e84f3721b|_state.json:-",
     "TP-4258079": "prototype.json:10276:c953680adf5c|_state.json:-",
     "TP-4258224": "prototype.json:18342:7912c37e7bf2|_state.json:-",
-    "VS-261020-tims-multivselennaya": "prototype.json:12247:ae60befc2a5d|_state.json:-",
     "VS-261022-markov-karaul-my-vse-umryem": "prototype.json:16646:86c3a8c8caf2|_state.json:-",
     "VS-261025-semikhatov-kvantovaya-teoriya-polya": "prototype.json:13159:e9b4898cf758|_state.json:-",
     "VS-261030-alipov-smena-nastroeniya": "prototype.json:14099:026692f60c08|_state.json:-",
