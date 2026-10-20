@@ -57,9 +57,10 @@ def merge(cfg):
     reg = tp.read(cfg.get("timepad") or site.get("timepad_url"),
                   file=cfg.get("timepad_file"))
     date_iso = cfg.get("date_iso") or site.get("date_iso") or ""
+    date_iso_end = cfg.get("date_iso_end") or ""
     time_start = cfg.get("time_start") or site.get("time_start") or reg.get("time_start") or ""
     time_end = cfg.get("time_end") or reg.get("time_end") or ""
-    return {"site": site, "reg": reg, "date_iso": date_iso,
+    return {"site": site, "reg": reg, "date_iso": date_iso, "date_iso_end": date_iso_end,
             "time_start": time_start, "time_end": time_end}
 
 
@@ -87,7 +88,7 @@ def build_fields(ev, cfg, venue, today_dt):
     fields.append(P.field("1", "Привязка", P.binding(ev["date_iso"], ev["time_start"])))
     dates = []
     P.date_fields(dates, ev["date_iso"], ev["time_start"], ev["time_end"],
-                  city_date, short_online, today_dt)
+                  city_date, short_online, today_dt, ev.get("date_iso_end"))
     day7 = dates.pop()          # «7» ставится позже, после 6.4
     fields += dates
 
@@ -140,7 +141,7 @@ def build_desc(ev, cfg, venue):
     online = venue.get("online", False)
     parts = [P.lead_field({}, ev["date_iso"], ev["time_start"], ev["time_end"],
                           venue["city"], venue["short"], online,
-                          venue.get("online_only", False))]
+                          venue.get("online_only", False), ev.get("date_iso_end"))]
     if cfg.get("intro"):
         parts.append(para(cfg["intro"]))
     parts.append("<KLBLOCK eltclub_authors_about/>")
@@ -216,6 +217,7 @@ def build(cfg, today_dt=None):
         "id": cfg["id"],
         "lectory": cfg.get("lectory") or "Лекторий Культурно-просветительского центра «Архэ»",
         "date_iso": ev["date_iso"],
+        "date_iso_end": ev.get("date_iso_end") or "",
         "time_start": ev["time_start"],
         "time_end": ev["time_end"],
         "city": venue["city"],

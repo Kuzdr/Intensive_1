@@ -295,32 +295,76 @@ def field(n, name, value):
     return {"n": n, "name": name, "value": value}
 
 
-def date_fields(fields, date_iso, time_start, time_end, city, place_short, today_dt):
-    """Добавляет поля 2, 2.1–2.4, 7 — механические даты/время.
+def date_range_dm(date_iso, date_iso_end):
+    """«11–13.12.2026» для поля 2 (диапазон в одном месяце).
+
+    Разные месяцы/годы — «11.12–13.01.2027».
+    """
+    a, b = d(date_iso), d(date_iso_end)
+    if a == b:
+        return a.strftime("%d.%m.%Y")
+    if a.year == b.year and a.month == b.month:
+        return "%02d–%s" % (a.day, b.strftime("%d.%m.%Y"))
+    return "%s–%s" % (a.strftime("%d.%m.%Y"), b.strftime("%d.%m.%Y"))
+
+
+def date_range_words(date_iso, date_iso_end):
+    """«11–13 декабря 2026 года» для шапки и поля 7.
+
+    Разные месяцы — «11 декабря – 13 января 2027 года».
+    """
+    a, b = d(date_iso), d(date_iso_end)
+    if a == b:
+        return "%d&nbsp;%s %d&nbsp;года" % (a.day, MONTHS[a.month - 1], a.year)
+    if a.year == b.year and a.month == b.month:
+        return "%d–%d&nbsp;%s %d&nbsp;года" % (
+            a.day, b.day, MONTHS[b.month - 1], b.year)
+    return "%d&nbsp;%s – %d&nbsp;%s %d&nbsp;года" % (
+        a.day, MONTHS[a.month - 1], b.day, MONTHS[b.month - 1], b.year)
+
+
+def date_fields(fields, date_iso, time_start, time_end, city, place_short, today_dt,
+                date_iso_end=None):
+    """Добавляет поля 2, 2.1, 2.1а, 2.2–2.4, 7 — механические даты/время.
 
     Для чисто-онлайн событий (place_short == «ОНЛАЙН», без офлайн-площадки)
     к времени добавляется пометка «(мск)» (правило пользователя 20.10.2026).
+
+    МНОГОДНЕВНЫЕ события (date_iso_end задан, решение пользователя 20.10.2026):
+    поле 2 — диапазон дат, появляется поле 2.1а «Дата окончания», поле 2.4
+    «Снять» = день ПОСЛЕ окончания. Поле «Время начала/окончания» — по первому
+    дню (сбор/старт).
     """
     dt = d(date_iso)
-    nxt = dt + datetime.timedelta(days=1)
+    dt_end = d(date_iso_end) if date_iso_end else None
+    nxt = (dt_end or dt) + datetime.timedelta(days=1)
     online_only = (place_short == "ОНЛАЙН" and not city)
     msk = " (мск)" if online_only else ""
-    parts = [dt.strftime("%d.%m.%Y")]
+    dstr = date_range_dm(date_iso, date_iso_end) if date_iso_end else dt.strftime("%d.%m.%Y")
+    parts = [dstr]
     if city:
         parts.append(city)
-    parts += [place_short, time_start + msk]
+    parts.append(place_short)
+    if not date_iso_end:
+        parts.append(time_start + msk)
     fields.append(field("2", "Дата события", ", ".join(parts)))
     fields.append(field("2.1", "Начало события", ru_date(dt)))
+    if date_iso_end:
+        fields.append(field("2.1а", "Дата окончания", ru_date(dt_end)))
     fields.append(field("2.2", "Время начала", time_start + msk))
     fields.append(field("2.3", "Поставить", ru_date(today_dt)))
     fields.append(field("2.4", "Снять", ru_date(nxt)))
-    tr = "%s–%s" % (time_start, time_end) if time_end else time_start
-    fields.append(field("7", "Дата и время", "%s, %d&nbsp;%s %d&nbsp;года, %s%s" % (
-        weekday_ru(dt), dt.day, MONTHS[dt.month - 1], dt.year, tr, msk)))
+    if date_iso_end:
+        fields.append(field("7", "Дата и время", "%s, %s" % (
+            weekday_ru(dt), date_range_words(date_iso, date_iso_end))))
+    else:
+        tr = "%s–%s" % (time_start, time_end) if time_end else time_start
+        fields.append(field("7", "Дата и время", "%s, %d&nbsp;%s %d&nbsp;года, %s%s" % (
+            weekday_ru(dt), dt.day, MONTHS[dt.month - 1], dt.year, tr, msk)))
 
 
 def lead_field(fields, date_iso, time_start, time_end, city, place, online,
-               online_only=False):
+               online_only=False, date_iso_end=None):
     """Первое поле описания — абзац-шапка <p class="small">."""
     dt = d(date_iso)
     place_head = place if online else re.sub(r" и&nbsp;ОНЛАЙН$", "", place)
@@ -328,8 +372,12 @@ def lead_field(fields, date_iso, time_start, time_end, city, place, online,
     msk = " (мск)" if online_only else ""
     tr = "%s–%s%s" % (time_start, time_end, msk) if time_end else time_start + msk
     where = "ОНЛАЙН" if online_only else "%s, %s%s" % (city, place_head, onl)
-    return '<p class="small"><b>%s, %d&nbsp;%s %d&nbsp;года, %s, %s.</b></p>' % (
-        weekday_ru(dt), dt.day, MONTHS[dt.month - 1], dt.year, tr, where)
+    if date_iso_end:
+        when = "%s, %s" % (weekday_ru(dt), date_range_words(date_iso, date_iso_end))
+    else:
+        when = "%s, %d&nbsp;%s %d&nbsp;года, %s" % (
+            weekday_ru(dt), dt.day, MONTHS[dt.month - 1], dt.year, tr)
+    return '<p class="small"><b>%s, %s.</b></p>' % (when, where)
 
 
 def author_new_fields(name, block_html, photo):
