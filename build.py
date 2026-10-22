@@ -338,6 +338,7 @@ ORGANIZER_NAMES = {
     'school.spbstu.ru': 'Санкт-Петербургский политехнический университет Петра Великого',
     'spbstuni.timepad.ru': 'Санкт-Петербургский политехнический университет Петра Великого',
     'deti-i-nauka-event.timepad.ru': 'Дети и наука',
+    'nekrasovka.ru': 'Библиотека им. Н. А. Некрасова',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')
@@ -1016,17 +1017,26 @@ def proto_photo(a, p, prefix):
     Оба показываем ОТДЕЛЬНО от описания (правило 13.10.2026): в тексте описания
     фото нет. Подписей под фото НЕ выводим (решение 28.09.2026). Если `photo`
     уже указывает на тот же файл 120×150, второй раз не дублируем.
+
+    Локальное имя файла (не URL) ищем в `site/assets/img/` — там лежат
+    подготовленные картинки 120×150 (иначе картинка не грузится).
     """
     name = a.get('name') or p.get('lecturer') or 'автор'
     src = (a.get('photo') or '').strip()
+    fn = author_photo_file(a, p)
     parts = []
-    if src:
-        href = src if re.match(r'^(https?:)?//', src) else prefix + src
+    same = bool(fn) and src == fn
+    if src and not same:
+        if re.match(r'^(https?:)?//', src):
+            href = src
+        elif os.path.isfile(os.path.join(IMG_DIR, src)):
+            href = prefix + 'assets/img/' + src
+        else:
+            href = prefix + src
         parts.append('<div class="pphoto"><img src="%s" alt="%s" '
                      'style="max-width:600px;height:auto"></div>'
                      % (esc(href), esc(name)))
-    fn = author_photo_file(a, p)
-    if fn and not src.endswith('/' + fn) and src != fn:
+    if fn and not src.endswith('/' + fn):
         parts.append('<div class="pphoto ph120"><img src="%s" alt="%s" '
                      'style="width:120px;height:150px" '
                      'title="Файл 120×150 для базы «Элементов»"></div>'
