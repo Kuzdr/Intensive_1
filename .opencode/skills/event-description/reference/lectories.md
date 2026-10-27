@@ -358,11 +358,22 @@
   «(ЗАМЕНИТЬ!)» не нужна); сайт площадки domkul.ru в тот же день был
   недоступен (запись в availability_log.md), телефон Яндекса — бронирование
   ресторана, в адресный блок не выносим. Бесплатность участия подтверждаем
-  по API билетов tickets.polymus.ru (POST /api/no-scheme, price=0);
+  по API билетов tickets.polymus.ru (POST /api/no-scheme, price=0):
+  hash берём из ссылки регистрации события `tickets.polymus.ru/event/<HEX>`,
+  тело запроса `{"hash": "<HEX>"}` (Content-Type: application/json,
+  Referer: https://tickets.polymus.ru/), смотрим `response.price[].price`
+  (все «0» = бесплатно) и категории `category_ru` (кафе-серия: «Взрослый»,
+  «Дети от 12 до 18 лет» → те же подписи в `reg_labels`);
   регистрация обязательна, строки цены — по образцу 446476 («Участие
   бесплатное, по предварительной регистрации. 12+»). ID: PM-<дата>-<slug>-msk
-  (образцы: PM-261111-issledovat-kosmos-msk, PM-261125-vodnoe-sudno-msk,
-  PM-261209-mikroelektronika-msk).
+  (образцы: PM-261028-sozdanie-samoleta-msk, PM-261111-issledovat-kosmos-msk,
+  PM-261125-vodnoe-sudno-msk, PM-261209-mikroelektronika-msk).
+  Фото спикеров кафе-серии: отдельных фото на polymus нет, портреты встроены
+  в афишу события (URL берём из страницы события, см. скилл 7.5) — вырезаем
+  120×150 в `site/assets/img/` (akulov-ilya_120.jpg, ponomarev-dmitry_120.jpg),
+  7.5/`photo` = URL афиши, 7.6/`photo_file` = имя файла. Исключение — авторы,
+  уже существующие на «Элементах» (Амелюшкин, Серов): фото берём дословно
+  оттуда.
 - Прочее:
   - Регистрация — tickets.polymus.ru/event/<HEX>: в блоке регистрации события
     ссылок может быть две (онлайн-лекция / очная лекция), в филиале — одна
