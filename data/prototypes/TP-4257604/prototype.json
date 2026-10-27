@@ -146,7 +146,7 @@
   "<p>По всем вопросам относительно лекции обращайтесь по <a href=\"mailto:arhe.msk@gmail.com\" target=\"_blank\">электронной почте</a> или в&nbsp;Телеграм: <a href=\"https://t.me/centrarhe\" target=\"_blank\">@centrarhe</a>.</p>",
   "<!-- @@@ -->",
   "<p class=\"small\">Информация о&nbsp;лекции <a href=\"https://arhe.msk.ru/?post_type=tribe_events&p=157566\" target=\"_blank\">на сайте «Архэ»</a>.<br>\n\nИнформация о&nbsp;лекции <a href=\"https://arhe-events.timepad.ru/event/4257604/\" target=\"_blank\">на TimePad</a>.</p>",
-  "<p class=\"small\"><a href=\"http://arhe.msk.ru/?page_id=369\" target=\"_blank\">О&nbsp;Лектории Центра «Архэ»</a></p>"
+  "<p class=\"small\"><a href=\"http://arhe.msk.ru/?page_id=369\" target=\"_blank\">О&nbsp;Лектории Центра «Архэ»</a>.</p>"
  ],
  "authors": [
   {
@@ -187,7 +187,7 @@
   "<p>Астроном, астрофотограф, популяризатор науки и&nbsp;автор книги «Как наблюдать за звездами. Практический гид» (АСТ).</p>",
   "<p><b>Адрес:</b> Москва, ул. Дубининская, д.&nbsp;20, стр.&nbsp;1 (Научно-популярная библиотека «Научка»).<br>\n\n<b>Проезд:</b> метро «Павелецкая». <a href=\"https://yandex.ru/maps/-/CPAWNU-f\" target=\"_blank\">Карта</a>.<br>\n\n<b>Телефон:</b> (495)&nbsp;088-92-81.</p>",
   "<p>По всем вопросам относительно лекции обращайтесь по <a href=\"mailto:arhe.msk@gmail.com\" target=\"_blank\">электронной почте</a> или в&nbsp;Телеграм: <a href=\"https://t.me/centrarhe\" target=\"_blank\">@centrarhe</a>.</p>",
-  "<p class=\"small\"><a href=\"http://arhe.msk.ru/?page_id=369\" target=\"_blank\">О&nbsp;Лектории Центра «Архэ»</a></p>"
+  "<p class=\"small\"><a href=\"http://arhe.msk.ru/?page_id=369\" target=\"_blank\">О&nbsp;Лектории Центра «Архэ»</a>.</p>"
  ],
  "photo_file": "",
  "notes": "Организатор — Культурно-просветительский центр «Архэ» (одиночная лекция, очно в «Научке» + платная трансляция).\nСтраница лекции: https://arhe.msk.ru/?post_type=tribe_events&p=157566; Timepad: https://arhe-events.timepad.ru/event/4257604/.\nДата 05.11.2026, время 19:00–20:30 — Timepad.\nМесто: Москва, ул. Дубининская, д. 20, стр. 1 (Научно-популярная библиотека «Научка»); есть платная трансляция (arhe.msk.ru/stream) → поле 2/8 «и ОНЛАЙН», возраст 16+ (Timepad).\nДУБЛЬ = совпадение даты: на «Элементах» 05.11.2026 событий нет (data/events.json); поиск elementy.ru/find?objs=eltevents&words=Ильницкий — есть только прошлые лекции (446946, 445543, другие даты) — дублем не является.\nАвтор Руслан Ильницкий на «Элементах» НАЙДЕН (446946, 445543) → on_elementy true, фото https://elementy.ru/images/eltevents/ilnitskij_r_100.jpg; блок «Об авторе» скопирован дословно.\nОдиночное событие (без курса): поле 3 = «Научно-популярный лекторий «Архэ»<br>Лекция Руслана Ильницкого «…»» (правило поля 3 от 15.10.2026).\nЦены: лекция 1000 руб., студентам/школьникам 600 руб., трансляция 900 руб. (Timepad).\nПоля 6.2 — 5247020 (Москва, Научно-популярная библиотека «Научка»), лекторий — 5. Тема «Астрономия»."

@@ -142,7 +142,7 @@
   "<p>Для приобретения видеозаписей лекций пишите на почту: <a href=\"mailto:arhe.msk@gmail.com\">arhe.msk@gmail.com</a>.</p>",
   "<!-- @@@ -->",
   "<p class=\"small\">Информация о&nbsp;лекции <a href=\"https://arhe.msk.ru/?post_type=tribe_events&p=157241\" target=\"_blank\">на сайте «Архэ»</a>.<br>\n\nИнформация о&nbsp;курсе <a href=\"https://arhe.msk.ru/?post_type=tribe_events&p=157203\" target=\"_blank\">на сайте «Архэ»</a>.<br>\n\nИнформация о&nbsp;лекции <a href=\"https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4224178/\" target=\"_blank\">на TimePad</a>.</p>",
-  "<p class=\"small\"><a href=\"http://arhe.msk.ru/?page_id=369\" target=\"_blank\">О&nbsp;Лектории Центра «Архэ»</a></p>"
+  "<p class=\"small\"><a href=\"http://arhe.msk.ru/?page_id=369\" target=\"_blank\">О&nbsp;Лектории Центра «Архэ»</a>.</p>"
  ],
  "authors": [
   {
@@ -182,7 +182,7 @@
  "verbatim_fragments": [
   "<p>Культурно-просветительский центр «Архэ» приглашает на курс <b><i>Михаила Магида</i> «Ближний Восток: новая политическая карта»</b>.</p>",
   "<p>Лекцию прочитает <b><i>Михаил Магид</i></b>, <i>востоковед и&nbsp;политический аналитик</i>.</p>",
-  "<p class=\"small\"><a href=\"http://arhe.msk.ru/?page_id=369\" target=\"_blank\">О&nbsp;Лектории Центра «Архэ»</a></p>"
+  "<p class=\"small\"><a href=\"http://arhe.msk.ru/?page_id=369\" target=\"_blank\">О&nbsp;Лектории Центра «Архэ»</a>.</p>"
  ],
  "photo_file": "",
  "notes": "Организатор — Культурно-просветительский центр «Архэ», онлайн-лекция курса (Timepad аккаунт tsentr-arhe-v-sankt-peter).\nСтраница лекции: https://arhe.msk.ru/?post_type=tribe_events&p=157241; страница курса: https://arhe.msk.ru/?post_type=tribe_events&p=157203; Timepad: https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4224178/.\nДата 06.11.2026, время 20:00–21:30 — Timepad (пятница). Лекция только онлайн → поля 2 и 8 «ОНЛАЙН», адреса нет.\nДУБЛЬ = совпадение даты: на «Элементах» 06.11.2026 событий нет; поиск по названию/«Иран» совпадений нет — дублем не является.\nАвтор Михаил Магид на «Элементах» НЕ найден → новый автор: on_elementy false, поля 7.5/7.6; фото из источника (arhe.msk.ru/wp-content/uploads/2026/09/magid.jpg) — как в лекциях 1–2 курса.\nСтруктура — по эталону онлайн-лекции курса TP-4223982 (лекция 2): intro «приглашает на курс…», «Тема третьей лекции: …», план курса, «Лекцию прочитает …».\nЦена: только трансляция одной лекции — 1100 руб. (абонемент на трансляции — только у первой онлайн-лекции курса, TP-4223982; в источнике лекции 3 абонемента нет).\nПоля 6.2 — 5246826 (Москва, Культурно-просветительский центр «Архэ»), лекторий — 5. Темы «Политология», «История»."
