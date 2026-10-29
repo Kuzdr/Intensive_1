@@ -29,7 +29,10 @@ PORT = int(os.environ.get('PORT', 8000))
 
 # Жёсткие пределы на шаги обновления (сек): защита от «зависания» навсегда,
 # когда сайт-источник не отвечает. См. run_step (правило 13.10.2026).
-SCRAPE_LIMIT = int(os.environ.get('SCRAPE_LIMIT', 300))
+# 29.10.2026: предел сбора поднят с 300 до 600 с — страницы «Элементов» иногда
+# отвечают по 35–40 с, и при повторе на медленном сайте 300 с не хватало
+# (обновление обрывалось на середине списка). Жёсткий предел остаётся.
+SCRAPE_LIMIT = int(os.environ.get('SCRAPE_LIMIT', 600))
 BUILD_LIMIT = int(os.environ.get('BUILD_LIMIT', 240))
 
 # Когда загружен этот код. Если файл сервера меняли ПОСЛЕ запуска, работающий
@@ -312,7 +315,7 @@ def proto_pass(evs=None, p0=62, p1=68, live=True):
         except Exception as e:
             status = 'НЕ ЧИТАЕТСЯ (%s)' % e
         else:
-            if protolib.is_past(p.get('date_iso')):
+            if protolib.is_past(p.get('date_iso'), p.get('date_iso_end')):
                 status = 'перенесён в архив (лекция уже прошла)'
                 archived.append(pid)
             else:
@@ -372,6 +375,12 @@ def git_publish(report, proto_report=None, kind='pipeline'):
     else:
         msg = ('Автообновление данных: +%d новых, %d изменено, %d удалено'
                % (added, changed, removed))
+    # События, чью страницу не удалось прочитать: они остались в файле с
+    # прежними данными (иначе сетевой сбой выглядел бы как «событие исчезло»).
+    failed = report.get('failed') or []
+    if failed:
+        msg += '; не прочитано %d (оставлены прежние данные: %s)' % (
+            len(failed), ', '.join(str(x.get('id', '?')) for x in failed[:10]))
     # Прототипы в статистике коммита: сколько проверено, сколько изменилось,
     # сколько скрыто (вами / как дубли «Элементов»).
     if proto_report:

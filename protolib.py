@@ -295,9 +295,10 @@ def archive(pid, reason=''):
     return dst
 
 
-def is_past(date_iso):
+def is_past(date_iso, date_iso_end=None):
+    """Событие прошло? Многодневное (date_iso_end) живёт до последнего дня."""
     try:
-        d = datetime.date(*map(int, str(date_iso).split('-')))
+        d = datetime.date(*map(int, str(date_iso_end or date_iso).split('-')))
     except Exception:
         return False
     return d < datetime.date.today()

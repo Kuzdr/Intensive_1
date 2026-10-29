@@ -37,8 +37,58 @@ def tag_text(html):
 def strip_punct(s):
     return unicodedata.normalize('NFKC', s)
 
+WEEKDAY_RU = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница',
+              'Суббота', 'Воскресенье']
+
+def short_date_span(raw):
+    """Дата из афиши → (начало «ДД.ММ», конец «ДД.ММ» или None).
+
+    Афиша «Элементов» показывает и одиночную дату («08.12»), и ДИАПАЗОН
+    многодневного события — «11&ndash;<wbr/>13.12» или «28.10—05.11».
+    Раньше разбиралась только одиночная дата: у диапазона date_dot оставался
+    пустым, и scrape.py падал на pick_year (28.10.2026, событие 450818
+    «Научная дача «Архэ»»). Теперь диапазон разбирается здесь.
+    """
+    t = clean(re.sub(r'<[^>]+>', '', raw or ''))
+    t = re.sub(r'\s+', '', t.replace('\u00a0', ' '))
+    for dash in ('\u2013', '\u2014', '\u2212'):
+        t = t.replace(dash, '-')
+    m = re.match(r'^(\d{1,2})(?:\.(\d{1,2}))?(?:-(\d{1,2})(?:\.(\d{1,2}))?)?$', t)
+    if not m:
+        return None, None
+    d1, m1, d2, m2 = m.groups()
+    if m1:
+        mon = int(m1)
+        start = '%02d.%02d' % (int(d1), mon)
+    elif m2:
+        # «11-13.12»: месяц стоит только в конце диапазона
+        mon = int(m2)
+        start = '%02d.%02d' % (int(d1), mon)
+    else:
+        return None, None
+    end = '%02d.%02d' % (int(d2), int(m2) if m2 else mon) if d2 else None
+    return start, end
+
+def range_end_iso(start_iso, end_dot):
+    """Дата конца многодневного события в ISO — по «ДД.ММ» и дате начала."""
+    if not start_iso or not end_dot:
+        return None
+    try:
+        day, mon = map(int, end_dot.split('.'))
+        year = int(start_iso[:4])
+        start_mon = int(start_iso[5:7])
+    except (ValueError, IndexError):
+        return None
+    if mon < start_mon:      # диапазон через Новый год
+        year += 1
+    try:
+        return '%04d-%02d-%02d' % (year, mon, day)
+    except (ValueError, TypeError):
+        return None
+
+
 def parse_list_page():
-    html = S.get('https://elementy.ru/events', timeout=30).text
+    html = S.get('https://elementy.ru/events', timeout=40).text
     events = []
     parts = html.split("<div class='edate'>")[1:]
     for p in parts:
@@ -54,7 +104,7 @@ def parse_list_page():
         pret_txt = re.sub(r'<[^>]+>', '', pret.group(1)) if pret else ''
         sub2 = re.search(r"<div class='sublink2'>(.*?)</div>", p, re.S)
         suplink = re.search(r"<div class='suplink'>(.*?)</div>", p, re.S)
-        dates = re.search(r"<div class='hdates short_date'>([0-9.]+)</div>", p)
+        dates = re.search(r"<div class='hdates short_date'>(.*?)</div>", p, re.S)
         times = re.findall(r"<div class='htimes subhead'>([^<]+)</div>", p)
         # types and topics from suplink: <a href="...xtypid=...">Лекция</a>, <a href="...prjid=...">Тема</a>
         types, topics = [], []
@@ -63,10 +113,7 @@ def parse_list_page():
                 types.append(clean(m.group(2)).strip())
             for m in re.finditer(r'<a href="[^"]*?prjid=(\d+)">([^<]+)</a>', suplink.group(1)):
                 topics.append(clean(m.group(2)).strip())
-        dot = None
-        if dates:
-            d, mo = dates.group(1).split('.')
-            dot = d + '.' + mo
+        dot, dot_end = short_date_span(dates.group(1)) if dates else (None, None)
         events.append({
             'id': eid,
             'pos': len(events),
@@ -74,6 +121,7 @@ def parse_list_page():
             'href': href,
             'url': 'https://elementy.ru' + href,
             'date_dot': dot,
+            'date_dot_end': dot_end,
             'weekday': clean(times[0]).strip() if times else None,
             'time': clean(times[1]).strip() if len(times) > 1 else None,
             'city': clean(city.group(1)).strip() if city else None,
@@ -87,18 +135,39 @@ def parse_list_page():
     return events
 
 def pick_year(day_month, weekday):
-    # day_month like '16.09' -> 2026 by matching weekday
-    day, mon = map(int, day_month.split('.'))
-    wd_rus = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
-    import datetime
-    for year in (2026, 2027):
+    """«ДД.ММ» (+ день недели из афиши) → дата события.
+
+    Год подбираем по дню недели: афиша показывает только дни недели
+    предстоящих событий. У МНОГОДНЕВНЫХ событий дня недели в афише нет
+    (там только дата-диапазон), поэтому запасной вариант — ближайшая дата
+    не раньше сегодняшней. Пустая/битая дата больше не роняет scrape.py:
+    возвращаем None, а вызывающий код событие пропускает.
+    """
+    if not day_month:
+        return None
+    try:
+        day, mon = map(int, str(day_month).split('.'))
+    except (ValueError, AttributeError):
+        return None
+    today = datetime.date.today()
+    years = (today.year, today.year + 1)
+    if weekday:
+        for year in years:
+            try:
+                dt = datetime.date(year, mon, day)
+            except ValueError:
+                continue
+            if WEEKDAY_RU[dt.weekday()] == weekday:
+                return dt
+    for year in years:
         try:
             dt = datetime.date(year, mon, day)
         except ValueError:
             continue
-        if wd_rus[dt.weekday()] == weekday:
+        if dt >= today - datetime.timedelta(days=7):
             return dt
-    return datetime.date(2026, mon, day)
+    return None
+
 
 def fix_local_html(html):
     # strip html comments (some are unbalanced, e.g. stray '-->')
@@ -122,12 +191,16 @@ def fix_local_html(html):
     return html
 
 def parse_detail(event):
-    html = S.get(event['url'], timeout=30).text
+    # Страницы событий «Элементов» иногда отвечают по 35–40 с (29.10.2026:
+    # 38 с при живом сайте), поэтому таймаут не 30, а 45 с — иначе scrape
+    # рвёт соединение на нормально работающем сайте.
+    html = S.get(event['url'], timeout=45).text
     i0 = html.find("<div class='itemblock memo'>")
     if i0 == -1:
         return {'detail_html': None, 'detail_text': None, 'annot': None,
-                'date_iso': None, 'time_start': event.get('time'), 'time_end': None,
-                'price_raw': None, 'price_short': None, 'reg_links': []}
+                'date_iso': None, 'date_iso_end': None, 'time_start': event.get('time'),
+                'time_end': None, 'price_raw': None, 'price_short': None,
+                'reg_links': [], 'speakers': []}
     i1 = html.find("<div class='toggle'>", i0)
     if i1 == -1:
         i1 = html.find("<div class='forum", i0)
@@ -143,10 +216,20 @@ def parse_detail(event):
     text = re.sub(r'\n\s*\n+', '\n', re.sub(r'[ \t]+', ' ', clean(t).replace('\u00a0', ' '))).strip()
 
     # --- дата/время/место из первой строки ---
-    date_iso, time_start, time_end = None, event.get('time'), None
-    m = re.search(r'(Понедельник|Вторник|Среда|Четверг|Пятница|Суббота|Воскресенье),\s*(\d{1,2})\s+(январ\S*|феврал\S*|март\S*|апрел\S*|ма[йя]\S*|июн\S*|июл\S*|август\S*|сентябр\S*|октябр\S*|ноябр\S*|декабр\S*)\s+(\d{4})\s+года,\s*([0-9]{1,2}:[0-9]{2})(?:\s*[–—\-]\s*([0-9]{1,2}:[0-9]{2}))?', text)
+    # Обычное событие: «Пятница, 11 декабря 2026 года, 19:00–21:00».
+    # Многодневное: «Пятница—воскресенье, 11–13 декабря 2026 года, …» — без
+    # времени; дата окончания нужна, чтобы событие не исчезало после первого дня.
+    date_iso, date_iso_end, time_start, time_end = None, None, event.get('time'), None
+    m = re.search(
+        r'(?:Понедельник|Вторник|Среда|Четверг|Пятница|Суббота|Воскресенье)'
+        r'(?:\s*[\u2013\u2014-]\s*[А-Яа-яЁё]+)?,\s*'
+        r'(\d{1,2})(?:\s*[\u2013\u2014-]\s*(\d{1,2}))?\s+'
+        r'(январ\S*|феврал\S*|март\S*|апрел\S*|ма[йя]\S*|июн\S*|июл\S*|август\S*|'
+        r'сентябр\S*|октябр\S*|ноябр\S*|декабр\S*)\s+(\d{4})\s+года'
+        r'(?:,\s*([0-9]{1,2}:[0-9]{2})(?:\s*[\u2013\u2014-]\s*([0-9]{1,2}:[0-9]{2}))?)?',
+        text)
     if m:
-        day, monname, year = int(m.group(2)), m.group(3), int(m.group(4))
+        day, day_end, monname, year = int(m.group(1)), m.group(2), m.group(3), int(m.group(4))
         mon = None
         for k, v in MONTHS.items():
             if monname.lower().startswith(k[:5]):
@@ -154,8 +237,12 @@ def parse_detail(event):
                 break
         if mon:
             date_iso = '%04d-%02d-%02d' % (year, mon, day)
-        time_start = m.group(5)
-        time_end = m.group(6)
+            if day_end:
+                date_iso_end = '%04d-%02d-%02d' % (year, mon, int(day_end))
+        if m.group(5):
+            time_start = m.group(5)
+            time_end = m.group(6)
+
 
     paras_text = []
     for p in re.findall(r'<(?:p|blockquote)[^>]*>(.*?)</(?:p|blockquote)>', memo_clean, re.S):
@@ -223,6 +310,7 @@ def parse_detail(event):
         'detail_text': text,
         'annot': annot,
         'date_iso': date_iso,
+        'date_iso_end': date_iso_end,
         'time_start': time_start,
         'time_end': time_end,
         'price_raw': price_raw,
@@ -495,7 +583,7 @@ def norm_key(s):
 def describe_change(old, fresh):
     """Короткая сверка по основным полям. Возвращает список изменившихся полей."""
     keys = []
-    for k in ('title', 'lecturer', 'date_iso', 'lectory', 'city', 'place'):
+    for k in ('title', 'lecturer', 'date_iso', 'date_iso_end', 'lectory', 'city', 'place'):
         if norm_key(old.get(k)) != norm_key(fresh.get(k)):
             keys.append(k)
     # цена: сверяем итоговую цену (её показывает сайт). Смена только формулировки
@@ -522,12 +610,23 @@ def write_report(report):
         json.dump(report, f, ensure_ascii=False, indent=1)
 
 def enrich(ev, sleep=0.4):
-    """Скачать страницу события и разобрать её (общие поля + год по дню недели)."""
+    """Скачать страницу события и разобрать её (общие поля + год по дню недели).
+
+    Один сетевой сбой не должен рушить всё обновление и не должен выглядеть
+    как «событие исчезло с «Элементов» (28.10.2026: три события пропали из
+    файла после одиночного таймаута) — пробуем дважды.
+    """
     print('Fetching', ev.get('id'), (ev.get('title') or '')[:60], flush=True)
-    try:
-        det = parse_detail(ev)
-    except Exception as e:
-        print('  ERROR', e, flush=True)
+    det = None
+    for attempt in (1, 2):
+        try:
+            det = parse_detail(ev)
+            break
+        except Exception as e:
+            print('  ERROR (попытка %d): %s' % (attempt, e), flush=True)
+            if attempt == 1:
+                time.sleep(3)
+    if det is None:
         return None
     ev.update(det)
     # год по дню недели
@@ -535,11 +634,21 @@ def enrich(ev, sleep=0.4):
         y, m, d = map(int, ev['date_iso'].split('-'))
     else:
         dt = pick_year(ev.get('date_dot'), ev.get('weekday'))
+        if dt is None:
+            print('  ERROR: не удалось определить дату (date_dot=%r)'
+                  % (ev.get('date_dot'),), flush=True)
+            return None
         y, m, d = dt.year, dt.month, dt.day
+
     ev['date_iso'] = '%04d-%02d-%02d' % (y, m, d)
+    # дата окончания многодневного события: из строки дня на странице события,
+    # иначе — из диапазона в афише («11–13.12»)
+    if not ev.get('date_iso_end'):
+        ev['date_iso_end'] = range_end_iso(ev['date_iso'], ev.get('date_dot_end'))
     if sleep:
         time.sleep(sleep)
     return ev
+
 
 def reload_ids(ids):
     """Перезагрузить со страницы «Элементов» только перечисленные события.
@@ -607,10 +716,22 @@ def main():
     events = parse_list_page()
     progress(10, 'Найдено %d событий, скачиваю страницы…' % len(events))
     n = len(events)
+    fresh_list, failed = [], []
     for i, ev in enumerate(events):
-        enrich(ev)
+        if enrich(ev) is None:
+            # Страница не скачалась / дата не разобрана. Событие не выбрасываем:
+            # для старой записи останутся прежние данные (см. ниже).
+            failed.append({'id': ev.get('id'), 'title': ev.get('title')})
+            progress(10 + int(60 * (i + 1) / max(n, 1)),
+                     'Событие %d из %d: не удалось прочитать, остаются прежние данные — %s'
+                     % (i + 1, n, (ev.get('title') or '')[:34]))
+            continue
+        fresh_list.append(ev)
         progress(10 + int(60 * (i + 1) / max(n, 1)), 'Событие %d из %d: %s' % (i + 1, n, (ev.get('title') or '')[:40]))
         time.sleep(0.4)
+    events = fresh_list
+    failed_ids = {f['id'] for f in failed if f.get('id')}
+
 
     today = datetime.date.today().isoformat()
     fresh = events
@@ -626,11 +747,18 @@ def main():
 
     # события, уже бывшие на сайте
     for oid, o in old_by_id.items():
-        if (o.get('date_iso') or '9999-99-99') < today:
+        # многодневное событие живёт до последнего дня (date_iso_end)
+        o_end = o.get('date_iso_end') or o.get('date_iso')
+        if (o_end or '9999-99-99') < today:
             removed.append({'id': oid, 'title': o.get('title'), 'reason': 'событие уже прошло'})
             continue
         f = fresh_by_id.get(oid)
         if f is None:
+            if oid in failed_ids:
+                # страница не скачалась — не считаем, что событие исчезло:
+                # оставляем прежнюю запись как есть
+                new_events.append(o)
+                continue
             removed.append({'id': oid, 'title': o.get('title'), 'reason': 'больше нет на elementy.ru'})
             continue
         keys = describe_change(o, f)
@@ -686,11 +814,17 @@ def main():
         'order_changed': order_changed,
         'max_el_id': max_el_id,
         'total': len(new_events),
+        'failed': failed,
     }
     write_report(report)
 
     print('REPORT: добавлено %d, изменено %d, удалено %d, всего событий %d'
           % (len(added), len(changed), len(removed), len(new_events)))
+    if failed:
+        print('REPORT: не удалось прочитать %d событий (оставлены прежние данные):'
+              % len(failed))
+        for f in failed:
+            print('  %s %s' % (f.get('id'), (f.get('title') or '')[:60]))
     if order_changed:
         print('REPORT: «Элементы» переставили %d событий внутри одной даты-времени:'
               % len(order_changed))

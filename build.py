@@ -78,6 +78,32 @@ def fmt_date_num(iso):
     y, m, d = map(int, iso.split('-'))
     return '%02d.%02d.%d' % (d, m, y)
 
+def fmt_date_span(e):
+    """Дата для карточки: у многодневного события — диапазон «11–13.12».
+
+    «Элементы» отдают date_iso (первый день), а для многодневных событий
+    ещё и date_iso_end (последний день) — см. scrape.py (event 450818).
+    """
+    start = e.get('date_iso') or ''
+    end = (e.get('date_iso_end') or '')[:10]
+    if not start:
+        return ''
+    if not end or end <= start:
+        return fmt_date_short(start)
+    if end[:7] == start[:7]:
+        return '%s\u2013%s' % (fmt_date_short(start)[:2], fmt_date_short(end))
+    return '%s\u2013%s' % (fmt_date_short(start), fmt_date_short(end))
+
+def fmt_date_ru_span(e):
+    """То же словами: «11–13 декабря 2026»."""
+    start = e.get('date_iso') or ''
+    end = (e.get('date_iso_end') or '')[:10]
+    if not start:
+        return ''
+    if not end or end <= start:
+        return fmt_date_ru(start)
+    return '%d\u2013%s' % (int(start[8:10]), fmt_date_ru(end))
+
 def fmt_time(e):
     t = e.get('time_start') or ''
     if e.get('time_end'):
@@ -222,6 +248,7 @@ def proto_item(p, st):
         'kind': 'proto',
         'slug': PL.slugify(p['id']),
         'date_iso': p['date_iso'],
+        'date_iso_end': (p.get('date_iso_end') or '')[:10],
         'weekday': WEEKDAYS[datetime.date(*map(int, p['date_iso'].split('-'))).weekday()],
         'time_start': p.get('time_start') or '',
         'time_end': p.get('time_end') or '',
@@ -269,7 +296,7 @@ def load_prototypes():
             print('  ПРОТОТИП %s — НЕ ЧИТАЕТСЯ (%s)' % (pid, e))
             continue
         PROTO_SUMMARY['total'] += 1
-        if PL.is_past(p.get('date_iso')):
+        if PL.is_past(p.get('date_iso'), p.get('date_iso_end')):
             PL.archive(pid)
             PROTO_SUMMARY['archived'] += 1
             print('  ПРОТОТИП %s — перенесён в архив (лекция уже прошла)' % pid)
@@ -412,7 +439,7 @@ def card(e, prefix=''):
         upd = f'<div class="badge-upd">обновлено {esc(e.get("updated_at", ""))}</div>'
     return f'''<div class="event" data-kind="el" data-id="{esc(e['id'])}" data-date="{esc(e['date_iso'])}">
   <div class="edate">
-    <div class="hday">{esc(fmt_date_short(e['date_iso']))}</div>
+    <div class="hday">{esc(fmt_date_span(e))}</div>
     <div class="hmeta">{esc(wd)}</div>
     <div class="hmeta">{esc(fmt_time(e))}</div>
     <div class="hcity">{esc(e['city'] or '')}</div>
@@ -495,9 +522,9 @@ def proto_card(e, prefix=''):
     lectory = proto_lectorium(p)
     filter_key = proto_filter_key(p)
     eurl = url_detail(e, prefix)
-    return f'''<div class="event proto{hidden_attr}" data-kind="proto" data-id="{esc(e['id'])}" data-organizer="{esc(filter_key)}" data-date="{esc(e['date_iso'])}" data-lecturer="{esc(e.get('lecturer') or '')}" data-title="{esc(e.get('title') or '')}" data-where="{esc(fmt_date_ru(e['date_iso']))}">
+    return f'''<div class="event proto{hidden_attr}" data-kind="proto" data-id="{esc(e['id'])}" data-organizer="{esc(filter_key)}" data-date="{esc(e['date_iso'])}" data-lecturer="{esc(e.get('lecturer') or '')}" data-title="{esc(e.get('title') or '')}" data-where="{esc(fmt_date_ru_span(e))}">
   <div class="edate">
-    <div class="hday">{esc(fmt_date_short(e['date_iso']))}</div>
+    <div class="hday">{esc(fmt_date_span(e))}</div>
     <div class="hmeta">{esc(e['weekday'])}</div>
     <div class="hmeta">{esc(fmt_time(e))}</div>
     <div class="hcity">{esc(e['city'] or '')}</div>
