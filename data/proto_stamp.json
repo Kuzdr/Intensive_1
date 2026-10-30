@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-29 04:51:43",
+  "date": "2026-10-30 23:19:12",
   "protos": {
     "MM-261031-butyagin-msk-zolotaya-maska": "prototype.json:10856:ef92b1d25035|_state.json:-",
     "MM-261105-reshetun-msk-smert-v-molodom-vozraste": "prototype.json:10630:18e7a30010a1|_state.json:-",
@@ -18,7 +18,6 @@
     "TP-4185611": "prototype.json:13798:8b2da8432eb3|_state.json:-",
     "TP-4185646": "prototype.json:14504:25e484ff2d03|_state.json:-",
     "TP-4194633": "prototype.json:15872:e69e87c78df3|_state.json:-",
-    "TP-4200782": "prototype.json:14786:4ce04bf651d3|_state.json:-",
     "TP-4215931": "prototype.json:16138:691a72bfcc21|_state.json:-",
     "TP-4217683": "prototype.json:16344:d09cb0e5de93|_state.json:-",
     "TP-4217749": "prototype.json:16355:c371bec9cf57|_state.json:-",
@@ -34,10 +33,8 @@
     "TP-4229484": "prototype.json:14343:7655dde50f0d|_state.json:-",
     "TP-4229521": "prototype.json:14588:8dce0a094f8c|_state.json:-",
     "TP-4231686": "prototype.json:16251:72b454c9a042|_state.json:-",
-    "TP-4240454": "prototype.json:18060:9331450e1dab|_state.json:-",
     "TP-4246779": "prototype.json:15055:2708ab9bf760|_state.json:-",
     "TP-4246786": "prototype.json:15084:ff84966074d7|_state.json:-",
-    "TP-4247514": "prototype.json:14744:fe0a228e9bcf|_state.json:-",
     "TP-4247784": "prototype.json:14164:5f94b55bb1e8|_state.json:-",
     "TP-4252096": "prototype.json:16632:94acbff9f2f4|_state.json:-",
     "TP-4252104": "prototype.json:16519:792c54d0a9f0|_state.json:-",
