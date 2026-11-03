@@ -54,8 +54,14 @@ def load_data():
 def merge(cfg):
     """Читает оба источника и сливает в одно событие."""
     site = tribe.read(cfg["arhe"], file=cfg.get("arhe_file"))
-    reg = tp.read(cfg.get("timepad") or site.get("timepad_url"),
-                  file=cfg.get("timepad_file"))
+    try:
+        reg = tp.read(cfg.get("timepad") or site.get("timepad_url"),
+                      file=cfg.get("timepad_file"))
+    except Exception as exc:
+        # Timepad иногда закрывается капчей Яндекса (см. reference/availability_log.md):
+        # цена/возраст/текст берутся из конфига, поэтому страница Timepad НЕ обязательна.
+        print("ВНИМАНИЕ: Timepad недоступен (%s). Собираю по данным сайта «Архэ»." % exc)
+        reg = {}
     date_iso = cfg.get("date_iso") or site.get("date_iso") or ""
     date_iso_end = cfg.get("date_iso_end") or ""
     time_start = cfg.get("time_start") or site.get("time_start") or reg.get("time_start") or ""
