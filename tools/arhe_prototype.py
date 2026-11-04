@@ -106,7 +106,10 @@ def build_fields(ev, cfg, venue, today_dt):
         tail_dot = "" if qtitle[-1:] in "?!." else "."
         line4 = "%s%s Лекция&nbsp;%d курса %s «%s»" % (
             qtitle, tail_dot, course["n"], course["author_gen"], course_name)
-        sub = "%s. Лекция&nbsp;%d" % (course_name, course["n"])
+        # курс может называться вопросом («Кто управляет муравейником?») —
+        # в этом случае второго знака (точки) не добавляем
+        tail_sub = "" if course_name.endswith(("?", "!", ".")) else "."
+        sub = "%s%s Лекция&nbsp;%d" % (course_name, tail_sub, course["n"])
     else:
         gen = cfg.get("author_gen") or ""
         line4 = (" ".join(x for x in [cfg.get("type", "Лекция"), gen, "«%s»" % title] if x)).replace("  ", " ")
