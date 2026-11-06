@@ -406,7 +406,12 @@ def festival_program(ev, cfg, auths=None):
         name, sep, title = head.partition("—")
         name = name.strip()
         title = title.strip().rstrip(".")
-        groups.append((name, ["<p><b><i>%s</i></b>&nbsp;— %s.</p>" % (name, title)]))
+        # Названия лекций жирным — только если это задано в конфиге события
+        # (просьба пользователя 06.11.2026 по фестивалю в Петербурге).
+        fmt = "<p><b><i>%s</i></b>&nbsp;— <b>%s</b>.</p>" \
+            if cfg.get("bold_lecture_titles") \
+            else "<p><b><i>%s</i></b>&nbsp;— %s.</p>"
+        groups.append((name, [fmt % (name, title)]))
     out = []
     for name, paras_ in groups:
         out.extend(paras_)
