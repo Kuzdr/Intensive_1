@@ -109,6 +109,9 @@ def price_rub(price_human):
 
 
 DASH = "—&nbsp;"
+# Подзаголовок программы фестиваля: «<p><strong>Имя — «Название».</strong></p>».
+# В источнике он бывает с ведущими <br /> и пустыми строками перед <strong>.
+HEAD_RE = re.compile(r"^(?:<br\s*/?>|\s)*<strong>(.+?)</strong></p>$", re.S)
 
 
 def pas_online(txt):
@@ -285,7 +288,11 @@ def nbsp_normalize(t, skip_verbatim=False):
                 pass
             out.append(fix(chunk))
             prev = chunk
-    return "".join(out)
+    t = "".join(out)
+    # однобуквенный предлог/союз перед тегом: «и <b>Имя</b>» → «и&nbsp;<b>…»
+    t = re.sub(r"(?<![%s>&])([%s]) (?=<(?:b|i|strong|em|span|a)\b)" % (CYR, ONE_LETTER),
+               r"\1&nbsp;", t)
+    return t
 
 
 def lecturer_name(ev):
@@ -324,26 +331,9 @@ def fields_for(ev, cfg, venue, today):
     add("1", "Привязка", binding(ev["date_iso"], ev["time"]))
     add("2", "Дата события", "%s, %s, %s, %s" % (
         dt.strftime("%d.%m.%Y"), city, venue["short"], ev["time"]))
-    # Событие с несколькими лекторами (фестивали): в админке у каждого
-    # дополнительного лектора своя строка 2.b/2.c, 4.b/4.c, 7.b/7.c
-    # с его названием лекции (названия берутся из `author_titles`).
-    atitles = cfg.get("author_titles") or {}
-    atitles = {k: nbsp_normalize(v) for k, v in atitles.items()}
-    # Совместная лекция двух авторов (не фестиваль): дополнительные строки
-    # 2.b/4.b/7.b не нужны — у события одна дата и одно название.
-    listed = [] if cfg.get("joint") else (cfg.get("authors") or [])
-    for j, a in enumerate(listed):
-        if j == 0:
-            continue
-        suf = "bcdefgh"[j - 1]
-        add("2." + suf, "Дата события (лектор %d)" % (j + 1),
-            "%s, %s, %s, %s" % (dt.strftime("%d.%m.%Y"), city, venue["short"], ev["time"]))
-        add("4." + suf, "Полный заголовок без подзаголовка (лектор %d)" % (j + 1),
-            "Лекция %s «%s»" % (a, atitles.get(a) or ""))
-        add("7." + suf, "Дата и время (лектор %d)" % (j + 1),
-            "%s, %d&nbsp;%s %d&nbsp;года, %s" % (
-                WD[dt.weekday()].capitalize(), dt.day, MONTHS[dt.month - 1],
-                dt.year, ev["time"]))
+    # Фестиваль — ОДНО событие с одной датой и одним названием, поэтому полей
+    # «по лекторам» (2.b/4.b/7.b, 2.c/4.c/7.c) не бывает: в админке у него
+    # ровно один комплект полей каждого вида (правило пользователя 06.11.2026).
     add("2.1", "Начало события", "%d %s %d" % (dt.day, MONTHS[dt.month - 1], dt.year))
     add("2.2", "Время начала", ev["time"])
     add("2.3", "Поставить", "%d %s %d" % (today.day, MONTHS[today.month - 1], today.year))
@@ -375,6 +365,60 @@ def fields_for(ev, cfg, venue, today):
     return f
 
 
+def festival_program(ev, cfg, auths=None):
+    """Программа фестиваля: лекция → её текст → описание лектора.
+
+    Источник подаёт программу блоком с подзаголовками вида
+    «<strong>Имя — «Название лекции».</strong>». По правилу 15.10.2026 имя
+    в заголовке выделяется `<b><i>`, название лекции — обычным шрифтом, а
+    описание лектора из источника ставится СРАЗУ ПОД ЕГО ЛЕКЦИЕЙ (без
+    вводного «Лекцию прочитает»), а не общим списком в конце.
+
+    Подсветка упоминаний в тексте (регалии, инициалы) задаётся в конфиге
+    списком пар `body_fixes`; замены делаются после приведения nbsp.
+    """
+    src = {x.get("name"): x for x in (ev.get("lecturers") or [])}
+
+    def pick(name):
+        if name in src:
+            return src[name]
+        for k, v in src.items():
+            if k.split()[-1] == name.split()[-1]:
+                return v
+        return {}
+
+    paras = [nbsp_normalize(x) for x in source_body(ev, cfg)]
+    # висячий <br /> в конце абзаца источника — убираем
+    paras = [re.sub(r"(?:<br\s*/?>\s*)+</p>$", "</p>", p) for p in paras]
+    for old, new in cfg.get("body_fixes") or []:
+        paras = [p.replace(old, new) for p in paras]
+    groups = []  # [(имя лектора или None, [абзацы])]
+    for p in paras:
+        # Подзаголовок в источнике бывает с ведущим <br /> («<p><br /><strong>…»).
+        m = HEAD_RE.match(re.sub(r"^<p>", "", p.strip()))
+        if not m:
+            if groups:
+                groups[-1][1].append(p)
+            else:
+                groups.append((None, [p]))
+            continue
+        head = m.group(1).replace("&nbsp;", " ")
+        name, sep, title = head.partition("—")
+        name = name.strip()
+        title = title.strip().rstrip(".")
+        groups.append((name, ["<p><b><i>%s</i></b>&nbsp;— %s.</p>" % (name, title)]))
+    out = []
+    for name, paras_ in groups:
+        out.extend(paras_)
+        if not name:
+            continue
+        rec = pick(name)
+        s = author_sentence(name, rec.get("descr") or rec.get("role") or "")
+        if s:
+            out.append(s)
+    return out
+
+
 def desc_for(ev, cfg, venue, auths):
     dt = d(ev["date_iso"])
     online = " и&nbsp;ОНЛАЙН" if ev.get("online") else ""
@@ -387,18 +431,25 @@ def desc_for(ev, cfg, venue, auths):
         parts[0] = re.sub(r"(\d) +и&nbsp;ОНЛАЙН", r"\1&nbsp;и&nbsp;ОНЛАЙН", parts[0])
     if cfg.get("intro") is not None:
         payload = nbsp_normalize(cfg["intro"])
-        parts.append(pas_online(payload) if ev.get("online") else payload)
+        parts.append(pas_online(payload)
+                     if ev.get("online") and not cfg.get("intro_no_online")
+                     else payload)
     else:
         parts.append("<p>Лекция <b><i>%s</i> «%s»</b>%s.</p>"
                      % (cfg.get("gen") or lecturer_name(ev) or "", cfg["title"],
                         " и&nbsp;ОНЛАЙН" if ev.get("online") else ""))
     parts.append("<KLBLOCK eltclub_authors_about/>")
     parts.append('<blockquote class="small">')
-    if cfg.get("body"):
+    if cfg.get("festival_bios"):
+        parts.extend(festival_program(ev, cfg, auths))
+    elif cfg.get("body"):
         parts.extend(nbsp_normalize(x) for x in cfg["body"])
     else:
         parts.extend(source_body(ev, cfg))
     closer = cfg.get("closer")
+    if cfg.get("festival_bios"):
+        # Описания лекторов уже стоят под их лекциями (festival_program).
+        closer = None
     if closer is True:
         # Описание автора ищем в источнике ПО ИМЕНИ, а не по индексу: порядок
         # лекторов в конфиге (программа фестиваля) может отличаться от
