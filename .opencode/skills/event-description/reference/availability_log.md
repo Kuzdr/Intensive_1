@@ -294,3 +294,7 @@
 ## 07.11.2026, 05:16 — сбой автосбора (scrape.py)
 
 - `https://elementy.ru/events` — HTTP 403. Файл `data/events.json` не изменён.
+
+## 07.11.2026, 05:21 — сбой автосбора (scrape.py)
+
+- `https://elementy.ru/events` — HTTP 403. Файл `data/events.json` не изменён.
