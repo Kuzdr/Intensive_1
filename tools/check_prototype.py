@@ -747,6 +747,54 @@ def fix_br_blank(text: str) -> tuple:
     return BR_BAD.subn("<br>\n\n", text)
 
 
+# «и ОНЛАЙН» в шапке описания: законное место — ТОЛЬКО первый абзац
+# (дата/время/город/площадка). Во втором абзаце (название лекции или
+# фестиваля) пометка — дубль (правило пользователя 07.11.2026, прототип
+# Семихатова 18.11.2026: «… что нет» и&nbsp;ОНЛАЙН.»).
+ONLINE_IN_HEAD_RE = re.compile(
+    r"(?:&nbsp;|\u00A0|[ \t])*и(?:&nbsp;|\u00A0|[ \t])+ОНЛАЙН")
+
+
+def _head_blocks(desc: str):
+    """Абзацы шапки описания: всё до <KLBLOCK, разбитое по пустым строкам."""
+    head = (desc or "").split("<KLBLOCK", 1)[0]
+    return [b for b in re.split(r"\n\s*\n", head) if b.strip()]
+
+
+def p_online_outside_first_para(proto: dict) -> list:
+    """«ОНЛАЙН» во втором абзаце шапки описания -> [(текст абзаца), ...].
+
+    Онлайн упоминается только в первом абзаце (после города и площадки);
+    во втором абзаце шапки пометки быть не должно — это дубль.
+    """
+    blocks = _head_blocks((proto or {}).get("desc_html") or "")
+    return [b for b in blocks[1:] if re.search(r"ОНЛАЙН", b)]
+
+
+def fix_online_head(text: str) -> tuple:
+    """Убирает «и ОНЛАЙН» из абзацев шапки, кроме первого.
+
+    Возвращает (текст, сколько_исправлено). Пустые строки-разделители
+    (\\n\\n) сохраняются, поэтому блоки не склеиваются.
+    """
+    head, sep, tail = (text or "").partition("<KLBLOCK")
+    if not sep:
+        return text, 0
+    core = head.rstrip("\r\n \t")
+    trailing = head[len(core):] or "\n\n"
+    blocks = re.split(r"\n\s*\n", core)
+    n_all = 0
+    for i, b in enumerate(blocks):
+        if i == 0:
+            continue
+        b2, n = ONLINE_IN_HEAD_RE.subn("", b)
+        n_all += n
+        blocks[i] = b2
+    if not n_all:
+        return text, 0
+    return "\n\n".join(blocks) + trailing + sep + tail, n_all
+
+
 def check_br_blank(proto: dict, sel=None) -> list:
     """Ошибки «после <br> нет пустой строки» по блокам extra_html."""
     out = []
@@ -806,7 +854,14 @@ def fix_proto_values(proto: dict, sel=None) -> tuple:
                       ("lecturer", "lecturer"), ("desc_html", "desc"),
                       ("photo_file", "authors")):
         if key in p2 and want_block(area, key):
-            p2[key] = fix_str(p2[key])
+            if key == "desc_html" and isinstance(p2[key], str):
+                # «и ОНЛАЙН» — только в первом абзаце шапки (правило 07.11.2026)
+                fixed, n = fix_online_head(p2[key])
+                if n:
+                    changed += 1
+                p2[key] = fix_str(fixed)
+            else:
+                p2[key] = fix_str(p2[key])
     extra = p2.get("extra_html")
     if isinstance(extra, list) and want_block("extra", "extra_html"):
         fixed = []
@@ -1197,6 +1252,18 @@ def main() -> None:
         # Автор с on_elementy обязан иметь фото (урок TP-4211635)
         for msg in author_photo_problems(proto):
             hard.append(("7a", msg, "", msg, display))
+        # «и ОНЛАЙН» — только в первом абзаце шапки (правило 07.11.2026)
+        if sel is None or sel_block(sel, "desc"):
+            for block in p_online_outside_first_para(proto):
+                hard.append((
+                    "11",
+                    "«ОНЛАЙН» во втором абзаце шапки описания — онлайн "
+                    "упоминается только в первом абзаце (после города и "
+                    "площадки); уберите вручную или запустите с --fix",
+                    block[:160].replace("\n", " "),
+                    block[:160].replace("\n", " "),
+                    display,
+                ))
 
     # Слова для проверки «ё» из tools/yo_words.txt (пополняемый список)
     try:

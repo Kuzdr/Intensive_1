@@ -434,15 +434,14 @@ def desc_for(ev, cfg, venue, auths):
         # Число в названии площадки («LOFT 13») + союз «и»: валидатор требует
         # nbsp после числа — привязываем «13» к «и» («LOFT 13&nbsp;и&nbsp;ОНЛАЙН»).
         parts[0] = re.sub(r"(\d) +и&nbsp;ОНЛАЙН", r"\1&nbsp;и&nbsp;ОНЛАЙН", parts[0])
+    # «и ОНЛАЙН» — ТОЛЬКО в первом абзаце (после города и площадки).
+    # Во втором абзаце шапки (название лекции/фестиваля) пометку не ставим:
+    # это дубль, правило пользователя 07.11.2026 (прототип Семихатова).
     if cfg.get("intro") is not None:
-        payload = nbsp_normalize(cfg["intro"])
-        parts.append(pas_online(payload)
-                     if ev.get("online") and not cfg.get("intro_no_online")
-                     else payload)
+        parts.append(nbsp_normalize(cfg["intro"]))
     else:
-        parts.append("<p>Лекция <b><i>%s</i> «%s»</b>%s.</p>"
-                     % (cfg.get("gen") or lecturer_name(ev) or "", cfg["title"],
-                        " и&nbsp;ОНЛАЙН" if ev.get("online") else ""))
+        parts.append("<p>Лекция <b><i>%s</i> «%s»</b>.</p>"
+                     % (cfg.get("gen") or lecturer_name(ev) or "", cfg["title"]))
     parts.append("<KLBLOCK eltclub_authors_about/>")
     parts.append('<blockquote class="small">')
     if cfg.get("festival_bios"):
