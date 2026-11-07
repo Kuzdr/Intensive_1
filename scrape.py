@@ -87,8 +87,40 @@ def range_end_iso(start_iso, end_dot):
         return None
 
 
+def log_unavailable(url, detail):
+    """Запись сбоя запроса в лог недоступности источников (правило 10.10.2026).
+
+    Сбой автосбора раньше приводил к тому, что пустой список событий
+    принимался за «все события удалены» (07.11.2026, elementy.ru ответил
+    403 и файл data/events.json обнулился). Теперь сбой виден и в консоли,
+    и в журнале `.opencode/skills/event-description/reference/availability_log.md`.
+    """
+    path = os.path.join(ROOT, '.opencode', 'skills', 'event-description',
+                        'reference', 'availability_log.md')
+    try:
+        now = datetime.datetime.now().strftime('%d.%m.%Y, %H:%M')
+        with open(path, 'a', encoding='utf-8') as f:
+            f.write('\n## %s — сбой автосбора (scrape.py)\n\n'
+                    '- `%s` — %s. Файл `data/events.json` не изменён.\n'
+                    % (now, url, detail))
+    except OSError:
+        pass
+
+
 def parse_list_page():
-    html = S.get('https://elementy.ru/events', timeout=40).text
+    url = 'https://elementy.ru/events'
+    try:
+        resp = S.get(url, timeout=40)
+    except requests.RequestException as e:
+        log_unavailable(url, 'ошибка запроса (%s)' % e.__class__.__name__)
+        print('REPORT: не удалось запросить %s: %s' % (url, e))
+        return []
+    if resp.status_code != 200:
+        log_unavailable(url, 'HTTP %d' % resp.status_code)
+        print('REPORT: %s ответил HTTP %d — список событий не получен'
+              % (url, resp.status_code))
+        return []
+    html = resp.text
     events = []
     parts = html.split("<div class='edate'>")[1:]
     for p in parts:
@@ -714,6 +746,12 @@ def main():
         return
     progress(2, 'Загрузка списка событий с elementy.ru…')
     events = parse_list_page()
+    if not events:
+        # Пустой список — это сбой доступа/разметки, а НЕ «все события удалены»:
+        # без этой проверки 07.11.2026 файл data/events.json обнулился (71 → 0).
+        print('REPORT: список событий пуст — data/events.json НЕ изменён.')
+        progress(100, 'Ошибка: список событий не получен, данные не тронуты.')
+        sys.exit(1)
     progress(10, 'Найдено %d событий, скачиваю страницы…' % len(events))
     n = len(events)
     fresh_list, failed = [], []
@@ -731,6 +769,11 @@ def main():
         time.sleep(0.4)
     events = fresh_list
     failed_ids = {f['id'] for f in failed if f.get('id')}
+    if not events and n:
+        print('REPORT: ни одна страница события не прочитана (%d попыток) — '
+              'data/events.json НЕ изменён.' % n)
+        progress(100, 'Ошибка: страницы событий не прочитаны, данные не тронуты.')
+        sys.exit(1)
 
 
     today = datetime.date.today().isoformat()
@@ -742,6 +785,14 @@ def main():
     fresh_by_id = {e['id']: e for e in fresh}
     fresh_ord = {e['id']: e['ord'] for e in fresh}
     old_by_id = {e['id']: e for e in load_old_events()}
+    # Страховка от частичного сбоя: почти пустая афиша при десятках прежних
+    # событий — это сбой доступа/разметки, а не массовое удаление.
+    if len(fresh) < 3 and len(old_by_id) >= 10:
+        print('REPORT: прочитано %d событий при %d прежних — похоже на сбой '
+              'доступа; data/events.json НЕ изменён.'
+              % (len(fresh), len(old_by_id)))
+        progress(100, 'Ошибка: подозрительно мало событий, данные не тронуты.')
+        sys.exit(1)
 
     new_events, added, changed, removed = [], [], [], []
 
