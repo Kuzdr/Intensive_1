@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-08 01:30:47",
+  "date": "2026-11-08 05:57:00",
   "protos": {
     "MM-261108-surdin-piter-dop-2": "prototype.json:11851:3ea065481a94|_state.json:-",
     "MM-261114-mm-fest-msk": "prototype.json:21043:a84d96ec2f56|_state.json:-",
@@ -63,7 +63,12 @@
     "TP-4282734": "prototype.json:13648:69d4f898eea3|_state.json:-",
     "VS-261115-khoruzhaya-mozg": "prototype.json:13614:5edd7f87a20d|_state.json:-",
     "VS-261119-butyagin-artemida": "prototype.json:14231:323a6085624d|_state.json:-",
+    "VS-261121-zharinov-iskusstvo-i-nauka": "prototype.json:14997:b565659aba5b|_state.json:-",
     "VS-261125-mikhaylova-trappist": "prototype.json:13997:b4a50da7463a|_state.json:-",
-    "VS-261206-leontev-ii": "prototype.json:13180:fadf08f85bd2|_state.json:-"
+    "VS-261205-khoruzhaya-neyrofiziologiya": "prototype.json:15109:5f7a198d23f4|_state.json:-",
+    "VS-261206-leontev-ii": "prototype.json:13180:fadf08f85bd2|_state.json:-",
+    "VS-261210-zheltova-ritual": "prototype.json:12821:2fcacd6001dd|_state.json:-",
+    "VS-261213-vodovozov-lovushki-mozga": "prototype.json:12926:b2c2ab3f5cd2|_state.json:-",
+    "VS-261226-tims-multivselennaya": "prototype.json:13222:1b05918d2282|_state.json:-"
   }
 }
