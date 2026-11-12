@@ -430,6 +430,46 @@ def p_block_breaks(t: str):
     return hits
 
 
+_BQ = re.compile(r"(?s)<blockquote\b[^>]*>(.*?)</blockquote>")
+
+
+class _FakeM:
+    """Заглушка match-объекта с фиксированными позициями (для emit/ctx/frag)."""
+
+    def __init__(self, start, end, text):
+        self._s, self._e, self._g = start, end, text
+
+    def start(self):
+        return self._s
+
+    def end(self):
+        return self._e
+
+    def group(self, *a):
+        return self._g
+
+
+def p_blockquote_bare_paragraphs(t: str):
+    """Голый (не обёрнутый в блочный тег) текст внутри <blockquote> —
+    ОШИБКА: каждый абзац цитаты должен быть `<p>…</p>`. При публикации
+    («Элементы») переносы строк внутри blockquote теряются, и голые
+    абзацы склеиваются в один (урок TP-4275452, 12.11.2026: абзацы
+    аннотации Майзульса слились на опубликованной странице). Строки,
+    начинающиеся с «<» (уже блочный тег), не трогаем."""
+    out = []
+    for bm in _BQ.finditer(t):
+        inner = bm.group(1)
+        base = bm.start(1)
+        off = 0
+        for line in inner.split("\n"):
+            s = line.strip()
+            if s and not s.startswith("<"):
+                abs_start = base + off + (len(line) - len(line.lstrip()))
+                out.append(_FakeM(abs_start, abs_start + len(s), s))
+            off += len(line) + 1
+    return out
+
+
 def author_photo_problems(proto) -> list:
     """Фото автора обязательно, если автор уже есть на «Элементах»
     (on_elementy): блок «Об авторе» без фото неполон (урок TP-4211635,
@@ -1200,6 +1240,10 @@ def main() -> None:
         emit("1i", "нет пустой строки между блоками — абзацы склеятся "
              "(после </p>/</ul>/</blockquote> перед блочным тегом нужен "
              "\\n\\n, не слитно и не одним переносом)", m)
+    for m in p_blockquote_bare_paragraphs(t):
+        emit("1j", "голый абзац внутри <blockquote> — обернуть в <p>…</p> "
+             "(каждый абзац цитаты — блочный тег; при публикации переносы "
+             "теряются и абзацы склеятся в один)", m)
     for m in p_invariant_yo(t):
         emit("6", "«ё» в слове-инварианте — убрать", m)
     for m in p_notes_yo_audit(t):
