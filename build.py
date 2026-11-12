@@ -356,6 +356,7 @@ ORGANIZER_NAMES = {
     'polymus.ru': 'Политехнический музей',
     'vdnh.ru': 'ВДНХ',
     'cosmos-vdnh.timepad.ru': 'ВДНХ',
+    'lektorij-vdnh.timepad.ru': 'ВДНХ',
     'vsmysle.spb.ru': 'Сообщество «ВСмысле»',
     'bio-fact.timepad.ru': 'БИО-ФАКТ',
     'pryamaya.ru': 'Прямая речь',
