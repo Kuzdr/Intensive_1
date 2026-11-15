@@ -367,6 +367,7 @@ ORGANIZER_NAMES = {
     'spbstuni.timepad.ru': 'Санкт-Петербургский политехнический университет Петра Великого',
     'deti-i-nauka-event.timepad.ru': 'Дети и наука',
     'nekrasovka.ru': 'Библиотека им. Н. А. Некрасова',
+    'lectory2.ru': 'Лекторий «Живой город»',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')
@@ -1161,6 +1162,9 @@ def source_num_id(u):
     m = re.search(r'timepad\.ru/(\d{5,})', u or '')
     if m:
         return m.group(1), 'Timepad'
+    m = re.search(r'lectory2\.ru/[^"\s]*?#lecture_(\d+)', u or '')
+    if m:
+        return m.group(1), 'Живой город'
     return None, ''
 
 
