@@ -1,10 +1,6 @@
 {
-  "date": "2026-11-14 05:08:51",
+  "date": "2026-11-16 03:57:20",
   "protos": {
-    "MM-261114-mm-fest-msk": "prototype.json:21043:a84d96ec2f56|_state.json:-",
-    "MM-261114-zhuravlyov-msk": "prototype.json:11587:38e12be3f520|_state.json:-",
-    "MM-261115-chaika-msk": "prototype.json:9958:a4f9e9d40ac3|_state.json:-",
-    "MM-261115-mm-fest-spb": "prototype.json:21886:818f6d6e4a99|_state.json:-",
     "MM-261118-semihatov-msk-raznoobrazie-vselennoj": "prototype.json:10480:d6d54affb316|_state.json:-",
     "MM-261121-terentev-msk": "prototype.json:9412:a681fc43e405|_state.json:-",
     "MM-261128-ahmetzyanov-msk": "prototype.json:9034:53f87850f397|_state.json:-",
@@ -25,7 +21,6 @@
     "MM-270121-reshetun-msk-dop": "prototype.json:11738:113f1adf7e8d|_state.json:-",
     "PM-261125-vodnoe-sudno-msk": "prototype.json:11235:2764d4ca31e8|_state.json:-",
     "PM-261209-mikroelektronika-msk": "prototype.json:13121:2589c8f2902f|_state.json:-",
-    "PR-261114-Boginya-Mat": "prototype.json:15920:953549c3c627|_state.json:-",
     "PR-261120-Kosmicheskaya-neyrobiologiya": "prototype.json:15336:af9f82cc8ffa|_state.json:-",
     "PR-261213-Chem-govoryat-muravi": "prototype.json:12431:0f5775e80ec6|_state.json:-",
     "PR-261220-Biologicheskiy-Novyy-god": "prototype.json:12034:c49cdfb0cc38|_state.json:-",
@@ -51,19 +46,15 @@
     "TP-4263754": "prototype.json:12754:e46d7b12c555|_state.json:-",
     "TP-4270037": "prototype.json:13033:7561378e8a0b|_state.json:-",
     "TP-4270052": "prototype.json:12837:87b7da9054be|_state.json:-",
-    "TP-4275452": "prototype.json:12087:983cb7cfc170|_state.json:-",
     "TP-4277765": "prototype.json:13255:f283d1bdb77d|_state.json:-",
     "TP-4278457": "prototype.json:10889:eea7d1b9946f|_state.json:-",
     "TP-4278460": "prototype.json:9862:08dc04776a30|_state.json:-",
     "TP-4279148": "prototype.json:10414:b37de2b17120|_state.json:-",
-    "TP-4282422": "prototype.json:12543:b734b8695ff3|_state.json:-",
     "TP-4282734": "prototype.json:13648:69d4f898eea3|_state.json:-",
-    "TP-4288520": "prototype.json:12969:a4381ebefdb7|_state.json:-",
     "TP-4293291": "prototype.json:13345:286df3260dcf|_state.json:-",
     "TP-4294100": "prototype.json:12851:9b7f8bdc5db3|_state.json:-",
     "TP-4298115": "prototype.json:11477:d5358fab932e|_state.json:-",
     "TP-4299432": "prototype.json:14216:208900bdce96|_state.json:-",
-    "VS-261115-khoruzhaya-mozg": "prototype.json:13614:5edd7f87a20d|_state.json:-",
     "VS-261119-butyagin-artemida": "prototype.json:14231:323a6085624d|_state.json:-",
     "VS-261121-zharinov-iskusstvo-i-nauka": "prototype.json:14997:b565659aba5b|_state.json:-",
     "VS-261125-mikhaylova-trappist": "prototype.json:13997:b4a50da7463a|_state.json:-",
@@ -71,6 +62,8 @@
     "VS-261206-leontev-ii": "prototype.json:13180:fadf08f85bd2|_state.json:-",
     "VS-261210-zheltova-ritual": "prototype.json:12821:2fcacd6001dd|_state.json:-",
     "VS-261213-vodovozov-lovushki-mozga": "prototype.json:12926:b2c2ab3f5cd2|_state.json:-",
-    "VS-261226-tims-multivselennaya": "prototype.json:13222:1b05918d2282|_state.json:-"
+    "VS-261226-tims-multivselennaya": "prototype.json:13222:1b05918d2282|_state.json:-",
+    "ZG-1003": "prototype.json:10443:8bbe63ef05bd|_state.json:-",
+    "ZG-1006": "prototype.json:12346:a9d9c8020c5f|_state.json:-"
   }
 }
