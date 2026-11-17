@@ -368,6 +368,8 @@ ORGANIZER_NAMES = {
     'deti-i-nauka-event.timepad.ru': 'Дети и наука',
     'nekrasovka.ru': 'Библиотека им. Н. А. Некрасова',
     'lectory2.ru': 'Лекторий «Живой город»',
+    'geogr.msu.ru': 'Географический факультет МГУ',
+    'www.geogr.msu.ru': 'Географический факультет МГУ',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')
