@@ -29,10 +29,12 @@ nbsp/«ё»-инвариантов и сущностей тире (только 
 
 Автоправки — только механика: nbsp после однобуквенных, удаление nbsp после
 двухбуквенных, nbsp у чисел/тире/инициалов, «пойдёт» → «пойдет», сущности
-тире. Тонкие места (наводка «название организации?», прямые кавычки, лапки,
-римские цифры, «ё» по списку yo_words) остаются человеку — их валидатор
-печатает наводками после правок. Правила не живут здесь: при изменении
-правила правим скилл, а этот файл — только зеркало механики.
+тире, вторые «ёлочки» внутри «ёлочек» → „лапки“, заглавная буква в поле 7.4
+«Описание автора». Тонкие места (наводка «название организации?», прямые
+кавычки, лапки без внешних ёлочек, римские цифры, «ё» по списку yo_words)
+остаются человеку — их валидатор печатает наводками после правок. Правила
+не живут здесь: при изменении правила правим скилл, а этот файл — только
+зеркало механики.
 
 ПРАВИЛО ДОСЛОВНЫХ ВСТАВОК (verbatim_fragments): в prototype.json верхнего
 уровня может быть задан массив строк `verbatim_fragments`. Тексты из него
@@ -551,6 +553,87 @@ def p_entities_typo(t: str):
     )
 
 
+def p_nested_guillemets(t: str):
+    """Вторые «ёлочки» ВНУТРИ «ёлочек» — ошибка: вложенная цитата — „лапки“.
+
+    Правило скилла `event-description` (разд. 3в п. 3) и `post-check` п. 9a:
+    когда название целиком взято в «ёлочки», его внутренняя часть пишется
+    в „лапках“: «Мифология науки: кричал ли Архимед „Эврика!“?».
+    Даже если в источнике обе пары стоят ёлочками (ошибка 18.11.2026,
+    прототип EXP-261206-gubin-mifologiya-nauki).
+
+    Возвращает список псевдосовпадений по внутренним парам (позиция
+    открывающей « … позиция после закрывающей »).
+
+    Уровни вложенности чередуются, как в типографике: 1 — «ёлочки»,
+    2 — „лапки“, 3 — снова «ёлочки». Поэтому ошибкой считаются пары,
+    стоящие на ЧЁТНОМ уровне (2, 4, …): вторая пара должна быть „лапками“,
+    а третья (внутри лапок) снова ёлочками — и это не ошибка.
+    Уровень считаем по ВСЕМ кавычкам (« », „ “), а не только по ёлочкам,
+    иначе вложенные лапки не участвовали бы в счёте.
+    """
+    masked = re.sub(r"<[^>]+>", lambda m: " " * len(m.group(0)), t)
+    OPEN = "\u00ab\u201e"
+    CLOSE = "\u00bb\u201c"
+    stack = []                     # позиции открывающих кавычек
+    out = []
+    for m in re.finditer("[\u00ab\u00bb\u201e\u201c]", masked):
+        ch = m.group(0)
+        if ch in OPEN:
+            stack.append(m.start())
+        elif stack:
+            op = stack.pop()
+            level = len(stack) + 1     # 1 — внешняя пара, 2 — вложенная …
+            # закрывающая кавычка должна быть парной к открывающей
+            if ch == "\u00bb" and masked[op] == "\u00ab" and level % 2 == 0:
+                out.append(_Span(op, m.end(), t[op:m.end()]))
+    return out
+
+
+def author_desc_lowercase(proto, sel=None) -> list:
+    """Поле 7.4 «Описание автора» обязано начинаться с ЗАГЛАВНОЙ буквы.
+
+    Правило скилла `event-description` (разд. 3, п. 7.4) и `post-check` п. 12:
+    это самостоятельное описание в модальном окне, а не продолжение фразы
+    после тире (там, в тексте аннотации, строчная — правильно).
+    Ошибка 18.11.2026, прототипы EXP-2611xx/EXP-2612xx: во всех трёх 7.4
+    начиналось со строчной («специалист в&nbsp;области…»).
+    """
+    out = []
+    if not isinstance(proto, dict):
+        return out
+    for a in proto.get("authors") or []:
+        for f in a.get("fields") or []:
+            if str(f.get("n")) != "7.4":
+                continue
+            body = re.sub(r"^\s*(?:<[^>]+>\s*)*", "", f.get("value") or "")
+            ch = body[:1]
+            if ch and ch.isalpha() and ch == ch.lower():
+                out.append(
+                    "поле 7.4 у автора «%s» начинается со строчной («%s…») — "
+                    "описание автора пишется с заглавной буквы"
+                    % (a.get("name") or "?", body[:40]))
+    return out
+
+
+def fix_author_desc_capital(value: str) -> tuple:
+    """Первая буква поля 7.4 — заглавная (механика --fix, правило 18.11.2026).
+
+    Возвращает (значение, сколько_исправлено). Теги в начале
+    (`<p>…`) сохраняются, меняется только первая буква.
+    """
+    if not isinstance(value, str):
+        return value, 0
+    m = re.match(r"^\s*(?:<[^>]+>\s*)*(\S)", value, re.S)
+    if not m:
+        return value, 0
+    i = m.start(1)
+    ch = value[i]
+    if not ch.isalpha() or ch != ch.lower() or ch.upper() == ch:
+        return value, 0
+    return value[:i] + ch.upper() + value[i + 1:], 1
+
+
 # --- правила, добавленные по обратной связи пользователя 28.09.2026 ----------
 
 ROMAN = ("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
@@ -732,6 +815,10 @@ def _spans_fix(t: str, fragments=None):
     # обычные пробелы ВНУТРИ буквенных сокращений («и т. п.» → «и&nbsp;т.&nbsp;п.»)
     for m in p_abbrev_spacing(t):
         add_remove(m.start(), m.end(), SENT)
+    # вторые «ёлочки» внутри «ёлочек» → „лапки“ (вложенная цитата)
+    for sp in p_nested_guillemets(t):
+        add_remove(sp.start(), sp.start() + 1, "\u201e")
+        add_remove(sp.end() - 1, sp.end(), "\u201c")
 
     # убираем вложенные/пересекающиеся правки, применяем «с конца»
     spans.sort(key=lambda s: s[0])
@@ -918,7 +1005,12 @@ def fix_proto_values(proto: dict, sel=None) -> tuple:
             a["name"] = fix_str(a["name"])
         for f in a.get("fields") or []:
             if "value" in f and (want or sel_field(sel, str(f.get("n")))):
-                f["value"] = fix_str(f["value"])
+                val = fix_str(f["value"])
+                if str(f.get("n")) == "7.4":
+                    val, n = fix_author_desc_capital(val)
+                    if n:
+                        changed += 1
+                f["value"] = val
         if "block_html" in a and (want or sel_field(sel, "7.4")):
             a["block_html"] = fix_str(a["block_html"])
     return p2, changed
@@ -1273,6 +1365,9 @@ def main() -> None:
         emit("9", 'прямые кавычки " — заменить на «»/„“', m, is_warn=True)
     for m in p_lapki_without_outer(t):
         emit("9a", "лапки „…“ без внешних ёлочек — заменить на «…»", m)
+    for m in p_nested_guillemets(t):
+        emit("9b", "вторые «ёлочки» внутри «ёлочек» — вложенная цитата "
+             "пишется „лапками“", m)
     for m in p_roman_spacing(t):
         emit("1f", "римская цифра без nbsp с обеих сторон («Петра&nbsp;I&nbsp;до»)", m)
     for m in p_abbrev_spacing(t):
@@ -1296,6 +1391,9 @@ def main() -> None:
         # Автор с on_elementy обязан иметь фото (урок TP-4211635)
         for msg in author_photo_problems(proto):
             hard.append(("7a", msg, "", msg, display))
+        # Поле 7.4 «Описание автора» — с заглавной буквы (правило 18.11.2026)
+        for msg in author_desc_lowercase(proto, sel):
+            hard.append(("7b", msg, "", msg, display))
         # «и ОНЛАЙН» — только в первом абзаце шапки (правило 07.11.2026)
         if sel is None or sel_block(sel, "desc"):
             for block in p_online_outside_first_para(proto):

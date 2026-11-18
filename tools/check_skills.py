@@ -28,7 +28,13 @@
    `</p><p>` склеивает абзацы (урок TP-4211635, 19.10.2026);
 9. МЕХАНИКА фото автора: у автора с on_elementy=true поле photo
    обязано быть заполнено (урок TP-4211635: на опубликованной странице
-   у автора не было фото).
+   у автора не было фото);
+10. МЕХАНИКА вложенных кавычек: вторые «ёлочки» внутри «ёлочек» —
+   ошибка, `--fix` переводит их в „лапки“ (ошибка 18.11.2026,
+   EXP-261206: название с цитатой внутри);
+11. МЕХАНИКА поля 7.4: «Описание автора» начинается с заглавной буквы,
+   `--fix` поднимает первую букву (ошибка 18.11.2026, три прототипа
+   «Экспериментаниума»).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -357,6 +363,90 @@ def check_author_photo() -> list:
     return problems
 
 
+def check_nested_quotes() -> list:
+    """Вторые «ёлочки» ВНУТРИ «ёлочек» — ошибка: вложенная цитата — „лапки“.
+
+    Ошибка 18.11.2026 (прототип EXP-261206-gubin-mifologiya-nauki):
+    название с цитатой внутри стояло целиком в ёлочках. Проверяем обе
+    стороны и автоправку --fix.
+    """
+    cp, problems = _load_cp("_cp_quotes")
+    if cp is None:
+        return problems
+    cases = [
+        ("«Мифология науки: кричал ли Архимед «Эврика!»?»", True,
+         "вторые ёлочки внутри ёлочек"),
+        ("«Мифология науки: кричал ли Архимед „Эврика!“?»", False,
+         "вложенные лапки — верно"),
+        ("Мифология науки: кричал ли Архимед «Эврика!»?", False,
+         "единственная пара без внешних ёлочек — верно"),
+        ("«Ученые&nbsp;— детям» в&nbsp;рамках проекта", False,
+         "одна пара — не вложенность"),
+        ("<b>«Пираты Карибского моря»</b> и «Часть команды&nbsp;— часть "
+         "корабля»", False, "две пары подряд, не вложенные"),
+        ("<p>«Название «внутри» название»</p>", True,
+         "вложенность внутри абзаца"),
+        ("«Он сказал: „цикл «Ученые — детям» — мой“ цикл»", False,
+         "третий уровень вложенности снова ёлочки — верно (2-й уровень в лапках)"),
+    ]
+    for text, want_hit, comment in cases:
+        hit = bool(cp.p_nested_guillemets(cp.analyze(text)))
+        if hit != want_hit:
+            problems.append("проверка вложенных кавычек для %r дала "
+                            "срабатывание=%s, ожидалось %s (%s)"
+                            % (text, hit, want_hit, comment))
+    src = "«Мифология науки: кричал ли Архимед «Эврика!»?»"
+    want = "«Мифология науки: кричал ли Архимед „Эврика!“?»"
+    fixed, _n = cp.apply_fixes(src, None)
+    if fixed != want:
+        problems.append("--fix не перевёл вложенные ёлочки в лапки: %r → %r"
+                        % (src, fixed))
+    fixed2, n2 = cp.apply_fixes(fixed, None)
+    if n2:
+        problems.append("--fix вложенных кавычек не идемпотентен: %r" % fixed2)
+    return problems
+
+
+def check_author_desc_capital() -> list:
+    """Поле 7.4 «Описание автора» начинается с заглавной буквы.
+
+    Ошибка 18.11.2026 (прототипы EXP-261122/EXP-261206/EXP-261213): во всех
+    трёх 7.4 начиналось со строчной; в тексте аннотации после тире строчная
+    при этом правильна, поэтому проверяем только поле 7.4.
+    """
+    cp, problems = _load_cp("_cp_a74")
+    if cp is None:
+        return problems
+    cases = [
+        ({"authors": [{"name": "X", "fields": [
+            {"n": "7.4", "value": "<p>специалист в&nbsp;области…</p>"}]}]},
+         True, "7.4 со строчной — ошибка"),
+        ({"authors": [{"name": "X", "fields": [
+            {"n": "7.4", "value": "<p>Специалист в&nbsp;области…</p>"}]}]},
+         False, "7.4 с заглавной — верно"),
+        ({"authors": [{"name": "X", "fields": [
+            {"n": "7.2", "value": "специалист"}]}]},
+         False, "не 7.4 — не проверяем"),
+        ({"authors": []}, False, "авторов нет"),
+    ]
+    for proto, want_hit, comment in cases:
+        hit = bool(cp.author_desc_lowercase(proto))
+        if hit != want_hit:
+            problems.append("проверка заглавной в 7.4 для %r дала "
+                            "срабатывание=%s, ожидалось %s (%s)"
+                            % (proto, hit, want_hit, comment))
+    src = "<p>специалист в&nbsp;области</p>"
+    want = "<p>Специалист в&nbsp;области</p>"
+    fixed, _n = cp.fix_author_desc_capital(src)
+    if fixed != want:
+        problems.append("--fix не поднял первую букву 7.4: %r → %r"
+                        % (src, fixed))
+    fixed2, n2 = cp.fix_author_desc_capital(fixed)
+    if n2:
+        problems.append("--fix заглавной в 7.4 не идемпотентен: %r" % fixed2)
+    return problems
+
+
 def main() -> None:
     if not os.path.isdir(SKILLS_DIR):
         print("нет каталога .opencode/skills")
@@ -414,6 +504,20 @@ def main() -> None:
 
     mech = check_author_photo()
     print("%s механика: фото автора при on_elementy"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_nested_quotes()
+    print("%s механика: вложенные кавычки (ёлочки → лапки)"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_author_desc_capital()
+    print("%s механика: поле 7.4 с заглавной буквы"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)
