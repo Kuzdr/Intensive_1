@@ -1,6 +1,9 @@
 {
-  "date": "2026-11-16 03:57:20",
+  "date": "2026-11-18 07:00:07",
   "protos": {
+    "EXP-261122-singh-pod-parusami": "prototype.json:13132:b60d9585b3de|_state.json:-",
+    "EXP-261206-gubin-mifologiya-nauki": "prototype.json:11213:0e82d1bc06a6|_state.json:-",
+    "EXP-261213-gushinets-bacilly": "prototype.json:11747:0143016f948a|_state.json:-",
     "MM-261118-semihatov-msk-raznoobrazie-vselennoj": "prototype.json:10480:d6d54affb316|_state.json:-",
     "MM-261121-terentev-msk": "prototype.json:9412:a681fc43e405|_state.json:-",
     "MM-261128-ahmetzyanov-msk": "prototype.json:9034:53f87850f397|_state.json:-",
@@ -28,7 +31,6 @@
     "PR-261227-Biologicheskiy-Novyy-god": "prototype.json:12034:a682c20eb0ef|_state.json:-",
     "TP-4185611": "prototype.json:13798:8b2da8432eb3|_state.json:-",
     "TP-4185646": "prototype.json:14504:25e484ff2d03|_state.json:-",
-    "TP-4217749": "prototype.json:16355:c371bec9cf57|_state.json:-",
     "TP-4217783": "prototype.json:16368:ab3040d8b714|_state.json:-",
     "TP-4224294": "prototype.json:11807:f04fb738af0b|_state.json:-",
     "TP-4229360": "prototype.json:12120:d6b1a06836f1|_state.json:-",
@@ -39,6 +41,7 @@
     "TP-4247784": "prototype.json:14164:5f94b55bb1e8|_state.json:-",
     "TP-4252096": "prototype.json:16632:94acbff9f2f4|_state.json:-",
     "TP-4252104": "prototype.json:16519:792c54d0a9f0|_state.json:-",
+    "TP-4255785": "prototype.json:12824:4cbb64526fee|_state.json:-",
     "TP-4258099": "prototype.json:19092:d020ca14b78e|_state.json:-",
     "TP-4258224": "prototype.json:18343:af4830f04be1|_state.json:-",
     "TP-4263734": "prototype.json:13010:87a93fd8f376|_state.json:-",
@@ -51,8 +54,11 @@
     "TP-4278460": "prototype.json:9862:08dc04776a30|_state.json:-",
     "TP-4279148": "prototype.json:10414:b37de2b17120|_state.json:-",
     "TP-4282734": "prototype.json:13648:69d4f898eea3|_state.json:-",
+    "TP-4289673": "prototype.json:11549:81394834ad60|_state.json:-",
     "TP-4293291": "prototype.json:13345:286df3260dcf|_state.json:-",
     "TP-4294100": "prototype.json:12851:9b7f8bdc5db3|_state.json:-",
+    "TP-4297583": "prototype.json:12221:bda2f9ccfd05|_state.json:-",
+    "TP-4297595": "prototype.json:13307:9c9d9af827aa|_state.json:-",
     "TP-4298115": "prototype.json:11477:d5358fab932e|_state.json:-",
     "TP-4299432": "prototype.json:14216:208900bdce96|_state.json:-",
     "VS-261119-butyagin-artemida": "prototype.json:14231:323a6085624d|_state.json:-",
@@ -63,6 +69,7 @@
     "VS-261210-zheltova-ritual": "prototype.json:12821:2fcacd6001dd|_state.json:-",
     "VS-261213-vodovozov-lovushki-mozga": "prototype.json:12926:b2c2ab3f5cd2|_state.json:-",
     "VS-261226-tims-multivselennaya": "prototype.json:13222:1b05918d2282|_state.json:-",
+    "YuGeo-261128-tainstvennaya-istoriya-krasnoj-palatki": "prototype.json:16283:42ddbfd671b2|_state.json:-",
     "ZG-1003": "prototype.json:10443:8bbe63ef05bd|_state.json:-",
     "ZG-1006": "prototype.json:12346:a9d9c8020c5f|_state.json:-"
   }
