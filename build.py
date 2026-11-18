@@ -372,6 +372,8 @@ ORGANIZER_NAMES = {
     'www.geogr.msu.ru': 'Географический факультет МГУ',
     'zilcc.ru': 'Культурный центр ЗИЛ',
     'zilcc.timepad.ru': 'Культурный центр ЗИЛ',
+    'experimentanium.ru': 'Музей «Экспериментаниум»',
+    'www.experimentanium.ru': 'Музей «Экспериментаниум»',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')

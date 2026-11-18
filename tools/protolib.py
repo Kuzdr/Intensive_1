@@ -51,7 +51,7 @@ LAT = {"а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "
 DASH = "—&nbsp;"
 CYR = "а-яёА-ЯЁ"
 ONE_LETTER = "вскоуиа"
-ABBR_DOT = ("д", "ул", "корп", "стр", "г", "им", "пр", "пер", "бул", "наб", "ш")
+ABBR_DOT = ("д", "ул", "корп", "стр", "г", "им", "пр", "пер", "бул", "наб", "ш", "к")
 # Слова, где «ё» не пишется (список согласован с check_prototype.py).
 # «Ильёй» — исключение: внесено по вердикту пользователя 27.10.2026.
 YO_INVARIANTS = ("ещё", "её", "учёный", "учёные", "учёными", "учёных",
@@ -186,7 +186,7 @@ def nbsp_normalize(t, skip_verbatim=False):
     def fix(chunk):
         chunk = re.sub(r"(?<![%s])([%s]) (?=[%s])" % (CYR, ONE_LETTER, CYR),
                        r"\1&nbsp;", chunk, flags=re.IGNORECASE)
-        chunk = re.sub(r"([%s0-9»)]+) —" % CYR, r"\1&nbsp;—", chunk)
+        chunk = re.sub(r"([%s0-9»)>]+) —" % CYR, r"\1&nbsp;—", chunk)
         chunk = chunk.replace("—&nbsp;", "— ")
         chunk = re.sub(r"(?<![А-ЯЁ])([А-ЯЁ])\. ([А-ЯЁ])\.", r"\1.&nbsp;\2.", chunk)
         chunk = re.sub(r"(?<![А-ЯЁ])([А-ЯЁ])\. ([А-ЯЁ][а-яё]{2,})", r"\1.&nbsp;\2", chunk)
@@ -207,7 +207,11 @@ def nbsp_normalize(t, skip_verbatim=False):
     out = []
     for s, e, is_tag in _visible_segments(t):
         out.append(t[s:e] if is_tag else fix(t[s:e]))
-    return "".join(out)
+    res = "".join(out)
+    # тире сразу после закрывающего тега («…</i></b> — <i>…») — nbsp нужен,
+    # внутри видимого фрагмента предыдущего символа нет
+    res = re.sub(r"([%s0-9»)>]) —" % CYR, r"\1&nbsp;—", res)
+    return res
 
 
 def pas_online(txt):
