@@ -184,7 +184,9 @@ def nbsp_normalize(t, skip_verbatim=False):
     t = re.sub(r"[ \t]{2,}", " ", t)
 
     def fix(chunk):
-        chunk = re.sub(r"(?<![%s])([%s]) (?=[%s])" % (CYR, ONE_LETTER, CYR),
+        # взгляд вперёд включает ««»: норма репо «и&nbsp;«слово»» (8 мест),
+        # без этого однобуквенный союз перед кавычкой оставался с пробелом
+        chunk = re.sub(r"(?<![%s])([%s]) (?=[%s«])" % (CYR, ONE_LETTER, CYR),
                        r"\1&nbsp;", chunk, flags=re.IGNORECASE)
         chunk = re.sub(r"([%s0-9»)>]+) —" % CYR, r"\1&nbsp;—", chunk)
         chunk = chunk.replace("—&nbsp;", "— ")
@@ -199,9 +201,13 @@ def nbsp_normalize(t, skip_verbatim=False):
         chunk = re.sub(r"(?<=[%s0-9]) (%s)\b" % (CYR, rom), "&nbsp;\\1", chunk)
         chunk = re.sub(r"\b(%s) " % rom, "\\1&nbsp;", chunk)
         for w in YO_INVARIANTS:
+            # Подстрокой, а не по границам слов — так же ищет
+            # check_prototype.p_invariant_yo: «полёт» должно ловить и
+            # «полёта», «полётов» (иначе protolib пропускает формы слова,
+            # а валидатор их требует).
+            chunk = chunk.replace(w, w.replace("ё", "е"))
             cap = w[0].upper() + w[1:]
-            chunk = re.sub(r"\b%s\b" % cap, cap.replace("ё", "е"), chunk)
-            chunk = re.sub(r"\b%s\b" % w, w.replace("ё", "е"), chunk)
+            chunk = chunk.replace(cap, cap.replace("ё", "е"))
         return chunk
 
     out = []
