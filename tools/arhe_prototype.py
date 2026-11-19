@@ -253,9 +253,16 @@ def build(cfg, today_dt=None):
 
 
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
     check = "--check" in sys.argv
     no_validate = "--no-validate" in sys.argv
+    value_opts = ("--arhe-file", "--tp-file")
+    skip = set()
+    for name in value_opts:
+        for i, a in enumerate(sys.argv):
+            if a == name and i + 1 < len(sys.argv):
+                skip.add(i + 1)
+    args = [a for i, a in enumerate(sys.argv[1:], 1)
+            if not a.startswith("--") and i not in skip]
 
     def opt(name):
         for i, a in enumerate(sys.argv):
