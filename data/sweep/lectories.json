@@ -1,0 +1,218 @@
+{
+  "version": 1,
+  "note": "Редактируйте этот файл: добавляйте лектории, источники и критерии. Поля: key (латиницей, без пробелов), name, enabled, collector (pryamaya|arhe|пусто), id_prefix, sources[{kind,url,note}], criteria, reference. Сборщик для лектория без collector не запускается — источники просто хранятся здесь.",
+  "lectories": [
+    {
+      "key": "pryamaya",
+      "name": "Лекторий «Прямая речь»",
+      "enabled": true,
+      "collector": "pryamaya",
+      "id_prefix": "PR",
+      "sources": [
+        {
+          "kind": "afisha",
+          "url": "https://www.pryamaya.ru/",
+          "note": "афиша, страницы /?page=N; обходить до пустой/повторяющейся"
+        },
+        {
+          "kind": "event",
+          "url": "https://www.pryamaya.ru/<слаг>",
+          "note": "страница события: цены, возраст, описание автора"
+        }
+      ],
+      "criteria": "Научно-популярные и культурно-научные лекции; игры, спектакли, курсы и мастер-классы не берём",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "arhe",
+      "name": "Центр «Архэ»",
+      "enabled": true,
+      "collector": "arhe",
+      "id_prefix": "TP",
+      "sources": [
+        {
+          "kind": "calendar",
+          "url": "https://arhe.msk.ru/?post_type=tribe_events",
+          "note": "основной источник; календарь кэшируется в data/raw/arhe_calendar.json"
+        },
+        {
+          "kind": "timepad",
+          "url": "https://arhe-events.timepad.ru/events/",
+          "note": "Москва, аккаунт 13612"
+        },
+        {
+          "kind": "timepad",
+          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/events/",
+          "note": "Санкт-Петербург, аккаунт 44486"
+        }
+      ],
+      "criteria": "Лекции по естественным наукам и археологии; чистую историю без связи с наукой и искусство/музыку не берём",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "vsmysle",
+      "name": "Сообщество «ВСмысле»",
+      "enabled": false,
+      "collector": "",
+      "id_prefix": "VS",
+      "sources": [
+        {
+          "kind": "afisha",
+          "url": "https://vsmysle.spb.ru/community/afisha/",
+          "note": "пять страниц ?PAGEN_1=1..5, обходить до 404/повтора"
+        }
+      ],
+      "criteria": "Научно-популярные лекции, не клубы/практикумы/экскурсии",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "mediomodo",
+      "name": "Medio Modo",
+      "enabled": false,
+      "collector": "",
+      "id_prefix": "MM",
+      "sources": [
+        {
+          "kind": "place",
+          "url": "https://www.benran.ru/",
+          "note": "Библиотека по естественным наукам РАН, площадка"
+        }
+      ],
+      "criteria": "Научно-популярные лекции",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "polymus",
+      "name": "Политехнический музей",
+      "enabled": false,
+      "collector": "",
+      "id_prefix": "PM",
+      "sources": [
+        {
+          "kind": "afisha",
+          "url": "https://polymus.ru/events/",
+          "note": "страница события /events/detail/<slug>; __NUXT_DATA__"
+        }
+      ],
+      "criteria": "Научно-популярные лекции",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "vdnh",
+      "name": "ВДНХ",
+      "enabled": false,
+      "collector": "",
+      "id_prefix": "VD",
+      "sources": [
+        {
+          "kind": "afisha",
+          "url": "https://vdnh.ru/events/",
+          "note": "страница события /events/<id>/; регистрация может быть на Timepad"
+        }
+      ],
+      "criteria": "Лекции и экскурсии-лекции научной тематики",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "zil",
+      "name": "Культурный центр «ЗИЛ»",
+      "enabled": false,
+      "collector": "",
+      "id_prefix": "ZIL",
+      "sources": [
+        {
+          "kind": "timepad",
+          "url": "https://zilcc.timepad.ru/afisha/",
+          "note": "обход по ?page=N до 404"
+        },
+        {
+          "kind": "site",
+          "url": "https://zilcc.ru/afisha",
+          "note": "API карточек https://eventapi.zilcc.ru/events/cards/v2?page_size=100"
+        }
+      ],
+      "criteria": "Научно-популярные лекции",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "yeltsin",
+      "name": "Филиал Ельцин Центра в Москве",
+      "enabled": false,
+      "collector": "",
+      "id_prefix": "EC",
+      "sources": [
+        {
+          "kind": "afisha",
+          "url": "https://yeltsin.ru/affairs/?cid=1",
+          "note": "основной источник; страница события /affair/<slug>/"
+        }
+      ],
+      "criteria": "Научно-популярные лекции",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "zhivoy-gorod",
+      "name": "Лекторий «Живой город» (Тверь)",
+      "enabled": false,
+      "collector": "",
+      "id_prefix": "ZG",
+      "sources": [
+        {
+          "kind": "api",
+          "url": "https://lectory2.ru/",
+          "note": "Vue-SPA: POST /api/get/list/ и /api/get/get/, точное время — calendar.ics"
+        }
+      ],
+      "criteria": "Научно-популярные лекции",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "geograf",
+      "name": "Лекторий юного географа",
+      "enabled": false,
+      "collector": "",
+      "id_prefix": "YuGeo",
+      "sources": [
+        {
+          "kind": "site",
+          "url": "https://www.geogr.msu.ru/admission/lektory/",
+          "note": "анонсы конкретных лекций на сайте факультета"
+        }
+      ],
+      "criteria": "Географические и околонаучные лекции для детей и взрослых",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "nekrasovka",
+      "name": "Библиотека им. Н. А. Некрасова",
+      "enabled": false,
+      "collector": "",
+      "id_prefix": "NB",
+      "sources": [
+        {
+          "kind": "afisha",
+          "url": "https://nekrasovka.ru/afisha/",
+          "note": "страница события /afisha/<дата>/<id>"
+        }
+      ],
+      "criteria": "Научно-популярные лекции",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "experimentanium",
+      "name": "Музей «Экспериментаниум»",
+      "enabled": false,
+      "collector": "",
+      "id_prefix": "EX",
+      "sources": [
+        {
+          "kind": "site",
+          "url": "https://experimentanium.ru/uchenye-detyam.html",
+          "note": "цикл «Ученые — детям»; страница /show/<слаг>.html"
+        }
+      ],
+      "criteria": "Научные лекции для детей",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    }
+  ]
+}
