@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Редактируйте этот файл: добавляйте лектории, источники и критерии. Поля: key (латиницей, без пробелов), name, enabled, collector (pryamaya|arhe|пусто), id_prefix, sources[{kind,url,note}], criteria, reference. Сборщик для лектория без collector не запускается — источники просто хранятся здесь.",
+  "note": "Редактируйте этот файл через чат с ИИ (вручную JSON не правим): добавляйте лектории, источники и критерии. Поля: key (латиницей, без пробелов), name, enabled, collector (pryamaya|arhe|пусто), id_prefix, sources[{kind,url,note}], criteria, reference. Сборщик для лектория без collector не запускается — источники просто хранятся здесь. Каждый отчёт об обходе обязан содержать ПОЛНЫЙ список кандидатов со ссылками (не только счётчики/ID).",
   "lectories": [
     {
       "key": "pryamaya",
@@ -20,12 +20,12 @@
           "note": "страница события: цены, возраст, описание автора"
         }
       ],
-      "criteria": "Научно-популярные и культурно-научные лекции; игры, спектакли, курсы и мастер-классы не берём",
+      "criteria": "Научно-популярные и культурно-научные лекции; игры, спектакли, курсы и мастер-классы не берём. Детские лекции (7+) получают аудиторию «Для всех, Для школьников»; поле 3 начинается «Прямая речь» в кавычках, поле 6 = «Лекторий \"Прямая речь\"»",
       "reference": ".opencode/skills/event-description/reference/lectories.md"
     },
     {
       "key": "arhe",
-      "name": "Центр «Архэ»",
+      "name": "Центр «Архэ» (приоритетный источник)",
       "enabled": true,
       "collector": "arhe",
       "id_prefix": "TP",
@@ -36,55 +36,80 @@
           "note": "основной источник; календарь кэшируется в data/raw/arhe_calendar.json"
         },
         {
+          "kind": "site",
+          "url": "https://arhe.msk.ru/?page_id=369",
+          "note": "раздел «Лекторий» — искать другие варианты страниц лекций"
+        },
+        {
+          "kind": "site",
+          "url": "https://arhe.msk.ru/?page_id=32233",
+          "note": "раздел «Архэ СПб»"
+        },
+        {
+          "kind": "site",
+          "url": "https://arhe.msk.ru/?page_id=77150",
+          "note": "раздел «Архэ Лайт»"
+        },
+        {
+          "kind": "site",
+          "url": "https://arhe.msk.ru/?page_id=332",
+          "note": "раздел «Архэ Курсы»; страницы курсов не берём, берём отдельные лекции курса"
+        },
+        {
           "kind": "timepad",
           "url": "https://arhe-events.timepad.ru/events/",
-          "note": "Москва, аккаунт 13612"
+          "note": "Москва, аккаунт 13612; один анонс может быть в обоих аккаунтах под разными ID"
         },
         {
           "kind": "timepad",
           "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/events/",
-          "note": "Санкт-Петербург, аккаунт 44486"
+          "note": "Санкт-Петербург, аккаунт 44486; проверять ОБА аккаунта при каждой проверке"
         }
       ],
-      "criteria": "Лекции по естественным наукам и археологии; чистую историю без связи с наукой и искусство/музыку не берём",
+      "criteria": "ПРИОРИТЕТНЫЙ ИСТОЧНИК: иногда берём лекции, которые не взяли бы от других организаторов, в том числе по гуманитарным наукам (например, курс Магида). Лекции по естественным наукам и археологии; нейронауки — берём; чистую историю без связи с наукой и искусство/музыку — не берём. Сверять календарь, все 4 раздела сайта и оба Timepad; дату/время — из текста анонса и Timepad, расхождения в notes",
       "reference": ".opencode/skills/event-description/reference/lectories.md"
     },
     {
       "key": "vsmysle",
       "name": "Сообщество «ВСмысле»",
-      "enabled": false,
+      "enabled": true,
       "collector": "",
       "id_prefix": "VS",
       "sources": [
         {
           "kind": "afisha",
           "url": "https://vsmysle.spb.ru/community/afisha/",
-          "note": "пять страниц ?PAGEN_1=1..5, обходить до 404/повтора"
+          "note": "пять страниц ?PAGEN_1=1..5, обходить до 404/повтора (страница 6 повторяет 5-ю)"
         }
       ],
-      "criteria": "Научно-популярные лекции, не клубы/практикумы/экскурсии",
+      "criteria": "Научно-популярные лекции, не клубы/практикумы/экскурсии/мастер-классы; дата — из анонса, а не из Timepad",
       "reference": ".opencode/skills/event-description/reference/lectories.md"
     },
     {
       "key": "mediomodo",
       "name": "Medio Modo",
-      "enabled": false,
+      "enabled": true,
       "collector": "",
       "id_prefix": "MM",
       "sources": [
         {
+          "kind": "afisha",
+          "url": "https://mediomodo.ru/",
+          "note": "основной источник: страница события; покупка билета — окно Tickets Cloud на той же странице"
+        },
+        {
           "kind": "place",
           "url": "https://www.benran.ru/",
-          "note": "Библиотека по естественным наукам РАН, площадка"
+          "note": "Библиотека по естественным наукам РАН, типичная площадка"
         }
       ],
-      "criteria": "Научно-популярные лекции",
+      "criteria": "Научно-популярные лекции; не переносить «пугалку» про видеосъёмку, описание автора — из блока «О лекторе»",
       "reference": ".opencode/skills/event-description/reference/lectories.md"
     },
     {
       "key": "polymus",
       "name": "Политехнический музей",
-      "enabled": false,
+      "enabled": true,
       "collector": "",
       "id_prefix": "PM",
       "sources": [
@@ -100,7 +125,7 @@
     {
       "key": "vdnh",
       "name": "ВДНХ",
-      "enabled": false,
+      "enabled": true,
       "collector": "",
       "id_prefix": "VD",
       "sources": [
@@ -108,15 +133,40 @@
           "kind": "afisha",
           "url": "https://vdnh.ru/events/",
           "note": "страница события /events/<id>/; регистрация может быть на Timepad"
+        },
+        {
+          "kind": "timepad",
+          "url": "https://lektorij-vdnh.timepad.ru/events/",
+          "note": "АО «ВДНХ» Знание — проверять при каждой проверке обновлений"
+        },
+        {
+          "kind": "timepad",
+          "url": "https://cosmos-vdnh.timepad.ru/events/",
+          "note": "Центр «Космонавтика и авиация» ВДНХ — проверять при каждой проверке обновлений"
+        },
+        {
+          "kind": "timepad",
+          "url": "https://atom-lab.timepad.ru/events/",
+          "note": "Павильон «АТОМ» — проверять при каждой проверке обновлений"
+        },
+        {
+          "kind": "timepad",
+          "url": "https://muzey-biotekh.timepad.ru/events/",
+          "note": "Центр современных биотехнологий — Музей БИОТЕХ — проверять при каждой проверке обновлений"
+        },
+        {
+          "kind": "timepad",
+          "url": "https://slovo-vdnh.timepad.ru/events/",
+          "note": "Музей славянской письменности «Слово» — проверять при каждой проверке обновлений"
         }
       ],
-      "criteria": "Лекции и экскурсии-лекции научной тематики",
+      "criteria": "Лекции и экскурсии-лекции научной тематики; ВДНХ без Timepad: если регистрации нет — поле 10 пустое, ID = VD-<id страницы>, образец 449979",
       "reference": ".opencode/skills/event-description/reference/lectories.md"
     },
     {
       "key": "zil",
       "name": "Культурный центр «ЗИЛ»",
-      "enabled": false,
+      "enabled": true,
       "collector": "",
       "id_prefix": "ZIL",
       "sources": [
@@ -128,16 +178,16 @@
         {
           "kind": "site",
           "url": "https://zilcc.ru/afisha",
-          "note": "API карточек https://eventapi.zilcc.ru/events/cards/v2?page_size=100"
+          "note": "ВТОРОЙ ОБЯЗАТЕЛЬНЫЙ ИСТОЧНИК — сайт самого КЦ ЗИЛ; API карточек https://eventapi.zilcc.ru/events/cards/v2?page_size=100"
         }
       ],
-      "criteria": "Научно-популярные лекции",
+      "criteria": "Научно-популярные лекции; оба источника (Timepad и сайт zilcc.ru) проверять при каждой проверке обновлений",
       "reference": ".opencode/skills/event-description/reference/lectories.md"
     },
     {
       "key": "yeltsin",
       "name": "Филиал Ельцин Центра в Москве",
-      "enabled": false,
+      "enabled": true,
       "collector": "",
       "id_prefix": "EC",
       "sources": [
@@ -153,7 +203,7 @@
     {
       "key": "zhivoy-gorod",
       "name": "Лекторий «Живой город» (Тверь)",
-      "enabled": false,
+      "enabled": true,
       "collector": "",
       "id_prefix": "ZG",
       "sources": [
@@ -169,7 +219,7 @@
     {
       "key": "geograf",
       "name": "Лекторий юного географа",
-      "enabled": false,
+      "enabled": true,
       "collector": "",
       "id_prefix": "YuGeo",
       "sources": [
@@ -179,13 +229,13 @@
           "note": "анонсы конкретных лекций на сайте факультета"
         }
       ],
-      "criteria": "Географические и околонаучные лекции для детей и взрослых",
+      "criteria": "Географические и околонаучные лекции для детей и взрослых; площадка — «географический факультет МГУ»",
       "reference": ".opencode/skills/event-description/reference/lectories.md"
     },
     {
       "key": "nekrasovka",
       "name": "Библиотека им. Н. А. Некрасова",
-      "enabled": false,
+      "enabled": true,
       "collector": "",
       "id_prefix": "NB",
       "sources": [
@@ -201,7 +251,7 @@
     {
       "key": "experimentanium",
       "name": "Музей «Экспериментаниум»",
-      "enabled": false,
+      "enabled": true,
       "collector": "",
       "id_prefix": "EX",
       "sources": [
@@ -212,6 +262,197 @@
         }
       ],
       "criteria": "Научные лекции для детей",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "akademiya-gramoty",
+      "name": "Академия Грамоты",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "AG",
+      "sources": [
+        {
+          "kind": "timepad",
+          "url": "https://academy-gramota.timepad.ru/events/",
+          "note": "афиша Timepad"
+        }
+      ],
+      "criteria": "Научно-популярные лекции о языке и грамоте",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "okeanologiya",
+      "name": "Институт океанологии им. П. П. Ширшова РАН",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "IO",
+      "sources": [
+        {
+          "kind": "timepad",
+          "url": "https://institut-okeanologii-im-p.timepad.ru/events/",
+          "note": "афиша Timepad"
+        }
+      ],
+      "criteria": "Научно-популярные лекции по океанологии",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "volnoslushatel",
+      "name": "Лекторий «Вольнослушатель»",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "VSH",
+      "sources": [
+        {
+          "kind": "timepad",
+          "url": "https://volnoslushatel.timepad.ru/events/",
+          "note": "афиша Timepad"
+        }
+      ],
+      "criteria": "Научно-популярные лекции",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "lobachevsky-lab",
+      "name": "Парк науки ННГУ «Лобачевский Lab»",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "TP",
+      "sources": [
+        {
+          "kind": "timepad",
+          "url": "https://lobachevskylab.timepad.ru/events/",
+          "note": "основной источник; ID событий TP-<id Timepad>"
+        },
+        {
+          "kind": "site",
+          "url": "https://naukann.ru/meropriyatiya/",
+          "note": "второй источник — афиша мероприятий на сайте naukann.ru"
+        }
+      ],
+      "criteria": "Научно-популярные лекции в Нижнем Новгороде",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "zanuda",
+      "name": "Зануда",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "ZN",
+      "sources": [
+        {
+          "kind": "timepad",
+          "url": "https://zanuda.timepad.ru/events/",
+          "note": "афиша Timepad"
+        }
+      ],
+      "criteria": "Научно-популярные лекции",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "astrocamp",
+      "name": "Astrocamp",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "TP",
+      "sources": [
+        {
+          "kind": "timepad",
+          "url": "https://astrocamp.timepad.ru/events/",
+          "note": "афиша Timepad; ID событий TP-<id Timepad>"
+        }
+      ],
+      "criteria": "Лекции по астрономии и космосу; по умолчанию события полностью офлайн (модалку «Получить ссылку на трансляцию» подтверждением онлайна не считаем)",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "nauchpop",
+      "name": "Свидетели научпопа",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "NP",
+      "sources": [
+        {
+          "kind": "timepad",
+          "url": "https://nauchpop-moscow.timepad.ru/events/",
+          "note": "афиша Timepad"
+        }
+      ],
+      "criteria": "Научно-популярные лекции",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "istovyj-inzhener",
+      "name": "«Истовый инженер»",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "II",
+      "sources": [
+        {
+          "kind": "timepad",
+          "url": "https://yadro-engineer.timepad.ru/events/",
+          "note": "афиша Timepad"
+        }
+      ],
+      "criteria": "Научно-популярные лекции по технике и инженерии",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "kurilka-gutenberga",
+      "name": "Курилка Гутенберга",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "KG",
+      "sources": [
+        {
+          "kind": "timepad",
+          "url": "https://kurilka-gutenberga-events.timepad.ru/events/",
+          "note": "афиша Timepad, основной аккаунт"
+        },
+        {
+          "kind": "timepad",
+          "url": "https://kurilkaintmn.timepad.ru/events/",
+          "note": "второй аккаунт Timepad — проверять оба"
+        }
+      ],
+      "criteria": "Научно-популярные лекции",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "kapitsa",
+      "name": "Технопарк Физтех-лицея им. Капицы",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "KP",
+      "sources": [
+        {
+          "kind": "site",
+          "url": "https://kapitsa.center/lecture_categories/lectures/",
+          "note": "афиша лекций на сайте технопарка"
+        }
+      ],
+      "criteria": "Научно-популярные лекции",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "herzen",
+      "name": "Герценовский университет (РГПУ им. А. И. Герцена)",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "HZ",
+      "sources": [
+        {
+          "kind": "site",
+          "url": "https://sdnt-project.herzen.spb.ru/openlectures/",
+          "note": "открытые лекции проекта СДНТ"
+        },
+        {
+          "kind": "site",
+          "url": "https://www.herzen.spb.ru/about/proyekty/otkrytyy-kampus/anonsy/",
+          "note": "анонсы «Открытого кампуса» на сайте университета"
+        }
+      ],
+      "criteria": "Научно-популярные лекции; вуз без указанной цены = бесплатно",
       "reference": ".opencode/skills/event-description/reference/lectories.md"
     }
   ]
