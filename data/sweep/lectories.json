@@ -496,6 +496,64 @@
       ],
       "criteria": "Научно-популярные лекции отдела Охта-8 (Санкт-Петербург); ID = TP-<id Timepad>; адрес/карта/телефон — дословно из опубликованного 450840; обязательна сверка с полной афишей «Элементов» (дубли)",
       "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "yeltsin-ekb",
+      "name": "Ельцин Центр (Екатеринбург)",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "TP",
+      "sources": [
+        {
+          "kind": "site",
+          "url": "https://yeltsin.ru/affairs/?cid=2&t=lecture",
+          "note": "афиша лекций Ельцин Центра (Екатеринбург); проверять все страницы, если есть постраничная навигация"
+        },
+        {
+          "kind": "timepad",
+          "url": "https://yeltsin-center.timepad.ru/events/",
+          "note": "лента Timepad Ельцин Центра; Timepad отдаёт капчу — читать через обычный Edge/CDP (tp_cdp.py)"
+        }
+      ],
+      "criteria": "Научно-популярные лекции Ельцин Центра (Екатеринбург); ID = TP-<id Timepad>; по состоянию на 23.11.2026 подходящих событий в источниках нет, источники добавлены для регулярного обхода",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "crypto",
+      "name": "Музей криптографии",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "TP",
+      "sources": [
+        {
+          "kind": "site",
+          "url": "https://cryptography-museum.ru/events",
+          "note": "афиша Музея криптографии (Москва)"
+        }
+      ],
+      "criteria": "Научно-популярные лекции Музея криптографии (Москва); по состоянию на 23.11.2026 подходящих событий в источнике нет, источник добавлен для регулярного обхода",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "darwin",
+      "name": "Дарвиновский музей",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "TP",
+      "sources": [
+        {
+          "kind": "site",
+          "url": "https://www.darwinmuseum.ru/projects/event",
+          "note": "афиша Дарвиновского музея (Москва); «Учительский клуб» НЕ берём"
+        },
+        {
+          "kind": "timepad",
+          "url": "https://darwinmuseum.timepad.ru/events/",
+          "note": "лента Timepad Дарвиновского музея; «Учительский клуб» НЕ берём; Timepad отдаёт капчу — читать через обычный Edge/CDP (tp_cdp.py)"
+        }
+      ],
+      "criteria": "Научно-популярные лекции Дарвиновского музея (Москва); «Учительский клуб» НЕ берём; по состоянию на 23.11.2026 подходящих событий в источниках нет, источники добавлены для регулярного обхода",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
     }
   ]
 }
