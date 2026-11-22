@@ -378,6 +378,12 @@ ORGANIZER_NAMES = {
     'planetarium.one': 'Библиотека Планетарий 1',
     'www.planetarium.one': 'Библиотека Планетарий 1',
     'oxta8.timepad.ru': 'Библиотека им. В. В. Маяковского Охта-8',
+    'darwinmuseum.ru': 'Государственный Дарвиновский музей',
+    'www.darwinmuseum.ru': 'Государственный Дарвиновский музей',
+    'darwinmuseum.timepad.ru': 'Государственный Дарвиновский музей',
+    'cryptography-museum.ru': 'Музей криптографии',
+    'www.cryptography-museum.ru': 'Музей криптографии',
+    'yeltsin-center.timepad.ru': 'Ельцин Центр (Екатеринбург)',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')
