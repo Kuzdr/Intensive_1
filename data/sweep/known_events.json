@@ -1,4 +1,4 @@
-{
+﻿{
   "version": 1,
   "note": "Реестр проверенных событий. Статусы: candidate (ждёт решения), added (в прототипе/на сайте), on_elementy (уже на «Элементах»), rejected (отвергнуто, причина в note), duplicate (дубль, ID в note). Заполняется командой tools\\sweep_lectories.py --bootstrap и правится вручную через --mark.",
   "lectories": {
@@ -449,7 +449,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "status": "added",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "prototype_id": "PR-261222-Mayzuls-Rebus-v-Srednie-veka"
         },
         {
           "key": "PR-8932",
@@ -1074,7 +1075,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "HZ-261125-asteroidno-kometnaya"
         },
         {
           "key": "HZ-261125-kamen-fenomen",
@@ -1198,7 +1200,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "ZIL-4289705-mariya-kuri"
         },
         {
           "key": "ZIL-4297595-remesla",
@@ -1315,7 +1318,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "VS-261212-antropologiya"
         },
         {
           "key": "VS-261213-lovushki-mozga",
@@ -1343,7 +1347,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "VS-261217-orudiya"
         },
         {
           "key": "VS-261219-serdtse",
@@ -1380,12 +1385,13 @@
           "title": "Мультивселенная: 6 способов создать другую Вселенную",
           "subtitle": "",
           "author": "Георгий Тимс",
-          "url": "https://vsmysle.spb.ru/afisha/lektsiya-s-viktorinoy-multivselennaya-6-sposobov-sozdat-druguyu-vselennuyu/",
+          "url": "https://vsmysle.spb.ru/community/afisha/lektsiya-s-viktorinoy-multivselennaya-6-sposobov-sozdat-druguyu-vselennuyu",
           "status": "added",
-          "note": "Решение пользователя 22.11.2026: добавить",
+          "note": "Покрыт прототипом VS-261226-tims-multivselennaya (тот же автор, дата и заголовок); отдельный прототип не нужен",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "VS-261226-tims-multivselennaya"
         }
       ]
     },
@@ -1446,7 +1452,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "MM-261206-zaharov-msk"
         },
         {
           "key": "MM-261206-biostatistika",
@@ -1474,7 +1481,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "MM-261211-alipov-msk"
         },
         {
           "key": "MM-261211-ikona",
@@ -1488,7 +1496,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "MM-261211-tretyakov-msk"
         },
         {
           "key": "MM-261211-ng-msk",
@@ -1530,7 +1539,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "MM-261212-osadchiy-medvedeva-msk"
         },
         {
           "key": "MM-261213-95",
@@ -1572,7 +1582,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "MM-261220-adamajtis-msk"
         },
         {
           "key": "MM-261220-lyubov-spb",
@@ -1586,7 +1597,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "MM-261220-alipov-spb"
         },
         {
           "key": "MM-270121-pechen",
@@ -1614,7 +1626,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "MM-270204-surdin-msk"
         },
         {
           "key": "MM-270321-resursy",
@@ -1628,7 +1641,8 @@
           "note": "Решение пользователя 22.11.2026: добавить",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
-          "updated": ""
+          "updated": "",
+          "prototype_id": "MM-270321-surdin-nn"
         }
       ]
     },
