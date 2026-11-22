@@ -96,11 +96,14 @@ def print_candidates(events):
         print("  кандидатов нет")
 
 
-def print_registry_candidates(reg, key, name):
+def print_registry_candidates(reg, key, name, proto=None):
     """Кандидаты из реестра — даже у лекториев без автоматического сборщика."""
+    proto = prototype_urls() if proto is None else proto
     events = [e for e in registry_events(reg, key)
               if future(e) and e.get("status") == "candidate"
               and e.get("review") != "hide"]
+    events, done = split_prototyped(events, proto)
+    print_prototyped(name, done)
     if not events:
         return 0
     print("\n%s: кандидатов в реестре %d" % (name, len(events)))
@@ -123,7 +126,7 @@ def log_unavailable(url, exc, attempts=1):
 
 
 def prototype_urls():
-    """URL событий, для которых уже есть прототип."""
+    """URL событий, для которых уже есть прототип (общая сверка для всех)."""
     urls = set()
     for p in glob.glob(os.path.join(ROOT, "data", "prototypes", "*",
                                     "prototype.json")):
@@ -138,19 +141,41 @@ def prototype_urls():
     return urls
 
 
+def split_prototyped(events, proto):
+    """Одинаковая для всех лекториев сверка: убрать уже оформленные прототипом.
+
+    Повод: 22.11.2026 лекция Соколовой (TP-4297595, тот же URL) попала в
+    кандидаты, потому что проверка была только в сборщике «Прямой речи».
+    """
+    usual, done = [], []
+    for e in events:
+        if str(e.get("url", "")).rstrip("/") in proto:
+            done.append(e)
+        else:
+            usual.append(e)
+    return usual, done
+
+
+def print_prototyped(name, events):
+    """Показать, что уже оформлено прототипом и в кандидаты не идёт."""
+    if not events:
+        return
+    print("\n%s: уже есть прототип — не кандидаты (%d):" % (name, len(events)))
+    for e in events:
+        print("    %s | %s | %s"
+              % (e["key"], e.get("date") or "?", e.get("title") or "?"))
+
+
 def collect_pryamaya(lectory, refresh=False):
     import collect_pryamaya as CP
-    proto_urls = prototype_urls()
     out = []
     for e in CP.collect_all():
-        status, note = "candidate", "Найдено в афише, решение не принято"
-        if e["url"].rstrip("/") in proto_urls:
-            status, note = "added", "Есть прототип в data/prototypes/"
         out.append({
             "key": e["key"], "date": e["date"], "time": e["time"],
             "title": e["title"], "subtitle": e["subtitle"],
             "author": e["author"], "url": e["url"],
-            "source_status": status, "note": note,
+            "source_status": "candidate",
+            "note": "Найдено в афише, решение не принято",
         })
     return out
 
@@ -219,6 +244,7 @@ def cmd_list(cfg, args):
 def do_sweep(cfg, reg, args):
     only = args.lectory
     rows, errors = [], []
+    proto = prototype_urls()          # одна сверка на все лектории
     for lectory in cfg.get("lectories", []):
         key = lectory["key"]
         if only and key != only:
@@ -228,7 +254,7 @@ def do_sweep(cfg, reg, args):
             continue
         coll_name = lectory.get("collector")
         if not coll_name:
-            if not print_registry_candidates(reg, key, lectory["name"]):
+            if not print_registry_candidates(reg, key, lectory["name"], proto):
                 print("\n%s: сборщик не назначен — только источники в списке"
                       % lectory["name"])
             continue
@@ -247,14 +273,18 @@ def do_sweep(cfg, reg, args):
             continue
         past = len(found) - sum(1 for e in found if future(e))
         found = [e for e in found if future(e)]
+        found, done = split_prototyped(found, proto)
+        print_prototyped(lectory["name"], done)
         known = index(registry_events(reg, key))
         new = [e for e in found if e["key"] not in known]
         counts = {}
         for e in found:
             st = known[e["key"]]["status"] if e["key"] in known else "new"
             counts[st] = counts.get(st, 0) + 1
-        print("\n%s: всего %d (прошедших скрыто %d), НОВЫХ %d | %s"
-              % (lectory["name"], len(found), past, len(new),
+        print("\n%s: всего %d (прошедших скрыто %d, уже с прототипом %d), "
+              "НОВЫХ %d | %s"
+              % (lectory["name"], len(found) + len(done), past, len(done),
+                 len(new),
                  ", ".join("%s=%d" % (k, v) for k, v in sorted(counts.items()))
                  or "реестр пуст"))
         for e in new:
@@ -270,9 +300,10 @@ def do_sweep(cfg, reg, args):
             print("  ждут решения: %d" % len(waiting))
             print_candidates(waiting)
         rows.append({"lectory": key, "name": lectory["name"],
-                     "total": len(found), "new": new, "counts": counts})
+                     "total": len(found) + len(done), "new": new,
+                     "prototyped": [e["key"] for e in done], "counts": counts})
         if args.update_seen:
-            for e in found:
+            for e in found + done:
                 if e["key"] in known:
                     known[e["key"]]["last_seen"] = today()
             save_json(REGISTRY_PATH, reg)
@@ -290,6 +321,7 @@ def do_bootstrap(cfg, reg, args):
     """Добавить в реестр все найденные события, которых там ещё нет."""
     lm = lectory_map(cfg)
     added = 0
+    proto = prototype_urls()          # та же сверка, что и при обходе
     for lectory in cfg.get("lectories", []):
         key = lectory["key"]
         if args.lectory and key != args.lectory:
@@ -305,15 +337,20 @@ def do_bootstrap(cfg, reg, args):
                             exc)
             continue
         found = [e for e in found if future(e)]
+        found, done = split_prototyped(found, proto)
+        done_keys = {e["key"] for e in done}
         known = index(registry_events(reg, key))
         node = reg["lectories"].setdefault(key, {"name": lectory["name"],
                                                  "events": []})
         node["name"] = lectory["name"]
-        for e in found:
+        for e in found + done:
             if e["key"] in known:
                 continue
             rec = dict(e)
-            rec["status"] = e["source_status"]
+            rec["status"] = ("added" if e["key"] in done_keys
+                             else e["source_status"])
+            if e["key"] in done_keys:
+                rec["note"] = "Есть прототип в data/prototypes/"
             rec["first_seen"] = today()
             rec["last_seen"] = rec["first_seen"]
             node.setdefault("events", []).append(rec)
