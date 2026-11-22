@@ -1962,6 +1962,29 @@ def build_toolbar_js():
   // статистику (сколько событий, сколько прототипов, что изменилось) не
   // успеваешь прочитать — страница перечитывается сразу после успеха.
   var LAST = 'nc:last-update';
+  /* Чтение/запись последней справки. Вынесены отдельно, чтобы закрытие панели
+     не стирало запись: иначе после перехода на прототип и возврата на главную
+     (страница грузится заново) кнопка (i) теряла данные и выдавала ошибку. */
+  function readLast() {
+    var raw = null;
+    try { raw = localStorage.getItem(LAST); } catch (e) { return null; }
+    if (!raw) return null;
+    var d = null;
+    try { d = JSON.parse(raw); } catch (e) { return null; }
+    return (d && d.x) ? d : null;
+  }
+  function writeLast(d) {
+    try { localStorage.setItem(LAST, JSON.stringify(d)); } catch (e) {}
+  }
+  /* Закрыть панель — значит только перестать показывать её при загрузке.
+     Сама справка остаётся в хранилище, и кнопка (i) показывает её снова. */
+  function dismissLast() {
+    var d = readLast();
+    if (d) { d.dismissed = true; writeLast(d); }
+  }
+  function lastText(d) {
+    return 'ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ (' + d.t + ')\n\n' + d.x;
+  }
 
   function usePanel(btn) {
     cur = btn;
@@ -2019,11 +2042,7 @@ def build_toolbar_js():
     if (!isErr) {
       // Сохраняем статистику: страница сейчас перечитается целиком, а панель
       // с результатом должна остаться читаемой и после перезагрузки.
-      try {
-        localStorage.setItem(LAST, JSON.stringify({
-          t: new Date().toLocaleString('ru-RU'), x: txt
-        }));
-      } catch (e) {}
+      writeLast({t: new Date().toLocaleString('ru-RU'), x: txt, dismissed: false});
       setTimeout(function () { location.reload(); }, 2500);
     }
   }
@@ -2032,7 +2051,7 @@ def build_toolbar_js():
     hideProgressGlobal();
     if (timer) { clearInterval(timer); timer = null; }
     if (gTimer) { clearInterval(gTimer); gTimer = null; }
-    try { localStorage.removeItem(LAST); } catch (e) {}
+    dismissLast();
   }
   // Кнопка «Закрыть» должна прятать ИМЕННО свою панель: панель показывается
   // ещё до нажатия «Обновить» (сохранённый результат, предупреждение), когда
@@ -2045,7 +2064,7 @@ def build_toolbar_js():
     var act = onClose || function () {
       box.hidden = true;
       if (timer) { clearInterval(timer); timer = null; }
-      try { localStorage.removeItem(LAST); } catch (e) {}
+      dismissLast();
     };
     acs.forEach(function (ac) {
       var b = ac.querySelector('.tbtn');
@@ -2057,12 +2076,13 @@ def build_toolbar_js():
   }
   // Показать сохранённый результат прошлого обновления (после перезагрузки).
   function showLast() {
-    var raw = null;
-    try { raw = localStorage.getItem(LAST); } catch (e) { return; }
-    if (!raw) return;
-    var d = null;
-    try { d = JSON.parse(raw); } catch (e) { return; }
-    if (!d || !d.x) return;
+    var d = readLast();
+    if (!d) return;
+    /* Справка доступна кнопке (i) ВСЕГДА — даже если панель уже закрывали
+       и мы вернулись с прототипа (страница загрузилась заново). Флаг
+       dismissed лишь запрещает показывать панель самим при загрузке. */
+    lastInfo = {t: lastText(d), e: false};
+    if (d.dismissed) return;
     var box = document.getElementById('update-panel-top') || document.querySelector('.update-panel');
     if (!box) return;
     box.hidden = false;
@@ -2070,12 +2090,10 @@ def build_toolbar_js():
     var st = box.querySelector('.update-status');
     if (pr) pr.hidden = true;
     if (st) {
-      st.textContent = 'ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ (' + d.t + ')\n\n' + d.x;
+      st.textContent = lastText(d);
       st.style.color = '#2e5d2e';
       st.hidden = false;
     }
-    // Чтобы кнопка (i) умела показать это ещё раз уже после перезагрузки.
-    lastInfo = {t: 'ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ (' + d.t + ')\n\n' + d.x, e: false};
     wireClose(box);
   }
   // Предупреждение сразу при загрузке страницы: сервер работает на коде,
@@ -2223,7 +2241,14 @@ def build_toolbar_js():
   var btnLastInfo = document.getElementById('btn-lastinfo');
   if (btnLastInfo) {
     btnLastInfo.addEventListener('click', function () {
-      if (!lastInfo) {
+      var info = lastInfo;
+      /* На всякий случай читаем и хранилище: после перехода на другую страницу
+         память скрипта обнуляется, а последняя справка там остаётся. */
+      if (!info) {
+        var d = readLast();
+        if (d) info = {t: lastText(d), e: false};
+      }
+      if (!info) {
         alert('Информация о последнем обновлении ещё не появлялась.');
         return;
       }
@@ -2241,8 +2266,8 @@ def build_toolbar_js():
       if (progress) progress.hidden = true;
       if (counts) counts.hidden = true;
       if (status) {
-        status.textContent = lastInfo.t || '';
-        status.style.color = lastInfo.e ? '#8c2f2f' : '#2e5d2e';
+        status.textContent = info.t || '';
+        status.style.color = info.e ? '#8c2f2f' : '#2e5d2e';
         status.hidden = false;
       }
       setActions(false);
@@ -2862,7 +2887,8 @@ PROTOTYPES_JS = r'''
      уводит в список — этим и пользуется сохранение обратной связи и комментария.
      stay=true — остаться на текущей странице (перечитать её на месте): так
      работают удаление комментария/обратной связи и кнопка «Скрыть»
-     (замечание пользователя 27.09.2026). */
+     (замечание пользователя 27.09.2026), а также сохранение поля
+     (замечание пользователя 22.11.2026: раньше уводило на главную). */
   function run(payload, okMsg, stay) {
     toast('Сохраняю…');
     return api(payload).then(function () {
@@ -3137,8 +3163,10 @@ PROTOTYPES_JS = r'''
         var v = $('#pj-ta', b).value;
         if (IS_LOCAL) {
           closeModal();
+          /* Правка поля — остаёмся на странице прототипа: без stay=true reload()
+             со страницы /event/ уводил бы на главную (как у комментариев). */
           run({ action: 'field', id: pageId(), area: area, key: key, value: v },
-            'Сохранено, сайт пересобран');
+            'Сохранено, сайт пересобран', true);
           return;
         }
         /* удалённый сайт: сервера нет — держим правку в браузере */
