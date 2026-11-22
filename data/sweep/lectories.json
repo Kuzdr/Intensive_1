@@ -454,6 +454,48 @@
       ],
       "criteria": "Научно-популярные лекции; вуз без указанной цены = бесплатно",
       "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "planetalib",
+      "name": "Библиотека Планетарий 1",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "TP",
+      "sources": [
+        {
+          "kind": "timepad",
+          "url": "https://planetalib.timepad.ru/events/",
+          "note": "основной источник: афиша и карточка события /event/<id>/; Timepad отдаёт капчу — читать через обычный Edge/CDP"
+        },
+        {
+          "kind": "site",
+          "url": "https://www.planetarium.one/",
+          "note": "сайт Планетария 1: конкретные лекции библиотеки там не публикуются, служит для адреса и ссылок"
+        }
+      ],
+      "criteria": "Научно-популярные лекции библиотеки при креативном кластере «Планетарий 1» (Санкт-Петербург); ID = TP-<id Timepad>; адрес/карта/ссылки — дословно из опубликованного 450925",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
+    },
+    {
+      "key": "oxta8",
+      "name": "Библиотека им. В. В. Маяковского Охта-8",
+      "enabled": true,
+      "collector": "",
+      "id_prefix": "TP",
+      "sources": [
+        {
+          "kind": "timepad",
+          "url": "https://oxta8.timepad.ru/events/",
+          "note": "основной источник: афиша и карточка события /event/<id>/; Age и полное описание — в evModel/DOM; Timepad отдаёт капчу — читать через обычный Edge/CDP"
+        },
+        {
+          "kind": "site",
+          "url": "https://elementy.ru/events",
+          "note": "полная афиша «Элементов» — обязательная сверка дублей по дате + автору/заголовку; адрес/карта/телефон Охта-8 — дословно из опубликованного 450840"
+        }
+      ],
+      "criteria": "Научно-популярные лекции отдела Охта-8 (Санкт-Петербург); ID = TP-<id Timepad>; адрес/карта/телефон — дословно из опубликованного 450840; обязательна сверка с полной афишей «Элементов» (дубли)",
+      "reference": ".opencode/skills/event-description/reference/lectories.md"
     }
   ]
 }

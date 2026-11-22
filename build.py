@@ -374,6 +374,10 @@ ORGANIZER_NAMES = {
     'zilcc.timepad.ru': 'Культурный центр ЗИЛ',
     'experimentanium.ru': 'Музей «Экспериментаниум»',
     'www.experimentanium.ru': 'Музей «Экспериментаниум»',
+    'planetalib.timepad.ru': 'Библиотека Планетарий 1',
+    'planetarium.one': 'Библиотека Планетарий 1',
+    'www.planetarium.one': 'Библиотека Планетарий 1',
+    'oxta8.timepad.ru': 'Библиотека им. В. В. Маяковского Охта-8',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')
