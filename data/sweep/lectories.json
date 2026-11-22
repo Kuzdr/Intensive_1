@@ -78,8 +78,8 @@
       "sources": [
         {
           "kind": "afisha",
-          "url": "https://vsmysle.spb.ru/community/afisha/",
-          "note": "пять страниц ?PAGEN_1=1..5, обходить до 404/повтора (страница 6 повторяет 5-ю)"
+          "url": "https://vsmysle.spb.ru/afisha/?w=all",
+          "note": "полная афиша (113 событий до 14.02.2027); ?PAGEN_1=1..5 с 22.11.2026 возвращают одну и ту же первую страницу — не использовать"
         }
       ],
       "criteria": "Научно-популярные лекции, не клубы/практикумы/экскурсии/мастер-классы; дата — из анонса, а не из Timepad",
@@ -210,7 +210,7 @@
         {
           "kind": "api",
           "url": "https://lectory2.ru/",
-          "note": "Vue-SPA: POST /api/get/list/ и /api/get/get/, точное время — calendar.ics"
+          "note": "Vue-SPA: POST /api/get/list/ с module:\"lectures\" (НЕ \"lecture\"), POST /api/get/get/, точное время — calendar.ics"
         }
       ],
       "criteria": "Научно-популярные лекции",

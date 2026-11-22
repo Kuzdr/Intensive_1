@@ -13,6 +13,13 @@
   rejected    — отвергнуто (причина в note);
   duplicate   — дубль опубликованного (ID в note).
 
+Прошедшие события (дата раньше сегодняшней) НИКОГДА не показываются и не
+добавляются в реестр. Для кандидатов поле `review` управляет выдачей:
+  include — явно подходит, вносить;
+  doubt   — сомнительно, показать отдельно;
+  hide    — заведомо не подходит, не показывать.
+Выдача кандидатов всегда полная: ключ, дата/время, автор, заголовок, URL.
+
 Использование:
   python -X utf8 tools\\sweep_lectories.py --list
   python -X utf8 tools\\sweep_lectories.py
@@ -56,6 +63,49 @@ def save_json(path, data):
 
 def today():
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+
+
+def today_date():
+    return datetime.date.today().isoformat()
+
+
+def future(event):
+    """Прошедшее событие не попадает ни в отчёт, ни в реестр."""
+    return (event.get("date") or "")[:10] >= today_date()
+
+
+def print_candidates(events):
+    """Полный список кандидатов со ссылками (правило пользователя 22.11.2026)."""
+    groups = [("include", "ЯВНО ВНОСИТЬ"), ("doubt", "СОМНИТЕЛЬНЫЕ"),
+              (None, "КАНДИДАТЫ")]
+    shown = 0
+    for review, header in groups:
+        rows = [e for e in events if e.get("review") == review] if review else [
+            e for e in events if e.get("review") not in ("include", "doubt", "hide")]
+        if not rows:
+            continue
+        print("  %s (%d):" % (header, len(rows)))
+        for e in rows:
+            author = e.get("author") or "автор не указан"
+            print("    %s | %s %s | %s | %s"
+                  % (e["key"], e.get("date") or "?", e.get("time") or "",
+                     author, e.get("title") or "?"))
+            print("      %s" % e.get("url", "?"))
+            shown += 1
+    if not shown:
+        print("  кандидатов нет")
+
+
+def print_registry_candidates(reg, key, name):
+    """Кандидаты из реестра — даже у лекториев без автоматического сборщика."""
+    events = [e for e in registry_events(reg, key)
+              if future(e) and e.get("status") == "candidate"
+              and e.get("review") != "hide"]
+    if not events:
+        return 0
+    print("\n%s: кандидатов в реестре %d" % (name, len(events)))
+    print_candidates(events)
+    return len(events)
 
 
 def log_unavailable(url, exc, attempts=1):
@@ -178,8 +228,9 @@ def do_sweep(cfg, reg, args):
             continue
         coll_name = lectory.get("collector")
         if not coll_name:
-            print("\n%s: сборщик не назначен — только источники в списке"
-                  % lectory["name"])
+            if not print_registry_candidates(reg, key, lectory["name"]):
+                print("\n%s: сборщик не назначен — только источники в списке"
+                      % lectory["name"])
             continue
         if coll_name not in COLLECTORS:
             print("\n%s: НЕИЗВЕСТНЫЙ сборщик %s" % (lectory["name"], coll_name))
@@ -194,14 +245,16 @@ def do_sweep(cfg, reg, args):
                             exc)
             errors.append((key, str(exc)))
             continue
+        past = len(found) - sum(1 for e in found if future(e))
+        found = [e for e in found if future(e)]
         known = index(registry_events(reg, key))
         new = [e for e in found if e["key"] not in known]
         counts = {}
         for e in found:
             st = known[e["key"]]["status"] if e["key"] in known else "new"
             counts[st] = counts.get(st, 0) + 1
-        print("\n%s: всего %d, НОВЫХ %d | %s"
-              % (lectory["name"], len(found), len(new),
+        print("\n%s: всего %d (прошедших скрыто %d), НОВЫХ %d | %s"
+              % (lectory["name"], len(found), past, len(new),
                  ", ".join("%s=%d" % (k, v) for k, v in sorted(counts.items()))
                  or "реестр пуст"))
         for e in new:
@@ -210,11 +263,12 @@ def do_sweep(cfg, reg, args):
             print("        %s" % e["url"])
             if e.get("subtitle"):
                 print("        %s" % e["subtitle"])
-        waiting = [e for e in found if e["key"] in known
+        waiting = [dict(e, review=known[e["key"]].get("review"))
+                   for e in found if e["key"] in known
                    and known[e["key"]].get("status") == "candidate"]
         if waiting:
-            print("  ждут решения: %d (%s)"
-                  % (len(waiting), ", ".join(e["key"] for e in waiting[:8])))
+            print("  ждут решения: %d" % len(waiting))
+            print_candidates(waiting)
         rows.append({"lectory": key, "name": lectory["name"],
                      "total": len(found), "new": new, "counts": counts})
         if args.update_seen:
@@ -250,6 +304,7 @@ def do_bootstrap(cfg, reg, args):
             log_unavailable(str(lectory.get("sources", [{}])[0].get("url", "?")),
                             exc)
             continue
+        found = [e for e in found if future(e)]
         known = index(registry_events(reg, key))
         node = reg["lectories"].setdefault(key, {"name": lectory["name"],
                                                  "events": []})

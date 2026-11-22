@@ -348,3 +348,32 @@
 - Тип ошибки: `HTTPError 307: Temporary Redirect` — бесконечный редирект при загрузке через `tools/sources/timepad.py` / `protolib.http_get`.
 - Попытки: 1 через скрипт; сразу же альтернативный запрос через webfetch — HTTP 200, страница получена целиком. Интервалы не потребовались: сайт отвечает, проблема в методе загрузки скрипта.
 - Итог: содержимое получено обходным путём. Выяснено: в тексте страницы план курса прямо указывает 25.11.2026 = «Зима, животные и человек» (6-я лекция), хотя заголовок страницы — устаревший «Осины, лоси и дикобразы». Совпадает с опубликованным на «Элементах» 450810 (дата, время, автор) — событие помечено дублем в реестре обходов.
+
+## 22.11.2026 — обход новых источников: капча Yandex на Timepad
+- URL: `https://academy-gramota.timepad.ru/events/`
+- URL: `https://institut-okeanologii-im-p.timepad.ru/events/`
+- URL: `https://volnoslushatel.timepad.ru/events/`
+- URL: `https://lobachevskylab.timepad.ru/events/`
+- URL: `https://zanuda.timepad.ru/events/`
+- URL: `https://astrocamp.timepad.ru/events/`
+- URL: `https://nauchpop-moscow.timepad.ru/events/`
+- URL: `https://yadro-engineer.timepad.ru/events/`
+- URL: `https://kurilka-gutenberga-events.timepad.ru/events/`
+- URL: `https://kurilkaintmn.timepad.ru/events/`
+- Тип ошибки: HTTP 302 → `/tmgrdfrend/showcaptcha`, заголовок `x-yandex-captcha: captcha`; webfetch — `Too many redirects (more than 10)`; через `r.jina.ai` — HTTP 451.
+- Попыток: ~18 на 10 URL (первичные + `?page=1`, корень, `rss/`, `http://`, прокси, повтор после паузы).
+- Итог: данные не получены. Причина — антибот-капча Yandex на стороне Timepad, не временная перегрузка; повтор через 1 и 5 минут результата не дал. Нужна замена IP/браузерный доступ или решение пользователя. Реестр не испорчен.
+
+## 22.11.2026 — обход ВДНХ и ЗИЛ: капча Timepad
+- URL: `https://vdnh.ru/events/`
+- URL: `https://lektorij-vdnh.timepad.ru/events/`
+- URL: `https://cosmos-vdnh.timepad.ru/events/`
+- URL: `https://atom-lab.timepad.ru/events/`
+- URL: `https://muzey-biotekh.timepad.ru/events/`
+- URL: `https://slovo-vdnh.timepad.ru/events/`
+- URL: `https://zilcc.timepad.ru/afisha/`
+- URL: `https://api.timepad.ru/v1/events`
+- URL: `https://r.jina.ai/`
+- Тип ошибки: Yandex SmartCaptcha («Вы не робот?»), заголовок `x-yandex-captcha: captcha`, цикл редиректов на `/tmgrdfrend/showcaptcha`; webfetch — `Too many redirects`. `vdnh.ru/events/` через webfetch — HTTP 500, но страница успешно прочитана прямым `fetch` (157 карточек __NUXT_DATA__). `api.timepad.ru/v1/events` — 403 без токена; `r.jina.ai` — 451.
+- Попыток: по 2–3 на адрес (ленты, `?page=1`, прямые карточки, альтернативные формы).
+- Итог: ленты Timepad не прочитаны; данные взяты из афиши `vdnh.ru/events/` и API `eventapi.zilcc.ru` (79 карточек). Реестр не испорчен, кандидаты добавлены по доступным источникам.

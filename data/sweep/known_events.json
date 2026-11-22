@@ -16,7 +16,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "doubt"
         },
         {
           "key": "PR-8916",
@@ -30,7 +31,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8941",
@@ -44,7 +46,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8940",
@@ -58,7 +61,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "include"
         },
         {
           "key": "PR-8920",
@@ -72,7 +76,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "doubt"
         },
         {
           "key": "PR-8944",
@@ -86,7 +91,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "doubt"
         },
         {
           "key": "PR-8925",
@@ -100,7 +106,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8957",
@@ -114,7 +121,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8915",
@@ -128,7 +136,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8946",
@@ -142,7 +151,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "doubt"
         },
         {
           "key": "PR-8907",
@@ -156,7 +166,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "doubt"
         },
         {
           "key": "PR-8955",
@@ -170,7 +181,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8892",
@@ -184,7 +196,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8939",
@@ -198,7 +211,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "include"
         },
         {
           "key": "PR-8958",
@@ -212,7 +226,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8931",
@@ -226,7 +241,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "doubt"
         },
         {
           "key": "PR-8938",
@@ -240,7 +256,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "doubt"
         },
         {
           "key": "PR-8922",
@@ -254,7 +271,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8934",
@@ -268,7 +286,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8917",
@@ -282,7 +301,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8927",
@@ -310,7 +330,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8935",
@@ -339,7 +360,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "doubt"
         },
         {
           "key": "PR-8960",
@@ -353,7 +375,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8919",
@@ -367,7 +390,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8968",
@@ -381,7 +405,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "include"
         },
         {
           "key": "PR-8928",
@@ -409,7 +434,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "doubt"
         },
         {
           "key": "PR-8959",
@@ -423,7 +449,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "include"
         },
         {
           "key": "PR-8932",
@@ -437,7 +464,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "doubt"
         },
         {
           "key": "PR-8956",
@@ -479,7 +507,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8967",
@@ -493,7 +522,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         },
         {
           "key": "PR-8969",
@@ -507,7 +537,8 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "include"
         },
         {
           "key": "PR-8947",
@@ -521,671 +552,14 @@
           "note": "Найдено в афише, решение не принято",
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-22 01:40",
+          "review": "hide"
         }
       ],
       "name": "Лекторий «Прямая речь»"
     },
     "arhe": {
       "events": [
-        {
-          "key": "TP-4247818",
-          "date": "2026-10-27",
-          "time": "",
-          "title": "Лекция Григория Сафронова «Открывая новое окно во вселенную: развитие нейтринной астрономии и Нобелевская премия по физике 2026 года»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4247818/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4171202",
-          "date": "2026-10-28",
-          "time": "",
-          "title": "Онлайн-лекция Данила Рябчикова «Средневековая история григорианского пения»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4171202/",
-          "source_status": "rejected",
-          "note": "Не по правилам отбора карточки «Архэ»",
-          "status": "rejected",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4219628",
-          "date": "2026-10-28",
-          "time": "",
-          "title": "Онлайн-лекция Павла Квартальнова «Жизнь подо льдом»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4219628/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4269017",
-          "date": "2026-10-28",
-          "time": "",
-          "title": "Онлайн-лекция «Театр ОБЭРИУ: дадаисты в Ленинграде»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4269017/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4247471",
-          "date": "2026-10-29",
-          "time": "",
-          "title": "Курс «Кто управляет муравейником?»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4247471/",
-          "source_status": "rejected",
-          "note": "Страница курса, не отдельная лекция",
-          "status": "rejected",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4247514",
-          "date": "2026-10-29",
-          "time": "",
-          "title": "Лекция «Семья муравьёв: как устроено их общество»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4247514/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4223982",
-          "date": "2026-10-30",
-          "time": "",
-          "title": "Онлайн-лекция Михаила Магида «США и новая расстановка сил на Ближнем Востоке»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4223982/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4231653",
-          "date": "2026-10-30",
-          "time": "",
-          "title": "Курс «Как мы учим языки. Что наука знает об обучении, грамматике, ошибках и о том, как мы начинаем говорить на чужом языке»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4231653/",
-          "source_status": "rejected",
-          "note": "Страница курса, не отдельная лекция",
-          "status": "rejected",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4231686",
-          "date": "2026-10-30",
-          "time": "",
-          "title": "Лекция «Почему родной язык осваивается иначе, чем иностранный»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4231686/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4268316",
-          "date": "2026-10-30",
-          "time": "",
-          "title": "Онлайн-лекция «Россия. Почему богатая страна так и не стала богатой?»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4268316/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4251928",
-          "date": "2026-10-31",
-          "time": "",
-          "title": "Лекция П.В. Рябова «Портреты. «Северяне»: братья Бестужевы — между флотом, искусством, литературой и революцией»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4251928/",
-          "source_status": "rejected",
-          "note": "Не по правилам отбора карточки «Архэ»",
-          "status": "rejected",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4257766",
-          "date": "2026-10-31",
-          "time": "",
-          "title": "Лекция «ХАЗАРЫ. Забытая империя Средневековья». Рассказ о загадочном народе хазар и о книге (Санкт-Петербург)",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4257766/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4280817",
-          "date": "2026-11-02",
-          "time": "",
-          "title": "Онлайн-лекция Андрея Цатуряна «Физика сердца»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4280817/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4185577",
-          "date": "2026-11-03",
-          "time": "",
-          "title": "Лекция астрофизика Сергея Попова «Расстояния в расширяющейся Вселенной»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4185577/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4208014",
-          "date": "2026-11-03",
-          "time": "",
-          "title": "Онлайн-курс Константина Фомичёва «Современная систематика растений: эволюция и разнообразие споровых сосудистых растений»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4208014/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4217564",
-          "date": "2026-11-03",
-          "time": "",
-          "title": "Лекция Константина Фомичёва «Сосудистые растения: два пути эволюции»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4217564/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4171541",
-          "date": "2026-11-04",
-          "time": "",
-          "title": "Онлайн-лекция Данила Рябчикова «Паралитургическая музыка средневековья — литургические драмы, лауды, кантиги, кондукты»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4171541/",
-          "source_status": "rejected",
-          "note": "Не по правилам отбора карточки «Архэ»",
-          "status": "rejected",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4219640",
-          "date": "2026-11-04",
-          "time": "",
-          "title": "Онлайн-лекция Павла Квартальнова «Белка и ее орех»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4219640/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4257604",
-          "date": "2026-11-05",
-          "time": "",
-          "title": "Лекция «Смарт-телескопы: умная обсерватория в рюкзаке»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4257604/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4258041",
-          "date": "2026-11-05",
-          "time": "",
-          "title": "Лекция «Свет, который у Вас в голове: за что дали Нобелевскую премию по медицине 2026»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4258041/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4269891",
-          "date": "2026-11-05",
-          "time": "",
-          "title": "Онлайн-лекция «Муравейник: дом, убежище и центр организации»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4269891/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4224178",
-          "date": "2026-11-06",
-          "time": "",
-          "title": "Онлайн-лекция Михаила Магида «Иран и борьба за влияние на Ближнем Востоке»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4224178/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4246779",
-          "date": "2026-11-06",
-          "time": "",
-          "title": "Лекция со свободным входом «Сдаю тесты, но не могу говорить»: как измеряется владение языком?»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4246779/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4254451",
-          "date": "2026-11-06",
-          "time": "",
-          "title": "Встреча «Научная работа Софьи Розенфельд «Гуси на пути к зимовкам»»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4254451/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4251946",
-          "date": "2026-11-07",
-          "time": "",
-          "title": "Лекция П.В. Рябова «Портреты «северян-диктаторов»: князья Сергей Трубецкой и Евгений Оболенский»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4251946/",
-          "source_status": "rejected",
-          "note": "Не по правилам отбора карточки «Архэ»",
-          "status": "rejected",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4269111",
-          "date": "2026-11-07",
-          "time": "",
-          "title": "Лекция «Нобелевская премия по химии 2026 года. Абсолютный асимметрический синтез: случайность и неизбежность»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4269111/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4286342",
-          "date": "2026-11-09",
-          "time": "",
-          "title": "Онлайн-занятие для детей «Кто жил под Петербургом до динозавров? Тайны ордовикского периода»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4286342/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4217683",
-          "date": "2026-11-10",
-          "time": "",
-          "title": "Лекция Константина Фомичёва «Плауновые (Lycopodiales): строение, систематика и жизненный цикл»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4217683/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4269852",
-          "date": "2026-11-10",
-          "time": "",
-          "title": "Онлайн-лекция политического философа и преподавателя социальных наук Адама Лазебника «От смысла жизни к счастью и обратно»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4269852/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4171719",
-          "date": "2026-11-11",
-          "time": "",
-          "title": "Онлайн-лекция Данила Рябчикова «Светская монодия — трубадуры, труверы, миннезингеры»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4171719/",
-          "source_status": "rejected",
-          "note": "Не по правилам отбора карточки «Архэ»",
-          "status": "rejected",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4219686",
-          "date": "2026-11-11",
-          "time": "",
-          "title": "Онлайн-лекция Павла Квартальнова «Гнездо под снегом»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4219686/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4269928",
-          "date": "2026-11-12",
-          "time": "",
-          "title": "Онлайн-лекция «Как муравьи воспринимают мир и общаются»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4269928/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4224254",
-          "date": "2026-11-13",
-          "time": "",
-          "title": "Онлайн-лекция Михаила Магида «Иран: как устроена Исламская Республика»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4224254/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4246786",
-          "date": "2026-11-13",
-          "time": "",
-          "title": "Лекция со свободным входом «Бывает ли поздно учить язык и есть ли языковые способности?»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4246786/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4251986",
-          "date": "2026-11-14",
-          "time": "",
-          "title": "Лекция П.В. Рябова «Общество Соединённых славян: от возникновения — до Сибири»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4251986/",
-          "source_status": "rejected",
-          "note": "Не по правилам отбора карточки «Архэ»",
-          "status": "rejected",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4306769",
-          "date": "2026-11-16",
-          "time": "",
-          "title": "Онлайн-занятие для детей «Доисторические архитекторы»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4306769/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4217749",
-          "date": "2026-11-17",
-          "time": "",
-          "title": "Онлайн-лекция Константина Фомичёва «Селагинеллы (Selaginellales): морфология, систематика и гетероспория»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4217749/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4306472",
-          "date": "2026-11-17",
-          "time": "",
-          "title": "Онлайн-лекция историка и культуролога Гиорги Мецхи «Многоликий Тбилиси: город на перекрёстке культур и эпох»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4306472/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4310522",
-          "date": "2026-11-17",
-          "time": "",
-          "title": "Онлайн-лекция Владимира Сурдина «Ресурсы космоса»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4310522/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4171756",
-          "date": "2026-11-18",
-          "time": "",
-          "title": "Онлайн-лекция Данила Рябчикова «Средневековый мотет — квинтэссенция средневековой эстетики в одном жанре»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4171756/",
-          "source_status": "rejected",
-          "note": "Не по правилам отбора карточки «Архэ»",
-          "status": "rejected",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4247728",
-          "date": "2026-11-18",
-          "time": "",
-          "title": "Курс Александра Бутягина «Античная жизнь» (Санкт-Петербург)",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4247728/",
-          "source_status": "rejected",
-          "note": "Страница курса, не отдельная лекция",
-          "status": "rejected",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4247784",
-          "date": "2026-11-18",
-          "time": "",
-          "title": "Лекция Александра Бутягина «Древние греки дома» (Санкт-Петербург)",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4247784/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4293953",
-          "date": "2026-11-18",
-          "time": "",
-          "title": "Лекция Дмитрия Хаустова «Предтечи постмодерна: Хайдеггер, Батай, Витгенштейн»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4293953/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4278457",
-          "date": "2026-11-19",
-          "time": "",
-          "title": "Онлайн-лекция «Мир и война: как взаимодействуют семьи муравьёв»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4278457/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4263734",
-          "date": "2026-11-20",
-          "time": "",
-          "title": "Лекция со свободным входом «Почему они говорят так быстро: как мы слышим иностранную речь»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4263734/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4270075",
-          "date": "2026-11-20",
-          "time": "",
-          "title": "Лекция «Что мы (не) можем знать? Археология перед лицом естественных наук» (Санкт-Петербург)",
-          "subtitle": "",
-          "author": "",
-          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4270075/",
-          "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
-        {
-          "key": "TP-4252026",
-          "date": "2026-11-21",
-          "time": "",
-          "title": "Лекция П.В. Рябова «Портреты «Соединённых славян»: Пётр Борисов и Иван Горбачевский»",
-          "subtitle": "",
-          "author": "",
-          "url": "https://arhe-events.timepad.ru/event/4252026/",
-          "source_status": "rejected",
-          "note": "Не по правилам отбора карточки «Архэ»",
-          "status": "rejected",
-          "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
-        },
         {
           "key": "TP-4217783",
           "date": "2026-11-24",
@@ -1519,8 +893,8 @@
           "author": "",
           "url": "https://arhe-events.timepad.ru/event/4318592/",
           "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
+          "note": "Решение пользователя 22.11.2026: добавить",
+          "status": "added",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40"
         },
@@ -1561,8 +935,8 @@
           "author": "",
           "url": "https://arhe-events.timepad.ru/event/4317016/",
           "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
+          "note": "Решение пользователя 22.11.2026: добавить",
+          "status": "added",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40"
         },
@@ -1617,8 +991,8 @@
           "author": "",
           "url": "https://arhe-events.timepad.ru/event/4317032/",
           "source_status": "candidate",
-          "note": "Кандидат по диффу «Архэ»",
-          "status": "candidate",
+          "note": "Решение пользователя 22.11.2026: добавить",
+          "status": "added",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40"
         },
@@ -1666,6 +1040,851 @@
         }
       ],
       "name": "Центр «Архэ»"
+    },
+    "kapitsa": {
+      "name": "kapitsa",
+      "events": [
+        {
+          "key": "KP-261126-nobelevskie-premii",
+          "date": "2026-11-26",
+          "time": "19:00",
+          "title": "Нобелевские премии 2026 года",
+          "subtitle": "Лекториум Капицы",
+          "author": "Алексей Паевский",
+          "url": "https://kapitsa.center/lectures/nobelevskie-premii-2026-goda/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026: бесплатно, регистрация открыта; Долгопрудный, Лётная ул., 2",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        }
+      ]
+    },
+    "herzen": {
+      "name": "herzen",
+      "events": [
+        {
+          "key": "HZ-261125-asteroidno-kometnaya",
+          "date": "2026-11-25",
+          "time": "15:00",
+          "title": "Астероидно-кометная опасность",
+          "subtitle": "Открытая научно-популярная лекция для старшеклассников и учителей",
+          "author": "Николай Борисович Железнов",
+          "url": "https://sdnt-project.herzen.spb.ru/openlectures/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026: к. ф.-м. н., с. н. с. ИПА РАН; регистрация завершена — уточнить перед внесением",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "HZ-261125-kamen-fenomen",
+          "date": "2026-11-25",
+          "time": "17:00",
+          "title": "Камень — феномен космический: о минералах и горных породах в трудах Рерихов и современной науке",
+          "subtitle": "Гостиная Открытого кампуса, Казанская ул., 1",
+          "author": "профессор Войтеховский (инициалы не указаны)",
+          "url": "https://www.herzen.spb.ru/about/proyekty/otkrytyy-kampus/anonsy/73296/",
+          "status": "candidate",
+          "review": "doubt",
+          "note": "Обход 22.11.2026: геология+математика, но заметный философско-художественный уклон на Рерихов",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        }
+      ]
+    },
+    "vdnh": {
+      "name": "vdnh",
+      "events": [
+        {
+          "key": "VD-4183-asteroidnaya-opasnost",
+          "date": "2026-11-22",
+          "time": "15:00",
+          "title": "Астероидно-кометная опасность. Курс на столкновение",
+          "subtitle": "",
+          "author": "Леонид Еленин",
+          "url": "https://vdnh.ru/events/4183/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. Бесплатно; регистрация https://cosmos-vdnh.timepad.ru/event/4298115/",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "VD-4038-tam-gde-zhivut-slova",
+          "date": "2026-11-22",
+          "time": "16:00",
+          "title": "Там, где живут слова",
+          "subtitle": "",
+          "author": "",
+          "url": "https://vdnh.ru/events/4038/",
+          "status": "candidate",
+          "review": "doubt",
+          "note": "Обход 22.11.2026. Экскурсия в Музее славянской письменности «Слово»",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        }
+      ]
+    },
+    "zil": {
+      "name": "zil",
+      "events": [
+        {
+          "key": "ZIL-4289673-luna",
+          "date": "2026-11-25",
+          "time": "19:30",
+          "title": "Открытая встреча Московского астрономического клуба: Луна — осознанный взгляд",
+          "subtitle": "",
+          "author": "Владимир Афанасьев",
+          "url": "https://zilcc.timepad.ru/event/4289673/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. Данные https://eventapi.zilcc.ru/events/1125/; цена не указана",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "ZIL-4255785-emotsii",
+          "date": "2026-12-03",
+          "time": "19:00",
+          "title": "Вечерняя школа: Почему эмоции важны для человека?",
+          "subtitle": "",
+          "author": "Елена Дарменко",
+          "url": "https://zilcc.timepad.ru/event/4255785/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. events/1063/; цена не указана",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "ZIL-4307285-berneys",
+          "date": "2026-12-05",
+          "time": "17:00",
+          "title": "От Бернейса до блогеров: сто лет управления общественным мнением",
+          "subtitle": "",
+          "author": "Фёдор Сердотецкий",
+          "url": "https://zilcc.timepad.ru/event/4307285/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. events/1155/; цена не указана",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "ZIL-4297583-ii-pedagog",
+          "date": "2026-12-10",
+          "time": "19:00",
+          "title": "Научить ИИ учить: как нейросети меняют работу педагога",
+          "subtitle": "",
+          "author": "Андрей Кузнецов",
+          "url": "https://zilcc.timepad.ru/event/4297583/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. events/1146/; цена не указана",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "ZIL-4289705-mariya-kuri",
+          "date": "2026-12-12",
+          "time": "17:00",
+          "title": "Мария Кюри: радиоактивность, ответственность, свобода",
+          "subtitle": "",
+          "author": "Елизавета Губанова",
+          "url": "https://zilcc.timepad.ru/event/4289705/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. events/1162/; цена не указана",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "ZIL-4297595-remesla",
+          "date": "2026-12-24",
+          "time": "19:00",
+          "title": "От бересты до щучьей кожи: ремесла хантов и манси",
+          "subtitle": "",
+          "author": "Дарья Соколова",
+          "url": "https://zilcc.timepad.ru/event/4297595/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. events/1137/; этнография, цена не указана",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "ZIL-4194633-rentgen",
+          "date": "2027-01-14",
+          "time": "19:00",
+          "title": "Рентгеновские методы исследования состава и структуры",
+          "subtitle": "",
+          "author": "Олег Корнейчик",
+          "url": "https://zilcc.timepad.ru/event/4194633/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. events/990/; цена не указана",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        }
+      ]
+    },
+    "vsmysle": {
+      "name": "vsmysle",
+      "events": [
+        {
+          "key": "VS-251119-trappist-1",
+          "date": "2026-11-25",
+          "time": "19:30",
+          "title": "Звезда по имени «ТРАППИСТ-1» и семь её планет",
+          "subtitle": "",
+          "author": "Ирина Михайлова",
+          "url": "https://vsmysle.spb.ru/afisha/lektsiya-zvezda-po-imeni-trappist-1-i-sem-eye-planet/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. 700 руб. (клубу 525)",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "VS-261128-sostav-vselennoy",
+          "date": "2026-11-28",
+          "time": "15:00",
+          "title": "Состав вселенной: основные ингредиенты",
+          "subtitle": "",
+          "author": "Сергей Попов",
+          "url": "https://vsmysle.spb.ru/afisha/lektsiya-sergeya-popova-sostav-vselennoy-osnovnye-ingredienty/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. 2000 руб. (клубу 1500)",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "VS-261205-neyrofiziologiya",
+          "date": "2026-12-05",
+          "time": "19:00",
+          "title": "Нейрофизиология впечатлений: инструкция по сборке запоминающегося путешествия",
+          "subtitle": "",
+          "author": "Анна Хоружая",
+          "url": "https://vsmysle.spb.ru/afisha/anna-khoruzhaya-neyrofiziologiya-vpechatleniy-instruktsiya-po-sborke-zapominayushchegosya-puteshestv/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. 1500 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "VS-261206-ii",
+          "date": "2026-12-06",
+          "time": "15:00",
+          "title": "ИИ умеет больше, чем кажется, — и меньше, чем обещают",
+          "subtitle": "",
+          "author": "Герман Леонтьев",
+          "url": "https://vsmysle.spb.ru/afisha/lektsiya-germana-leonteva-ii-umeet-bolshe-chem-kazhetsya-i-menshe-chem-obeshchayut/",
+          "status": "candidate",
+          "review": "doubt",
+          "note": "Обход 22.11.2026. 1000 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "VS-261210-ritual",
+          "date": "2026-12-10",
+          "time": "19:30",
+          "title": "Ритуал в человеческой культуре: взгляд археолога",
+          "subtitle": "",
+          "author": "Мария Желтова",
+          "url": "https://vsmysle.spb.ru/afisha/lektsiya-marii-zheltovoy-ritual-v-chelovecheskoy-kulture-vzglyad-arkheologa/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. 1500 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "VS-261212-antropologiya",
+          "date": "2026-12-12",
+          "time": "14:00",
+          "title": "Итоги 2026 года в антропологии",
+          "subtitle": "",
+          "author": "Станислав Дробышевский",
+          "url": "https://vsmysle.spb.ru/afisha/lektsiya-stanislava-drobyshevskogo-itogi-2026-goda-v-antropologii/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. 2000 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "VS-261213-lovushki-mozga",
+          "date": "2026-12-13",
+          "time": "15:00",
+          "title": "Ловушки мозга",
+          "subtitle": "",
+          "author": "Алексей Водовозов",
+          "url": "https://vsmysle.spb.ru/afisha/lektsiya-alekseya-vodovozova-lovushki-mozga/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. 1500 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "VS-261217-orudiya",
+          "date": "2026-12-17",
+          "time": "19:00",
+          "title": "Вооружение в каменном веке: от первых орудий до сложных технологий",
+          "subtitle": "",
+          "author": "Александр Очередной",
+          "url": "https://vsmysle.spb.ru/afisha/interaktivnaya-lektsiya-vooruzhenie-v-kamennom-veke-ot-pervykh-orudiy-do-slozhnykh-tekhnologiy/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. 1000 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "VS-261219-serdtse",
+          "date": "2026-12-19",
+          "time": "15:00",
+          "title": "Сердце человека: вечный двигатель или нежный мотор?",
+          "subtitle": "",
+          "author": "Алексей Решетун",
+          "url": "https://vsmysle.spb.ru/afisha/lektsiya-alekseya-reshetuna-serdtse-cheloveka-vechnyy-dvigatel-ili-nezhnyy-motor-/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. 2000 руб. (клубу 1500)",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "VS-261226-gorizonty",
+          "date": "2026-12-26",
+          "time": "13:00",
+          "title": "Горизонты вселенной и скорость ее расширения (лекция и семинар)",
+          "subtitle": "",
+          "author": "Сергей Попов",
+          "url": "https://vsmysle.spb.ru/afisha/lektsiya-i-seminar-sergeya-popova-gorizonty-vselennoy-i-skorost-ee-rasshireniya-/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. 2000 руб. (клубу 1500)",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "VS-261226-multivselennaya",
+          "date": "2026-12-26",
+          "time": "19:00",
+          "title": "Мультивселенная: 6 способов создать другую Вселенную",
+          "subtitle": "",
+          "author": "Георгий Тимс",
+          "url": "https://vsmysle.spb.ru/afisha/lektsiya-s-viktorinoy-multivselennaya-6-sposobov-sozdat-druguyu-vselennuyu/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. 1000 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        }
+      ]
+    },
+    "mediomodo": {
+      "name": "mediomodo",
+      "events": [
+        {
+          "key": "MM-261128-dinozavry",
+          "date": "2026-11-28",
+          "time": "19:00",
+          "title": "Динозавры, оставшиеся в тени",
+          "subtitle": "",
+          "author": "Анвар Ахметзянов",
+          "url": "https://mediomodo.ru/ahmetzyanov-msk",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. от 1600 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261205-rak",
+          "date": "2026-12-05",
+          "time": "16:00",
+          "title": "Мифы и правда о раке",
+          "subtitle": "",
+          "author": "Максим Котов",
+          "url": "https://mediomodo.ru/kotov-msk",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. от 1600 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261205-lechenie",
+          "date": "2026-12-05",
+          "time": "19:00",
+          "title": "Как новое лечение рака добирается до пациента",
+          "subtitle": "",
+          "author": "Андрей Афанасьев",
+          "url": "https://mediomodo.ru/afanasev-msk",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. от 1400 руб., Аудиториум",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261206-odissej",
+          "date": "2026-12-06",
+          "time": "13:00",
+          "title": "Какими деньгами пользовался Одиссей и его подданные?",
+          "subtitle": "",
+          "author": "Евгений Захаров",
+          "url": "https://mediomodo.ru/zaharov-msk",
+          "status": "candidate",
+          "review": "doubt",
+          "note": "Обход 22.11.2026. от 1600 руб., нумизматика",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261206-biostatistika",
+          "date": "2026-12-06",
+          "time": "16:00",
+          "title": "Биостатистика — самостоятельная наука…",
+          "subtitle": "",
+          "author": "Никита Бурлов",
+          "url": "https://mediomodo.ru/burlov-spb",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. от 1900 руб., СПб",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261211-lyubov-msk",
+          "date": "2026-12-11",
+          "time": "19:00",
+          "title": "Нейробиология любви",
+          "subtitle": "",
+          "author": "Владимир Алипов",
+          "url": "https://mediomodo.ru/alipov-msk",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. от 1200 руб., Аудиториум",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261211-ikona",
+          "date": "2026-12-11",
+          "time": "19:00",
+          "title": "Это точно икона? Научно-исторический взгляд…",
+          "subtitle": "",
+          "author": "Алексей Третьяков",
+          "url": "https://mediomodo.ru/tretyakov-msk",
+          "status": "candidate",
+          "review": "doubt",
+          "note": "Обход 22.11.2026. от 2000 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261211-ng-msk",
+          "date": "2026-12-11",
+          "time": "19:00",
+          "title": "Новый год с Сурдиным и Семихатовым",
+          "subtitle": "",
+          "author": "Владимир Сурдин, Сергей Семихатов",
+          "url": "https://mediomodo.ru/ss-msk",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. Царицыно",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261213-ng-spb",
+          "date": "2026-12-13",
+          "time": "19:00",
+          "title": "Новый год с Сурдиным и Семихатовым",
+          "subtitle": "",
+          "author": "Владимир Сурдин, Сергей Семихатов",
+          "url": "https://mediomodo.ru/ss-spb",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. СПб, Дворец Кваренги",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261212-neyrointerfejsy",
+          "date": "2026-12-12",
+          "time": "19:00",
+          "title": "Почти всё о нейроинтерфейсах",
+          "subtitle": "",
+          "author": "Осадчий и Медведева",
+          "url": "https://mediomodo.ru/osadchiy-medvedeva-msk",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. от 1600 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261213-95",
+          "date": "2026-12-13",
+          "time": "19:00",
+          "title": "Из чего состоит 95% вещества Вселенной?",
+          "subtitle": "",
+          "author": "Ольга Сажина",
+          "url": "https://mediomodo.ru/sazhina-msk",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. от 1600 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261219-sungir",
+          "date": "2026-12-19",
+          "time": "18:00",
+          "title": "Сунгирь. От могилы до всемирной славы",
+          "subtitle": "",
+          "author": "Станислав Дробышевский",
+          "url": "https://mediomodo.ru/drobyshevskij-msk-dop",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. от 2200 руб., LOFT 13",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261220-geografiya",
+          "date": "2026-12-20",
+          "time": "19:00",
+          "title": "Как география влияет на нас…",
+          "subtitle": "",
+          "author": "Станислав Адамайтис",
+          "url": "https://mediomodo.ru/adamajtis-msk",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-261220-lyubov-spb",
+          "date": "2026-12-20",
+          "time": "18:00",
+          "title": "Нейробиология любви",
+          "subtitle": "",
+          "author": "Владимир Алипов",
+          "url": "https://mediomodo.ru/alipov-spb",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. от 1400 руб., СПб",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-270121-pechen",
+          "date": "2027-01-21",
+          "time": "19:30",
+          "title": "Наша печень…",
+          "subtitle": "",
+          "author": "Алексей Решетун",
+          "url": "https://mediomodo.ru/reshetun-msk-dop",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. от 1200 руб.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-270204-zvezdy",
+          "date": "2027-02-04",
+          "time": "20:00",
+          "title": "Жизнь звёзд",
+          "subtitle": "",
+          "author": "Владимир Сурдин",
+          "url": "https://mediomodo.ru/surdin-msk",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. Московский планетарий",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "MM-270321-resursy",
+          "date": "2027-03-21",
+          "time": "18:00",
+          "title": "Ресурсы космоса",
+          "subtitle": "",
+          "author": "Владимир Сурдин",
+          "url": "https://mediomodo.ru/surdin-nn",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. Нижний Новгород",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        }
+      ]
+    },
+    "experimentanium": {
+      "name": "experimentanium",
+      "events": [
+        {
+          "key": "EX-261206-arximed",
+          "date": "2026-12-06",
+          "time": "17:00",
+          "title": "Мифология науки: кричал ли Архимед „Эврика!“?",
+          "subtitle": "",
+          "author": "Александр Губин",
+          "url": "https://experimentanium.ru/show/zemlya-i-pochva-raskapyivaem-istoriyu-ekosistem!.html",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. бесплатно, 10+",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "EX-261213-ruki",
+          "date": "2026-12-13",
+          "time": "17:00",
+          "title": "Бациллы, кокки, эшерихии и паразиты: научный взгляд на мытьё рук!",
+          "subtitle": "",
+          "author": "Павел Гушинец",
+          "url": "https://experimentanium.ru/show/baczillyi,-kokki,-esherixii-i-parazityi-nauchnyij-vzglyad-na-myityo-ruk!.html",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. бесплатно, 7+",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        }
+      ]
+    },
+    "nekrasovka": {
+      "name": "nekrasovka",
+      "events": [
+        {
+          "key": "NB-251119-9218",
+          "date": "2026-11-25",
+          "time": "19:30",
+          "title": "Нейропластичность: как опыт меняет мозг",
+          "subtitle": "",
+          "author": "Олеся Дружкова",
+          "url": "https://nekrasovka.ru/afisha/25-11-2026/9218",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "NB-271119-9220",
+          "date": "2026-11-27",
+          "time": "19:30",
+          "title": "Ах японские переводы, как светла от вас голова!",
+          "subtitle": "",
+          "author": "Александр Мещеряков",
+          "url": "https://nekrasovka.ru/afisha/27-11-2026/9220",
+          "status": "candidate",
+          "review": "doubt",
+          "note": "Обход 22.11.2026.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "NB-301119-9217",
+          "date": "2026-11-30",
+          "time": "19:00",
+          "title": "Сергей Павлович Королёв: человек, который открыл космос",
+          "subtitle": "",
+          "author": "Денис Прудник",
+          "url": "https://nekrasovka.ru/afisha/30-11-2026/9217",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "NB-031219-9202",
+          "date": "2026-12-03",
+          "time": "19:30",
+          "title": "Компьютерное мышление эвенков: алгоритмы кочевой жизни",
+          "subtitle": "",
+          "author": "Илья Сосновский",
+          "url": "https://nekrasovka.ru/afisha/03-12-2026/9202",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "NB-081219-9222",
+          "date": "2026-12-08",
+          "time": "19:00",
+          "title": "Путешествие на Южные Курилы и в Японию",
+          "subtitle": "",
+          "author": "Екатерина Железная",
+          "url": "https://nekrasovka.ru/afisha/08-12-2026/9222",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "NB-101219-9203",
+          "date": "2026-12-10",
+          "time": "19:30",
+          "title": "Экологический код бурят: система мировоззрения и практик",
+          "subtitle": "",
+          "author": "",
+          "url": "https://nekrasovka.ru/afisha/10-12-2026/9203",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "NB-151219-9223",
+          "date": "2026-12-15",
+          "time": "19:00",
+          "title": "Железнодорожная Америка",
+          "subtitle": "",
+          "author": "Георгий Красников",
+          "url": "https://nekrasovka.ru/afisha/15-12-2026/9223",
+          "status": "candidate",
+          "review": "doubt",
+          "note": "Обход 22.11.2026.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "NB-171219-9204",
+          "date": "2026-12-17",
+          "time": "19:30",
+          "title": "Сибирские шаманы",
+          "subtitle": "",
+          "author": "Андрей Шаповалов",
+          "url": "https://nekrasovka.ru/afisha/17-12-2026/9204",
+          "status": "candidate",
+          "review": "doubt",
+          "note": "Обход 22.11.2026.",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        }
+      ]
+    },
+    "geograf": {
+      "name": "geograf",
+      "events": [
+        {
+          "key": "YuGeo-281119-krasnaya-palatka",
+          "date": "2026-11-28",
+          "time": "16:00",
+          "title": "Таинственная история «Красной палатки». Экспедиция на дирижабле на Северный полюс",
+          "subtitle": "",
+          "author": "Фёдор Александрович Романенко",
+          "url": "https://www.geogr.msu.ru/admission/lektory/",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. бесплатно, очно+онлайн, ауд. 1807",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        }
+      ]
+    },
+    "zhivoy-gorod": {
+      "name": "zhivoy-gorod",
+      "events": [
+        {
+          "key": "ZG-1003",
+          "date": "2026-11-24",
+          "time": "19:00",
+          "title": "Как устроено зрение",
+          "subtitle": "",
+          "author": "Наталья Ринская",
+          "url": "https://lectory2.ru/#lecture_1003",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. 1300 руб., до 21:00 мск",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        },
+        {
+          "key": "ZG-1006",
+          "date": "2026-12-10",
+          "time": "19:00",
+          "title": "Лунная гонка XXI века",
+          "subtitle": "",
+          "author": "Александр Хохлов",
+          "url": "https://lectory2.ru/#lecture_1006",
+          "status": "candidate",
+          "review": "include",
+          "note": "Обход 22.11.2026. 1300 руб., до 21:00 мск",
+          "first_seen": "2026-11-22",
+          "last_seen": "2026-11-22",
+          "updated": ""
+        }
+      ]
     }
   }
 }
