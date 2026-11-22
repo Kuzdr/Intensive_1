@@ -446,11 +446,10 @@
           "author": "Михаил Майзульс",
           "url": "https://www.pryamaya.ru/mihail_majzul_s_rebus_v_srednie_veka_22_12_2026",
           "source_status": "candidate",
-          "note": "Найдено в афише, решение не принято",
-          "status": "candidate",
+          "note": "Решение пользователя 22.11.2026: добавить",
+          "status": "added",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "last_seen": "2026-11-22 01:40"
         },
         {
           "key": "PR-8932",
