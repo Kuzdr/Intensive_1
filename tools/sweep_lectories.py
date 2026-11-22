@@ -35,6 +35,7 @@ import io
 import json
 import os
 import sys
+import unicodedata
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SWEEP_DIR = os.path.join(ROOT, "data", "sweep")
@@ -46,8 +47,12 @@ STATUSES = ("candidate", "added", "on_elementy", "rejected", "duplicate")
 
 
 def load_json(path, fallback):
+    # utf-8-sig читает и обычный UTF-8, и файл с BOM. 22.11.2026 BOM в
+    # known_events.json заставил старый код вернуть пустой fallback, и CLI
+    # перезаписал реестр из 124 событий семью. Возвращаем fallback только
+    # когда явно просят (для реестра передаём None — см. main()).
     try:
-        with io.open(path, encoding="utf-8") as f:
+        with io.open(path, encoding="utf-8-sig") as f:
             return json.load(f)
     except Exception as exc:                       # noqa: BLE001
         sys.stderr.write("ОШИБКА чтения %s: %s\n" % (path, exc))
@@ -224,6 +229,102 @@ def index(events):
     return {e["key"]: e for e in events}
 
 
+# --- Распознавание одного события из двух источников -----------------------
+# Повод (правило пользователя 22.11.2026): лекцию Сердотецкого нашли дважды —
+# в Timepad ЗИЛ и на сайте zilcc.ru — и подали как два разных события.
+# Идентичность = дата + нормализованный заголовок (или автор, если заголовка
+# нет). Ключи и URL у одного события в разных источниках разные, поэтому
+# сверять их нельзя.
+
+_TITLE_NOISE = ("лекция", "онлайн лекция", "открытая лекция", "онлайнлекция",
+                "открытая встреча московского астрономического клуба")
+
+
+def norm_words(value):
+    """ё→е, нижний регистр, только буквы/цифры и пробелы — для сравнения."""
+    text = unicodedata.normalize("NFKC", str(value or "")).lower().replace("ё", "е")
+    out = []
+    for ch in text:
+        if ch.isalnum():
+            out.append(ch)
+        elif ch.isspace():
+            out.append(" ")
+    return " ".join("".join(out).split())
+
+
+def title_key(event):
+    """Нормализованный заголовок без типовых приставок («Лекция…»)."""
+    text = norm_words(event.get("title"))
+    for word in _TITLE_NOISE:
+        if text.startswith(word):
+            text = text[len(word):].strip()
+            break
+    return text
+
+
+def same_event(a, b):
+    """Одно ли событие (в разных источниках)? Дата + заголовок или автор."""
+    if (a.get("date") or "")[:10] != (b.get("date") or "")[:10]:
+        return False
+    ta, tb = title_key(a), title_key(b)
+    aa, ab = norm_words(a.get("author")), norm_words(b.get("author"))
+    # Одинаковые дата и заголовок — надёжный дубль (автора может не быть).
+    if ta and tb and ta == tb:
+        return True
+    # Один заголовок — начало/конец другого (сайт добавляет «Лекция …
+    # преподавателя …» к тому же названию): короткий должен быть не меньше
+    # 12 знаков и не короче 40% длинного, иначе это случайное совпадение.
+    if ta and tb and ta != tb:
+        short, long = sorted((ta, tb), key=len)
+        if len(short) >= 12 and len(short) * 100 >= len(long) * 40 \
+                and (short in long):
+            return True
+    # Совпавший автор на ту же дату, когда хотя бы один заголовок отсутствует.
+    if aa and ab and aa == ab and (not ta or not tb):
+        return True
+    return False
+
+
+def find_existing(reg, event, exclude_keys=None):
+    """Найти в реестре уже учтённое событие; вернуть (лекторий, запись)."""
+    exclude = set(exclude_keys or ())
+    for lkey, node in reg.get("lectories", {}).items():
+        for rec in node.get("events", []):
+            if rec.get("key") in exclude:
+                continue
+            if same_event(event, rec):
+                return lkey, rec
+    return None
+
+
+def check_registry_duplicates(reg):
+    """Все пары событий реестра, которые на самом деле одно событие."""
+    rows = []
+    seen = []
+    for lkey, node in reg.get("lectories", {}).items():
+        for rec in node.get("events", []):
+            for other_lkey, other in seen:
+                if same_event(rec, other):
+                    rows.append((lkey, rec, other_lkey, other))
+            seen.append((lkey, rec))
+    return rows
+
+
+def cmd_check_dups(reg):
+    rows = check_registry_duplicates(reg)
+    if not rows:
+        print("Дублей между источниками в реестре нет.")
+        return 0
+    print("ОДНО СОБЫТИЕ, ДВЕ ЗАПИСИ В РЕЕСТРЕ (%d):" % len(rows))
+    for lkey, rec, other_lkey, other in rows:
+        print("  %s | %s | %s" % (rec.get("key"), rec.get("date") or "?",
+                                 rec.get("title") or "?"))
+        print("    %s — %s" % (other_lkey, other.get("key")))
+        print("    %s" % (rec.get("url") or "?"))
+        print("    %s" % (other.get("url") or "?"))
+    return 0
+
+
 def cmd_list(cfg, args):
     print("СПИСОК ЛЕКТОРИЕВ (редактируйте: %s)" % os.path.relpath(
         CONFIG_PATH, ROOT))
@@ -277,6 +378,25 @@ def do_sweep(cfg, reg, args):
         print_prototyped(lectory["name"], done)
         known = index(registry_events(reg, key))
         new = [e for e in found if e["key"] not in known]
+        # Одно событие из двух источников не считаем двумя новыми: ищем его
+        # отпечаток (дата + заголовок/автор) во всём реестре.
+        source_dups = []
+        fresh = []
+        for e in new:
+            match = find_existing(reg, e, exclude_keys={e["key"]})
+            if match:
+                source_dups.append((e, match[1]))
+            else:
+                fresh.append(e)
+        if source_dups:
+            print("\n%s: уже в реестре под другим ключом — НЕ новые (%d):"
+                  % (lectory["name"], len(source_dups)))
+            for e, rec in source_dups:
+                print("    %s → %s | %s | %s"
+                      % (e["key"], rec.get("key"), e.get("date") or "?",
+                         e.get("title") or "?"))
+                print("      %s" % e.get("url", "?"))
+        new = fresh
         counts = {}
         for e in found:
             st = known[e["key"]]["status"] if e["key"] in known else "new"
@@ -301,6 +421,9 @@ def do_sweep(cfg, reg, args):
             print_candidates(waiting)
         rows.append({"lectory": key, "name": lectory["name"],
                      "total": len(found) + len(done), "new": new,
+                     "source_duplicates": [{"key": e["key"],
+                                            "registry_key": rec.get("key")}
+                                           for e, rec in source_dups],
                      "prototyped": [e["key"] for e in done], "counts": counts})
         if args.update_seen:
             for e in found + done:
@@ -345,6 +468,20 @@ def do_bootstrap(cfg, reg, args):
         node["name"] = lectory["name"]
         for e in found + done:
             if e["key"] in known:
+                continue
+            # Тот же отпечаток уже есть в реестре (событие из второго
+            # источника) — не создаём вторую запись, дописываем URL к первой.
+            match = find_existing(reg, e, exclude_keys={e["key"]})
+            if match:
+                old = match[1]
+                urls = old.setdefault("also_urls", [])
+                if e.get("url") and e["url"] not in urls:
+                    urls.append(e["url"])
+                old["note"] = (old.get("note", "") +
+                               " | ещё источник: %s" % e["key"]).strip(" |")
+                old["updated"] = today()
+                print("%s: тот же отпечаток, что %s — вторая запись не создана"
+                      % (e["key"], old.get("key")))
                 continue
             rec = dict(e)
             rec["status"] = ("added" if e["key"] in done_keys
@@ -420,6 +557,8 @@ def main():
     ap.add_argument("--author", help="автор для новой записи")
     ap.add_argument("--update-seen", action="store_true",
                     help="обновить last_seen у известных событий")
+    ap.add_argument("--check-dups", action="store_true",
+                    help="показать события, найденные дважды (один отпечаток)")
     ap.add_argument("--json", dest="json_out", help="сохранить отчёт в JSON")
     args = ap.parse_args()
 
@@ -427,8 +566,16 @@ def main():
     if not cfg.get("lectories"):
         print("Нет списка лекториев: %s" % CONFIG_PATH)
         return 2
-    reg = load_json(REGISTRY_PATH, {"version": 1, "lectories": {}})
+    # fallback=None: при ошибке чтения НЕ перезаписываем реестр (урок BOM
+    # 22.11.2026, когда пустой fallback стёр 124 события).
+    reg = load_json(REGISTRY_PATH, None)
+    if reg is None:
+        print("ОШИБКА: не удалось прочитать реестр %s — выход без изменений"
+              % REGISTRY_PATH)
+        return 2
 
+    if args.check_dups:
+        return cmd_check_dups(reg)
     if args.list:
         return cmd_list(cfg, args)
     if args.mark:

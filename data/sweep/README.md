@@ -20,6 +20,17 @@
   строкой «уже есть прототип — не кандидаты». Проверка одна (`split_prototyped`),
   повод: 22.11.2026 лекция Соколовой (TP-4297595) попала в выдачу, хотя прототип
   с тем же URL давно был готов, — старая проверка была только у «Прямой речи».
+- **Одно событие из двух источников — одна запись в реестре.** Отпечаток —
+  дата + нормализованный заголовок (`ё`→`е`, регистр/кавычки не важны,
+  приставки «Лекция…» и «Вечерняя школа ЗИЛ» убираются); нет заголовка —
+  дата + автор. `same_event()` / `find_existing()`: найденное событие с уже
+  известным отпечатком не печатается как новое, а при `--bootstrap` не создаёт
+  вторую запись — URL дописывается в `also_urls` существующей. Повод:
+  22.11.2026 лекцию Сердотецкого нашли в Timepad ЗИЛ и на сайте `zilcc.ru`
+  и подали как два разных события. Проверить уже заведённые пары: `--check-dups`.
+- **BOM и защита реестра.** `load_json()` читает `utf-8-sig`; если реестр не
+  читается, CLI выходит без изменений (22.11.2026 пустой fallback стёр 124
+  события, оставив 7).
 
 ## 1. `lectories.json` — список лекториев и источников
 
@@ -98,6 +109,7 @@ python -X utf8 tools\sweep_lectories.py --list
 python -X utf8 tools\sweep_lectories.py
 python -X utf8 tools\sweep_lectories.py --lectory pryamaya
 python -X utf8 tools\sweep_lectories.py --refresh
+python -X utf8 tools\sweep_lectories.py --check-dups
 python -X utf8 tools\sweep_lectories.py --bootstrap
 python -X utf8 tools\sweep_lectories.py --mark PR-8935 --mark-status added --note "прототип создан"
 python -X utf8 tools\sweep_lectories.py --mark PR-8935 --mark-status rejected --note "игра, не лекция"

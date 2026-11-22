@@ -35,6 +35,9 @@
 11. МЕХАНИКА поля 7.4: «Описание автора» начинается с заглавной буквы,
    `--fix` поднимает первую букву (ошибка 18.11.2026, три прототипа
    «Экспериментаниума»).
+ 12. МЕХАНИКА дедупликации обхода: одно событие из двух источников
+    (Timepad + сайт) распознаётся по дате и заголовку/автору, а реестр
+    с BOM читается и не перезаписывается пустым (урок 22.11.2026).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -447,6 +450,58 @@ def check_author_desc_capital() -> list:
     return problems
 
 
+def check_sweep_dedup() -> list:
+    """Одно событие из двух источников распознаётся как одно (22.11.2026),
+    а реестр с BOM читается и не перезаписывается пустым (урок CLI в тот же
+    день, когда 124 события чуть не превратились в 7).
+    """
+    problems = []
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    try:
+        import sweep_lectories as S
+    except Exception as exc:                        # noqa: BLE001
+        return ["не удалось импортировать sweep_lectories: %s" % exc]
+    base = {"date": "2026-12-05", "time": "17:00",
+            "title": "От Бернейса до блогеров: сто лет управления общественным мнением",
+            "author": "Фёдор Сердотецкий"}
+    site = {"date": "2026-12-05", "time": "17:00",
+            "title": "Лекция преподавателя РАНХиГС и РУДН Федора Сердотецкого "
+                     "«От Бернейса до блогеров: сто лет управления общественным мнением»",
+            "author": "Федор Сердотецкий"}
+    other = {"date": "2026-12-05", "time": "19:00",
+             "title": "Мария Кюри: радиоактивность, ответственность, свобода",
+             "author": "Елизавета Губанова"}
+    next_day = dict(base, date="2026-12-06")
+    for a, b, want, label in [
+        (base, site, True, "Timepad и сайт — одно событие"),
+        (base, other, False, "две лекции в один день — разные события"),
+        (base, next_day, False, "тот же заголовок в другой день"),
+    ]:
+        got = S.same_event(a, b)
+        if got != want:
+            problems.append("дедупликация: %s — результат %s, ожидалось %s"
+                            % (label, got, want))
+    reg = {"lectories": {"zil": {"events": [dict(base, key="ZIL-4307285")]}}}
+    found = S.find_existing(reg, dict(site, key="SITE-1155"))
+    if not found or found[1]["key"] != "ZIL-4307285":
+        problems.append("find_existing не нашёл событие по отпечатку")
+    # BOM: тот же JSON с \ufeff в начале должен читаться идентично
+    import io
+    import json
+    import tempfile
+    data = {"version": 1, "lectories": {"x": {"events": [{"key": "K"}]}}}
+    fd, path = tempfile.mkstemp(suffix=".json")
+    try:
+        with io.open(path, "w", encoding="utf-8-sig") as f:
+            json.dump(data, f, ensure_ascii=False)
+        if S.load_json(path, None) != data:
+            problems.append("load_json не читает JSON с BOM")
+    finally:
+        os.close(fd)
+        os.remove(path)
+    return problems
+
+
 def main() -> None:
     if not os.path.isdir(SKILLS_DIR):
         print("нет каталога .opencode/skills")
@@ -518,6 +573,13 @@ def main() -> None:
 
     mech = check_author_desc_capital()
     print("%s механика: поле 7.4 с заглавной буквы"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_sweep_dedup()
+    print("%s механика: дедупликация источников и чтение BOM реестра"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)
