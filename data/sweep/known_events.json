@@ -17,7 +17,7 @@
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "review": "hide"
         },
         {
           "key": "PR-8916",
@@ -62,7 +62,7 @@
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "include"
+          "review": "doubt"
         },
         {
           "key": "PR-8920",
@@ -92,7 +92,7 @@
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "review": "hide"
         },
         {
           "key": "PR-8925",
@@ -152,7 +152,7 @@
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "review": "hide"
         },
         {
           "key": "PR-8907",
@@ -167,7 +167,7 @@
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "review": "hide"
         },
         {
           "key": "PR-8955",
@@ -212,7 +212,7 @@
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "include"
+          "review": "doubt"
         },
         {
           "key": "PR-8958",
@@ -242,7 +242,7 @@
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "review": "hide"
         },
         {
           "key": "PR-8938",
@@ -257,7 +257,7 @@
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "review": "hide"
         },
         {
           "key": "PR-8922",
@@ -406,7 +406,7 @@
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "include"
+          "review": "doubt"
         },
         {
           "key": "PR-8928",
@@ -450,7 +450,7 @@
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "include"
+          "review": "doubt"
         },
         {
           "key": "PR-8932",
@@ -465,7 +465,7 @@
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "review": "hide"
         },
         {
           "key": "PR-8956",
@@ -538,7 +538,7 @@
           "status": "candidate",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "include"
+          "review": "doubt"
         },
         {
           "key": "PR-8947",
@@ -1052,9 +1052,8 @@
           "subtitle": "Лекториум Капицы",
           "author": "Алексей Паевский",
           "url": "https://kapitsa.center/lectures/nobelevskie-premii-2026-goda/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026: бесплатно, регистрация открыта; Долгопрудный, Лётная ул., 2",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450960)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1087,9 +1086,8 @@
           "subtitle": "Гостиная Открытого кампуса, Казанская ул., 1",
           "author": "профессор Войтеховский (инициалы не указаны)",
           "url": "https://www.herzen.spb.ru/about/proyekty/otkrytyy-kampus/anonsy/73296/",
-          "status": "candidate",
-          "review": "doubt",
-          "note": "Обход 22.11.2026: геология+математика, но заметный философско-художественный уклон на Рерихов",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450959)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1107,9 +1105,8 @@
           "subtitle": "",
           "author": "Леонид Еленин",
           "url": "https://vdnh.ru/events/4183/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. Бесплатно; регистрация https://cosmos-vdnh.timepad.ru/event/4298115/",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450907)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1142,9 +1139,8 @@
           "subtitle": "",
           "author": "Владимир Афанасьев",
           "url": "https://zilcc.timepad.ru/event/4289673/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. Данные https://eventapi.zilcc.ru/events/1125/; цена не указана",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450924)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1157,9 +1153,8 @@
           "subtitle": "",
           "author": "Елена Дарменко",
           "url": "https://zilcc.timepad.ru/event/4255785/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. events/1063/; цена не указана",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450948)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1187,9 +1182,8 @@
           "subtitle": "",
           "author": "Андрей Кузнецов",
           "url": "https://zilcc.timepad.ru/event/4297583/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. events/1146/; цена не указана",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450955)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1232,9 +1226,8 @@
           "subtitle": "",
           "author": "Олег Корнейчик",
           "url": "https://zilcc.timepad.ru/event/4194633/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. events/990/; цена не указана",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450765)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1252,9 +1245,8 @@
           "subtitle": "",
           "author": "Ирина Михайлова",
           "url": "https://vsmysle.spb.ru/afisha/lektsiya-zvezda-po-imeni-trappist-1-i-sem-eye-planet/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. 700 руб. (клубу 525)",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450895)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1267,9 +1259,8 @@
           "subtitle": "",
           "author": "Сергей Попов",
           "url": "https://vsmysle.spb.ru/afisha/lektsiya-sergeya-popova-sostav-vselennoy-osnovnye-ingredienty/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. 2000 руб. (клубу 1500)",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450544)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1282,9 +1273,8 @@
           "subtitle": "",
           "author": "Анна Хоружая",
           "url": "https://vsmysle.spb.ru/afisha/anna-khoruzhaya-neyrofiziologiya-vpechatleniy-instruktsiya-po-sborke-zapominayushchegosya-puteshestv/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. 1500 руб.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450894)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1297,9 +1287,8 @@
           "subtitle": "",
           "author": "Герман Леонтьев",
           "url": "https://vsmysle.spb.ru/afisha/lektsiya-germana-leonteva-ii-umeet-bolshe-chem-kazhetsya-i-menshe-chem-obeshchayut/",
-          "status": "candidate",
-          "review": "doubt",
-          "note": "Обход 22.11.2026. 1000 руб.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450950)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1312,9 +1301,8 @@
           "subtitle": "",
           "author": "Мария Желтова",
           "url": "https://vsmysle.spb.ru/afisha/lektsiya-marii-zheltovoy-ritual-v-chelovecheskoy-kulture-vzglyad-arkheologa/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. 1500 руб.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450958)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1342,9 +1330,8 @@
           "subtitle": "",
           "author": "Алексей Водовозов",
           "url": "https://vsmysle.spb.ru/afisha/lektsiya-alekseya-vodovozova-lovushki-mozga/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. 1500 руб.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450965)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1372,9 +1359,8 @@
           "subtitle": "",
           "author": "Алексей Решетун",
           "url": "https://vsmysle.spb.ru/afisha/lektsiya-alekseya-reshetuna-serdtse-cheloveka-vechnyy-dvigatel-ili-nezhnyy-motor-/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. 2000 руб. (клубу 1500)",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450539)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1387,9 +1373,8 @@
           "subtitle": "",
           "author": "Сергей Попов",
           "url": "https://vsmysle.spb.ru/afisha/lektsiya-i-seminar-sergeya-popova-gorizonty-vselennoy-i-skorost-ee-rasshireniya-/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. 2000 руб. (клубу 1500)",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450543)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1422,9 +1407,8 @@
           "subtitle": "",
           "author": "Анвар Ахметзянов",
           "url": "https://mediomodo.ru/ahmetzyanov-msk",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. от 1600 руб.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450880)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1437,9 +1421,8 @@
           "subtitle": "",
           "author": "Максим Котов",
           "url": "https://mediomodo.ru/kotov-msk",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. от 1600 руб.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450881)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1452,9 +1435,8 @@
           "subtitle": "",
           "author": "Андрей Афанасьев",
           "url": "https://mediomodo.ru/afanasev-msk",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. от 1400 руб., Аудиториум",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450882)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1482,9 +1464,8 @@
           "subtitle": "",
           "author": "Никита Бурлов",
           "url": "https://mediomodo.ru/burlov-spb",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. от 1900 руб., СПб",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450883)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1527,9 +1508,8 @@
           "subtitle": "",
           "author": "Владимир Сурдин, Сергей Семихатов",
           "url": "https://mediomodo.ru/ss-msk",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. Царицыно",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450885)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1542,9 +1522,8 @@
           "subtitle": "",
           "author": "Владимир Сурдин, Сергей Семихатов",
           "url": "https://mediomodo.ru/ss-spb",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. СПб, Дворец Кваренги",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450887)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1572,9 +1551,8 @@
           "subtitle": "",
           "author": "Ольга Сажина",
           "url": "https://mediomodo.ru/sazhina-msk",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. от 1600 руб.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450962)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1587,9 +1565,8 @@
           "subtitle": "",
           "author": "Станислав Дробышевский",
           "url": "https://mediomodo.ru/drobyshevskij-msk-dop",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. от 2200 руб., LOFT 13",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450966)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1682,9 +1659,8 @@
           "subtitle": "",
           "author": "Александр Губин",
           "url": "https://experimentanium.ru/show/zemlya-i-pochva-raskapyivaem-istoriyu-ekosistem!.html",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. бесплатно, 10+",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450928)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1697,9 +1673,8 @@
           "subtitle": "",
           "author": "Павел Гушинец",
           "url": "https://experimentanium.ru/show/baczillyi,-kokki,-esherixii-i-parazityi-nauchnyij-vzglyad-na-myityo-ruk!.html",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. бесплатно, 7+",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450929)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1717,9 +1692,8 @@
           "subtitle": "",
           "author": "Олеся Дружкова",
           "url": "https://nekrasovka.ru/afisha/25-11-2026/9218",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450933)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1732,9 +1706,8 @@
           "subtitle": "",
           "author": "Александр Мещеряков",
           "url": "https://nekrasovka.ru/afisha/27-11-2026/9220",
-          "status": "candidate",
-          "review": "doubt",
-          "note": "Обход 22.11.2026.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450935)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1747,9 +1720,8 @@
           "subtitle": "",
           "author": "Денис Прудник",
           "url": "https://nekrasovka.ru/afisha/30-11-2026/9217",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450936)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1762,9 +1734,8 @@
           "subtitle": "",
           "author": "Илья Сосновский",
           "url": "https://nekrasovka.ru/afisha/03-12-2026/9202",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450886)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1777,9 +1748,8 @@
           "subtitle": "",
           "author": "Екатерина Железная",
           "url": "https://nekrasovka.ru/afisha/08-12-2026/9222",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450951)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1792,9 +1762,8 @@
           "subtitle": "",
           "author": "",
           "url": "https://nekrasovka.ru/afisha/10-12-2026/9203",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450963)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1822,9 +1791,8 @@
           "subtitle": "",
           "author": "Андрей Шаповалов",
           "url": "https://nekrasovka.ru/afisha/17-12-2026/9204",
-          "status": "candidate",
-          "review": "doubt",
-          "note": "Обход 22.11.2026.",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450964)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1842,9 +1810,8 @@
           "subtitle": "",
           "author": "Фёдор Александрович Романенко",
           "url": "https://www.geogr.msu.ru/admission/lektory/",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. бесплатно, очно+онлайн, ауд. 1807",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450921)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1862,9 +1829,8 @@
           "subtitle": "",
           "author": "Наталья Ринская",
           "url": "https://lectory2.ru/#lecture_1003",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. 1300 руб., до 21:00 мск",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450922)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
@@ -1877,9 +1843,8 @@
           "subtitle": "",
           "author": "Александр Хохлов",
           "url": "https://lectory2.ru/#lecture_1006",
-          "status": "candidate",
-          "review": "include",
-          "note": "Обход 22.11.2026. 1300 руб., до 21:00 мск",
+          "status": "duplicate",
+          "note": "ДУБЛЬ: уже на «Элементах» (ID 450957)",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-22",
           "updated": ""
