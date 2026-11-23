@@ -58,11 +58,12 @@
           "author": "Александр Асмолов",
           "url": "https://www.pryamaya.ru/aleksandr_asmolov_neopredelennost_kak_prostranstvo_svobody_25_11_2026",
           "source_status": "candidate",
-          "note": "Найдено в афише, решение не принято",
-          "status": "candidate",
+          "note": "Решение пользователя 24.11.2026: прототип PR-261125-Asmolov-Voshozhdenie-k-slozhnosti готов и поставлен на сайт",
+          "status": "added",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "review": "include",
+          "updated": "2026-11-24 02:45"
         },
         {
           "key": "PR-8920",
@@ -73,11 +74,12 @@
           "author": "Эдвард Радзинский",
           "url": "https://www.pryamaya.ru/edvard_radzinskij_zagadki_istorii_26_11_2026",
           "source_status": "candidate",
-          "note": "Найдено в афише, решение не принято",
-          "status": "candidate",
+          "note": "Решение пользователя 24.11.2026: не берём и больше к ним не возвращаться",
+          "status": "rejected",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "last_seen": "2026-11-24",
+          "review": "hide",
+          "updated": "2026-11-24"
         },
         {
           "key": "PR-8944",
@@ -208,11 +210,12 @@
           "author": "Настя Четверикова",
           "url": "https://www.pryamaya.ru/nasta_cetverikova_drevnij_egipet_dla_smelyh_6_12_2026",
           "source_status": "candidate",
-          "note": "Найдено в афише, решение не принято",
-          "status": "candidate",
+          "note": "Решение пользователя 24.11.2026: не берём и больше к ним не возвращаться",
+          "status": "rejected",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "last_seen": "2026-11-24",
+          "review": "hide",
+          "updated": "2026-11-24"
         },
         {
           "key": "PR-8958",
@@ -357,11 +360,12 @@
           "author": "Кирилл Кириченко",
           "url": "https://www.pryamaya.ru/kirill_kiricenko_obrazovanie_epohi_peremen_16_12_2026",
           "source_status": "candidate",
-          "note": "Найдено в афише, решение не принято",
-          "status": "candidate",
+          "note": "Решение пользователя 24.11.2026: не берём и больше к ним не возвращаться",
+          "status": "rejected",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "last_seen": "2026-11-24",
+          "review": "hide",
+          "updated": "2026-11-24"
         },
         {
           "key": "PR-8960",
@@ -402,11 +406,12 @@
           "author": "Елена Литвяк",
           "url": "https://www.pryamaya.ru/elena_litvak_vitrazi_sekrety_svetasegosa_stekla_19_12_2026",
           "source_status": "candidate",
-          "note": "Найдено в афише, решение не принято",
-          "status": "candidate",
+          "note": "Решение пользователя 24.11.2026: не берём и больше к ним не возвращаться",
+          "status": "rejected",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "last_seen": "2026-11-24",
+          "review": "hide",
+          "updated": "2026-11-24"
         },
         {
           "key": "PR-8928",
@@ -431,11 +436,12 @@
           "author": "Эдвард Радзинский",
           "url": "https://www.pryamaya.ru/edvard_radzinskij_zagadki_istorii_21_12_2026",
           "source_status": "candidate",
-          "note": "Найдено в афише, решение не принято",
-          "status": "candidate",
+          "note": "Решение пользователя 24.11.2026: не берём и больше к ним не возвращаться",
+          "status": "rejected",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "last_seen": "2026-11-24",
+          "review": "hide",
+          "updated": "2026-11-24"
         },
         {
           "key": "PR-8959",
@@ -534,11 +540,12 @@
           "author": "Елена Литвяк",
           "url": "https://www.pryamaya.ru/8969_elena_litvak_vitrazi_sekrety_svetasegosa_stekla_10_01_2027",
           "source_status": "candidate",
-          "note": "Найдено в афише, решение не принято",
-          "status": "candidate",
+          "note": "Решение пользователя 24.11.2026: не берём и больше к ним не возвращаться",
+          "status": "rejected",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40",
-          "review": "doubt"
+          "last_seen": "2026-11-24",
+          "review": "hide",
+          "updated": "2026-11-24"
         },
         {
           "key": "PR-8947",
@@ -554,6 +561,70 @@
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40",
           "review": "hide"
+        },
+        {
+          "key": "PR-8970",
+          "date": "2026-12-15",
+          "time": "19:00",
+          "title": "ГУМ: грандиозное упоение Москвы",
+          "subtitle": "Экскурсия по главному столичному магазину",
+          "author": "Никита Брусиловский",
+          "url": "https://www.pryamaya.ru/nikita_brusilovskij_gum_grandioznoe_upoenie_moskvy_15_12_26",
+          "source_status": "candidate",
+          "note": "Решение пользователя 24.11.2026: новые прогулки по ГУМу не нужны точно так же, как старая (PR-8907)",
+          "status": "rejected",
+          "first_seen": "2026-11-24",
+          "last_seen": "2026-11-24",
+          "review": "hide",
+          "updated": "2026-11-24"
+        },
+        {
+          "key": "PR-8971",
+          "date": "2026-12-27",
+          "time": "19:00",
+          "title": "ГУМ: грандиозное упоение Москвы",
+          "subtitle": "Экскурсия по главному столичному магазину",
+          "author": "Никита Брусиловский",
+          "url": "https://www.pryamaya.ru/nikita_brusilovskij_gum_grandioznoe_upoenie_moskvy_27_12_26",
+          "source_status": "candidate",
+          "note": "Решение пользователя 24.11.2026: новые прогулки по ГУМу не нужны точно так же, как старая (PR-8907)",
+          "status": "rejected",
+          "first_seen": "2026-11-24",
+          "last_seen": "2026-11-24",
+          "review": "hide",
+          "updated": "2026-11-24"
+        },
+        {
+          "key": "PR-8972",
+          "date": "2027-01-05",
+          "time": "16:00",
+          "title": "ГУМ: грандиозное упоение Москвы",
+          "subtitle": "Экскурсия по главному столичному магазину",
+          "author": "Никита Брусиловский",
+          "url": "https://www.pryamaya.ru/nikita_brusilovskij_gum_grandioznoe_upoenie_moskvy_5_1_27",
+          "source_status": "candidate",
+          "note": "Решение пользователя 24.11.2026: новые прогулки по ГУМу не нужны точно так же, как старая (PR-8907)",
+          "status": "rejected",
+          "first_seen": "2026-11-24",
+          "last_seen": "2026-11-24",
+          "review": "hide",
+          "updated": "2026-11-24"
+        },
+        {
+          "key": "PR-8973",
+          "date": "2027-01-10",
+          "time": "16:00",
+          "title": "ГУМ: грандиозное упоение Москвы",
+          "subtitle": "Экскурсия по главному столичному магазину",
+          "author": "Никита Брусиловский",
+          "url": "https://www.pryamaya.ru/nikita_brusilovskij_gum_grandioznoe_upoenie_moskvy_10_1_27",
+          "source_status": "candidate",
+          "note": "Решение пользователя 24.11.2026: новые прогулки по ГУМу не нужны точно так же, как старая (PR-8907)",
+          "status": "rejected",
+          "first_seen": "2026-11-24",
+          "last_seen": "2026-11-24",
+          "review": "hide",
+          "updated": "2026-11-24"
         }
       ],
       "name": "Лекторий «Прямая речь»"
@@ -1367,12 +1438,12 @@
           "subtitle": "",
           "author": "Фёдор Сердотецкий",
           "url": "https://zilcc.timepad.ru/event/4307285/",
-          "status": "candidate",
-          "review": "doubt",
-          "note": "Решение пользователя 22.11.2026: в сомнительные, не берём",
+          "status": "rejected",
+          "review": "hide",
+          "note": "Решение пользователя 24.11.2026: не берём и больше к ним не возвращаться",
           "first_seen": "2026-11-22",
-          "last_seen": "2026-11-22",
-          "updated": ""
+          "last_seen": "2026-11-24",
+          "updated": "2026-11-24"
         },
         {
           "key": "ZIL-4297583-ii-pedagog",
