@@ -424,3 +424,10 @@
 - Тип ошибки: `webfetch` — «Too many redirects (more than 10)» (редирект на `/tmgrdfrend/showcaptcha`, капча Яндекса).
 - Попыток: по 1 на каждый адрес. Интервалы 1 и 5 минут не применялись: по данным от 04.11 и 22.11.2026 это не временный обрыв, а штатная защита Timepad от автоматических запросов; проверяется альтернативный рабочий путь (обычный Edge с CDP, порт 9223).
 - Итог: ленты через `webfetch` не прочитаны, но прочитаны через обычный Edge/CDP (порт 9223, профиль `edge_timepad_visible`): `tp_darwin_dom.html` 390221 байт, `tp_yeltsin_dom.html` 380779 байт, картинка `tp_darwin4301442_dom.html` 852348 байт, `showcaptcha=0`. Повторов через 1 и 5 минут не потребовалось: это штатная защита Timepad, а не временный обрыв. Афиши сайтов `darwinmuseum.ru`, `yeltsin.ru` и `cryptography-museum.ru` доступны (HTTP 200).
+
+## 23.11.2026 (вечер) — Timepad «Исторички» (istorichka.timepad.ru): антибот-кольцо
+
+- URL: `https://istorichka.timepad.ru/event/3225994/`, `https://istorichka.timepad.ru/`.
+- Тип ошибки: `webfetch` — «Too many redirects (more than 10)»; `curl -L` (5 и 12 редиректов) — бесконечный 307 на `?_ycch=2` с новой cookie `_yasc` на каждом шаге, `server: ycalb`.
+- Попыток: 3 (webfetch, curl×2); интервалы 1 и 5 минут не применялись — по записям 04.11/22.11/23.11 это штатная антибот-защита Timepad, а не временный обрыв.
+- Итог: карточку и ленту удалось прочитать обычным Edge/CDP (`tp_cdp.py`, порт 9223, профиль `edge_timepad_visible`): `tp_ist3225994_dom.html` 527105 байт, `tp_istfeed_dom.html` 387385 байт, `showcaptcha=0`. Данные получены в полном объёме, повторов не потребовалось.
