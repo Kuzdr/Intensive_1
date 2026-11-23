@@ -43,7 +43,11 @@
      валидатором (урок 23.11.2026, прототип TP-4316212);
  14. МЕХАНИКА помещения в дате/месте: зал/аудитория/этаж в полях 2 и 8
      и в первом абзаце шапки ловятся, а площадка «Аудиториум» и адрес
-     не ловятся (урок 23.11.2026, прототип TP-4314755).
+     не ловятся (урок 23.11.2026, прототип TP-4314755);
+ 15. МЕХАНИКА чтения страницы «Элементов»: карточки из блока «Ближайшие
+     события» отсекаются, дата берётся только из шапки своего события,
+     образцы до 01.03.2026 помечаются как слишком старые
+     (урок 23.11.2026, страница 449173 и чужой `sublink2` 450833).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -667,6 +671,51 @@ def check_room_in_place() -> list:
     return problems
 
 
+def check_elementy_scope() -> list:
+    """Только своё событие при разборе «Элементов»; образцы — с марта 2026.
+
+    Ошибка 23.11.2026: на странице 449173 строка «Вечерняя школа
+    Политехнического музея» в `sublink2` взята из карточки события 450833
+    под заголовком «Ближайшие события» и записана как подзаголовок
+    Гагаринки. Плюс 449173 датирована 08.10.2025 — такой образец не годится.
+    """
+    problems = []
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    try:
+        import elementy_detail as E
+    except Exception as exc:                        # noqa: BLE001
+        return ["не удалось импортировать elementy_detail: %s" % exc]
+    page = (
+        "<div class='mb itemhead event'><div class='hdates'>08.10.2025</div>"
+        "<div class='sublink'>Москва, Библиотека им. Гагарина</div></div>\n"
+        "<h2>Ближайшие события</h2>\n"
+        "<a href='/events/450833/Vechernyaya_shkola'><div class='sublink2'>"
+        "Вечерняя школа Политехнического музея</div></a>\n"
+        "<div class='itemblock memo'><p>Своё описание события.</p></div>"
+    )
+    own = E.own_event_html(page)
+    for token, label in [("450833", "ID чужой карточки"),
+                         ("Вечерняя школа", "чужой sublink2")]:
+        if token in own:
+            problems.append("в своё событие попал %s: %r" % (label, own))
+    for token, label in [("Библиотека им. Гагарина", "своя площадка"),
+                         ("Своё описание", "своё описание")]:
+        if token not in own:
+            problems.append("из своего события потеряна %s: %r" % (label, own))
+    if E.event_date(page) != "2025-10-08":
+        problems.append("дата взята не из шапки своего события: %s"
+                        % E.event_date(page))
+    if not E.sample_too_old(page):
+        problems.append("образец от 08.10.2025 не помечен как старый")
+    fresh = page.replace("08.10.2025", "05.03.2026")
+    if E.sample_too_old(fresh):
+        problems.append("образец от 05.03.2026 ошибочно помечен как старый")
+    plain = "<div class='mb itemhead event'><p>Своё событие.</p></div>"
+    if E.own_event_html(plain) != plain:
+        problems.append("страница без «Ближайших событий» изменилась напрасно")
+    return problems
+
+
 def check_sweep_dedup() -> list:
     """Одно событие из двух источников распознаётся как одно (22.11.2026),
     а реестр с BOM читается и не перезаписывается пустым (урок CLI в тот же
@@ -825,6 +874,13 @@ def main() -> None:
 
     mech = check_sweep_dedup()
     print("%s механика: дедупликация источников и чтение BOM реестра"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_elementy_scope()
+    print("%s механика: только своё событие, образцы с марта 2026"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)
