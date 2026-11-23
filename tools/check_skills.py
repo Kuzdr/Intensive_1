@@ -410,6 +410,42 @@ def check_nested_quotes() -> list:
     return problems
 
 
+def check_nested_b_head() -> list:
+    """Один <b> на «автор + название» в шапке, без вложенных <b>.
+
+    Ошибка 23.11.2026 (прототип TP-4318063 и ещё шесть ВДНХ):
+    `<b><i>Имя</i> <b>«Название»</b></b>` вместо
+    `<b><i>Имени</i> «Название»</b>`. Родительный падеж валидатор
+    проверить не может, а вложенность — может.
+    """
+    cp, problems = _load_cp("_cp_bhead")
+    if cp is None:
+        return problems
+    cases = [
+        ({"desc_html": "<p class=\"small\">Дата.</p>\n\n"
+                       "<p>Лекция <b><i>Марата Айрапетяна</i> «Космос как "
+                       "бизнес»</b>.</p>\n\n<KLBLOCK eltclub_authors_about/>"},
+         False, "один <b> на автора и название — верно"),
+        ({"desc_html": "<p class=\"small\">Дата.</p>\n\n"
+                       "<p>Лекция <b><i>Марат Айрапетян</i> <b>«Космос как "
+                       "бизнес»</b></b>.</p>\n\n<KLBLOCK eltclub_authors_about/>"},
+         True, "вложенные <b> — ошибка"),
+        ({"desc_html": "<p class=\"small\">Дата.</p>\n\n"
+                       "<p>Лекция <i>историка</i> <b><i>Андрея Шаповалова</i> "
+                       "«Сибирские шаманы»</b>&nbsp;— седьмая лекция курса "
+                       "<b>«Вселенная Сибири»</b>.</p>\n\n<KLBLOCK x/>"},
+         False, "два последовательных <b>, не вложенных — верно"),
+        ({"desc_html": ""}, False, "пустое описание"),
+    ]
+    for proto, want_hit, comment in cases:
+        hit = bool(cp.p_nested_b_in_head(proto))
+        if hit != want_hit:
+            problems.append("проверка вложенных <b> в шапке дала "
+                            "срабатывание=%s, ожидалось %s (%s)"
+                            % (hit, want_hit, comment))
+    return problems
+
+
 def check_author_desc_capital() -> list:
     """Поле 7.4 «Описание автора» начинается с заглавной буквы.
 
@@ -566,6 +602,13 @@ def main() -> None:
 
     mech = check_nested_quotes()
     print("%s механика: вложенные кавычки (ёлочки → лапки)"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_nested_b_head()
+    print("%s механика: вложенные <b> в шапке описания"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)
