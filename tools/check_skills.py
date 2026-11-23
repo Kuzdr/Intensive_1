@@ -47,7 +47,11 @@
  15. МЕХАНИКА чтения страницы «Элементов»: карточки из блока «Ближайшие
      события» отсекаются, дата берётся только из шапки своего события,
      образцы до 01.03.2026 помечаются как слишком старые
-     (урок 23.11.2026, страница 449173 и чужой `sublink2` 450833).
+     (урок 23.11.2026, страница 449173 и чужой `sublink2` 450833);
+ 16. МЕХАНИКА полной даты в афише на стыке лет: `<div class='hdates'>
+     14.01.2027</div>` разбирается наравне с `hdates short_date`,
+     явный год из афиши/шапки важнее года в тексте описания
+     (урок 23.11.2026, событие 450765).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -768,6 +772,74 @@ def check_sweep_dedup() -> list:
     return problems
 
 
+def check_elementy_full_date() -> list:
+    """Афиша на стыке лет: полная дата с годом и приоритет этого года.
+
+    23.11.2026 событие 450765 в афише — `<div class='hdates'>14.01.2027</div>`,
+    а первая строка описания всё ещё «14 января 2026 года». Парсер должен
+    понимать оба класса даты и не верить году из текста, если афиша дала
+    год явно.
+    """
+    problems = []
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)
+    try:
+        import scrape
+    except Exception as exc:                        # noqa: BLE001
+        return ["не удалось импортировать scrape: %s" % exc]
+
+    for raw, want in [
+        ("08.12", ("08.12", None, None, None)),
+        ("11&ndash;<wbr/>13.12", ("11.12", "13.12", None, None)),
+        ("28.10—05.11", ("28.10", "05.11", None, None)),
+        ("14.01.2027", ("14.01", None, 2027, 2027)),
+        ("28.12.2026—05.01.2027", ("28.12", "05.01", 2026, 2027)),
+    ]:
+        got = scrape.parse_date_hint(raw)
+        if got != want:
+            problems.append("parse_date_hint(%r) = %r, ожидалось %r"
+                            % (raw, got, want))
+    if scrape.short_date_span("14.01.2027") != ("14.01", None):
+        problems.append("short_date_span не понимает полную дату с годом")
+    for snippet, want in [
+        ("<div class='hdates'>14.01.2027</div>", "14.01.2027"),
+        ("<div class='hdates short_date'>08.12</div>", "08.12"),
+    ]:
+        m = scrape.HDATES_RE.search(snippet)
+        if not m or m.group(1) != want:
+            problems.append("HDATES_RE не нашёл дату в %r" % snippet)
+    if scrape.range_end_iso("2026-12-28", "05.01", 2027) != "2027-01-05":
+        problems.append("range_end_iso не берёт явный год конца диапазона")
+
+    # год из афиши перебивает год из текста описания
+    fake = {"detail_html": "x", "detail_text": "x", "date_iso": "2026-01-14",
+            "date_iso_end": None, "time_start": "19:00", "time_end": "20:30",
+            "annot": None, "price_raw": None, "price_short": "Бесплатно",
+            "reg_links": [], "speakers": [], "head_date": None}
+    old_parse = scrape.parse_detail
+    try:
+        scrape.parse_detail = lambda ev: dict(fake)
+        base = {"id": "450765", "date_dot": "14.01", "weekday": "Четверг",
+                "time": "19:00"}
+        out = scrape.enrich(dict(base, date_year=2027), sleep=0)
+        if out["date_iso"] != "2027-01-14":
+            problems.append("год из афиши не применён: %s" % out["date_iso"])
+        out = scrape.enrich(dict(base), sleep=0)
+        if out["date_iso"] != "2026-01-14":
+            problems.append("без явного года дата из текста изменена: %s"
+                            % out["date_iso"])
+        # шапка страницы тоже может дать год, когда афиша без явного года
+        fake["head_date"] = "2027-01-14"
+        out = scrape.enrich(dict(base), sleep=0)
+        if out["date_iso"] != "2027-01-14":
+            problems.append("год из шапки страницы не применён: %s"
+                            % out["date_iso"])
+        fake["head_date"] = None
+    finally:
+        scrape.parse_detail = old_parse
+    return problems
+
+
 def main() -> None:
     if not os.path.isdir(SKILLS_DIR):
         print("нет каталога .opencode/skills")
@@ -881,6 +953,13 @@ def main() -> None:
 
     mech = check_elementy_scope()
     print("%s механика: только своё событие, образцы с марта 2026"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_elementy_full_date()
+    print("%s механика: полная дата с годом в афише «Элементов»"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)

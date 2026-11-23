@@ -40,37 +40,70 @@ def strip_punct(s):
 WEEKDAY_RU = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница',
               'Суббота', 'Воскресенье']
 
-def short_date_span(raw):
-    """Дата из афиши → (начало «ДД.ММ», конец «ДД.ММ» или None).
+# У обычных событий дата в афише — «08.12» в классе hdates short_date.
+# На стыке лет «Элементы» показывают ПОЛНУЮ дату в классе hdates:
+# «14.01.2027», «28.12.2026—05.01.2027» (событие 450765, 23.11.2026).
+# Оба класса обязательны к разбору — иначе год из афиши теряется.
+HDATES_RE = re.compile(r"<div class=['\"]hdates(?: short_date)?['\"]>(.*?)</div>", re.S)
 
-    Афиша «Элементов» показывает и одиночную дату («08.12»), и ДИАПАЗОН
-    многодневного события — «11&ndash;<wbr/>13.12» или «28.10—05.11».
-    Раньше разбиралась только одиночная дата: у диапазона date_dot оставался
-    пустым, и scrape.py падал на pick_year (28.10.2026, событие 450818
-    «Научная дача «Архэ»»). Теперь диапазон разбирается здесь.
+
+def parse_date_hint(raw):
+    """Дата из афиши → (начало, конец, год начала, год конца).
+
+    Возвращает «ДД.ММ» для начала и конца (конца может не быть) и явный
+    год, если афиша его показала. Год из афиши важнее года в тексте
+    описания: при переносе события текст часто не правят (450765: шапка
+    14.01.2027, а первая строка описания — «14 января 2026 года»).
+
+    Разбираются все формы афиши: «08.12», «11–13.12», «28.10—05.11»,
+    «14.01.2027», «28.12.2026—05.01.2027».
     """
     t = clean(re.sub(r'<[^>]+>', '', raw or ''))
     t = re.sub(r'\s+', '', t.replace('\u00a0', ' '))
-    for dash in ('\u2013', '\u2014', '\u2212'):
+    for dash in ('\u2013', '\u2014', '\u2212', '\uFE58', '\u2015'):
         t = t.replace(dash, '-')
-    m = re.match(r'^(\d{1,2})(?:\.(\d{1,2}))?(?:-(\d{1,2})(?:\.(\d{1,2}))?)?$', t)
-    if not m:
-        return None, None
-    d1, m1, d2, m2 = m.groups()
-    if m1:
-        mon = int(m1)
-        start = '%02d.%02d' % (int(d1), mon)
-    elif m2:
-        # «11-13.12»: месяц стоит только в конце диапазона
-        mon = int(m2)
-        start = '%02d.%02d' % (int(d1), mon)
-    else:
-        return None, None
-    end = '%02d.%02d' % (int(d2), int(m2) if m2 else mon) if d2 else None
-    return start, end
 
-def range_end_iso(start_iso, end_dot):
-    """Дата конца многодневного события в ISO — по «ДД.ММ» и дате начала."""
+    def part(s):
+        m = re.match(r'^(\d{1,2})(?:\.(\d{1,2}))?(?:\.(\d{4}))?$', s)
+        if not m:
+            return None
+        return (int(m.group(1)),
+                int(m.group(2)) if m.group(2) else None,
+                int(m.group(3)) if m.group(3) else None)
+
+    parts = [part(x) for x in t.split('-')]
+    if not parts or any(p is None for p in parts) or len(parts) > 2:
+        return None, None, None, None
+    a = parts[0]
+    if len(parts) == 1:
+        if a[1] is None:
+            return None, None, None, None
+        return '%02d.%02d' % (a[0], a[1]), None, a[2], a[2]
+    b = parts[1]
+    if a[1] is None:
+        # «11-13.12»: месяц (и год) стоит только в конце диапазона
+        start_mon, start_year = b[1], b[2]
+    else:
+        start_mon, start_year = a[1], a[2]
+    if start_mon is None:
+        return None, None, None, None
+    end_mon = b[1] if b[1] is not None else start_mon
+    return ('%02d.%02d' % (a[0], start_mon),
+            '%02d.%02d' % (b[0], end_mon),
+            start_year, b[2] if b[2] is not None else start_year)
+
+
+def short_date_span(raw):
+    """Старый интерфейс: (начало «ДД.ММ», конец «ДД.ММ» или None)."""
+    dot, dot_end, _year, _year_end = parse_date_hint(raw)
+    return dot, dot_end
+
+def range_end_iso(start_iso, end_dot, year_end=None):
+    """Дата конца многодневного события в ISO — по «ДД.ММ» и дате начала.
+
+    Если афиша показала год конца явно («28.12.2026—05.01.2027»), берём
+    его; иначе считаем по порядку месяцев (диапазон через Новый год).
+    """
     if not start_iso or not end_dot:
         return None
     try:
@@ -79,7 +112,9 @@ def range_end_iso(start_iso, end_dot):
         start_mon = int(start_iso[5:7])
     except (ValueError, IndexError):
         return None
-    if mon < start_mon:      # диапазон через Новый год
+    if year_end:
+        year = int(year_end)
+    elif mon < start_mon:    # диапазон через Новый год
         year += 1
     try:
         return '%04d-%02d-%02d' % (year, mon, day)
@@ -136,7 +171,7 @@ def parse_list_page():
         pret_txt = re.sub(r'<[^>]+>', '', pret.group(1)) if pret else ''
         sub2 = re.search(r"<div class='sublink2'>(.*?)</div>", p, re.S)
         suplink = re.search(r"<div class='suplink'>(.*?)</div>", p, re.S)
-        dates = re.search(r"<div class='hdates short_date'>(.*?)</div>", p, re.S)
+        dates = HDATES_RE.search(p)
         times = re.findall(r"<div class='htimes subhead'>([^<]+)</div>", p)
         # types and topics from suplink: <a href="...xtypid=...">Лекция</a>, <a href="...prjid=...">Тема</a>
         types, topics = [], []
@@ -145,8 +180,11 @@ def parse_list_page():
                 types.append(clean(m.group(2)).strip())
             for m in re.finditer(r'<a href="[^"]*?prjid=(\d+)">([^<]+)</a>', suplink.group(1)):
                 topics.append(clean(m.group(2)).strip())
-        dot, dot_end = short_date_span(dates.group(1)) if dates else (None, None)
-        events.append({
+        if dates:
+            dot, dot_end, year, year_end = parse_date_hint(dates.group(1))
+        else:
+            dot = dot_end = year = year_end = None
+        ev = {
             'id': eid,
             'pos': len(events),
             'slug': slug,
@@ -163,7 +201,14 @@ def parse_list_page():
             'lectory': clean(sub2.group(1)).strip() if sub2 else None,
             'types': types,
             'topics': topics,
-        })
+        }
+        # Явный год из афиши пишем только когда он есть: у обычных событий
+        # дата «ДД.ММ», и лишние null-поля не нужны.
+        if year:
+            ev['date_year'] = year
+        if year_end:
+            ev['date_year_end'] = year_end
+        events.append(ev)
     return events
 
 def pick_year(day_month, weekday):
@@ -227,12 +272,18 @@ def parse_detail(event):
     # 38 с при живом сайте), поэтому таймаут не 30, а 45 с — иначе scrape
     # рвёт соединение на нормально работающем сайте.
     html = S.get(event['url'], timeout=45).text
+    # Шапка страницы даёт полную дату с годом («14.01.2027») — на стыке лет
+    # это обычный формат. Текст описания может быть с прошлогодним годом.
+    hm = re.search(
+        r"<div class=['\"]hdates['\"]>\s*(\d{1,2})\.(\d{1,2})\.(\d{4})", html, re.I)
+    head_date = ('%04d-%02d-%02d' % (int(hm.group(3)), int(hm.group(2)),
+                                    int(hm.group(1)))) if hm else None
     i0 = html.find("<div class='itemblock memo'>")
     if i0 == -1:
         return {'detail_html': None, 'detail_text': None, 'annot': None,
                 'date_iso': None, 'date_iso_end': None, 'time_start': event.get('time'),
                 'time_end': None, 'price_raw': None, 'price_short': None,
-                'reg_links': [], 'speakers': []}
+                'reg_links': [], 'speakers': [], 'head_date': head_date}
     i1 = html.find("<div class='toggle'>", i0)
     if i1 == -1:
         i1 = html.find("<div class='forum", i0)
@@ -349,6 +400,7 @@ def parse_detail(event):
         'price_short': price_short,
         'reg_links': reg_links,
         'speakers': speakers,
+        'head_date': head_date,
     }
 
 def clean_amt(a):
@@ -660,10 +712,42 @@ def enrich(ev, sleep=0.4):
                 time.sleep(3)
     if det is None:
         return None
+    head_date = det.get('head_date')   # служебное поле в events.json не пишем
     ev.update(det)
-    # год по дню недели
+    ev.pop('head_date', None)
+
+    # Полная дата из афиши (14.01.2027) — самый надёжный источник года.
+    list_date = None
+    if ev.get('date_year') and ev.get('date_dot'):
+        try:
+            dd, mm = map(int, ev['date_dot'].split('.'))
+            list_date = '%04d-%02d-%02d' % (int(ev['date_year']), mm, dd)
+        except (ValueError, AttributeError):
+            list_date = None
+
     if ev.get('date_iso'):
         y, m, d = map(int, ev['date_iso'].split('-'))
+        text_year = y
+        # Приоритет года: афиша → шапка страницы → текст описания.
+        # Подменяем год, только если день/месяц совпадают: если в тексте
+        # другая дата, её лучше не портить, а просто отметить расхождение.
+        for source in (list_date, head_date):
+            if not source:
+                continue
+            sy, sm, sd = map(int, source.split('-'))
+            if (sm, sd) == (m, d):
+                if sy != y:
+                    print('  ГОД УТОЧНЁН по афише/шапке: %s → %04d-%02d-%02d'
+                          % (ev['date_iso'], sy, sm, sd), flush=True)
+                    # дата окончания из того же текста сдвигается вместе с годом
+                    if ev.get('date_iso_end'):
+                        ey, em, ed = map(int, ev['date_iso_end'].split('-'))
+                        if ey == text_year:
+                            ev['date_iso_end'] = '%04d-%02d-%02d' % (sy, em, ed)
+                y = sy
+                break
+    elif list_date or head_date:
+        y, m, d = map(int, (list_date or head_date).split('-'))
     else:
         dt = pick_year(ev.get('date_dot'), ev.get('weekday'))
         if dt is None:
@@ -674,9 +758,10 @@ def enrich(ev, sleep=0.4):
 
     ev['date_iso'] = '%04d-%02d-%02d' % (y, m, d)
     # дата окончания многодневного события: из строки дня на странице события,
-    # иначе — из диапазона в афише («11–13.12»)
+    # иначе — из диапазона в афише («11–13.12», «28.12.2026—05.01.2027»)
     if not ev.get('date_iso_end'):
-        ev['date_iso_end'] = range_end_iso(ev['date_iso'], ev.get('date_dot_end'))
+        ev['date_iso_end'] = range_end_iso(ev['date_iso'], ev.get('date_dot_end'),
+                                           ev.get('date_year_end'))
     if sleep:
         time.sleep(sleep)
     return ev
