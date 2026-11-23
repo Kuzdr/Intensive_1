@@ -17,7 +17,8 @@
 (автоопределение по расширению; ключ --json принимается, но не обязателен),
 собирает текст ИЗ prototype.json
 (все формальные поля, заголовок, аннотация карточки, описание, доп. информация,
-блок автора) и дополнительно проверяет поле 1 «Привязка» по формуле.
+блок автора), дополнительно проверяет поле 1 «Привязка» по формуле и ловит
+зал/аудиторию в полях 2/8 и в первом абзаце шапки (тег 17).
 Второй — для проверки текста, набранного в чат.
 
 С ключом --fix скрипт ПЕРЕД проверкой применяет механические автоправки
@@ -1431,6 +1432,41 @@ def check_binding(p: dict):
     return out
 
 
+# Зал/аудитория/этаж — это помещение, а не площадка-организация. Слово
+# «Аудиториум» (название площадки) НЕ ловим: после «аудитори» должен идти
+# именно «я/и/ю» и граница слова (правило пользователя 23.11.2026).
+ROOM_IN_PLACE = re.compile(
+    r"(?<!\w)(?:зал|аудитори[яию]|этаж(?:а|е)?|кабинет|комнат[аы]|помещени[еяи])(?!\w)",
+    re.I,
+)
+
+
+def p_room_in_place(p: dict, sel=None) -> list:
+    """Помещение в полях 2/8 или в первом абзаце шапки описания.
+
+    Возвращает [(где, фрагмент, найденное слово), ...]. Зал/аудитория
+    относятся к адресу (поле 13 и блок адреса «Доп. информации»), а не
+    к дате/месту и не к шапке (урок `TP-4314755`, 23.11.2026).
+    """
+    out = []
+    for n in ("2", "8"):
+        if sel is not None and not sel_field(sel, n):
+            continue
+        v = field_value(p, n)
+        m = ROOM_IN_PLACE.search(v) if v else None
+        if m:
+            out.append(("поле %s" % n, v, m.group(0)))
+    if sel is None or sel_block(sel, "desc"):
+        head = p.get("desc_html") or ""
+        first = re.split(r"</p>", head, maxsplit=1)[0]
+        first = re.sub(r"<[^>]+>", "", first)
+        first = first.replace("&nbsp;", " ").replace(NBSP_SYM, " ").strip()
+        m = ROOM_IN_PLACE.search(first)
+        if m:
+            out.append(("первый абзац шапки", first[:160], m.group(0)))
+    return out
+
+
 def main() -> None:
     args = [a for a in sys.argv[1:] if a]
     if not args:
@@ -1584,6 +1620,13 @@ def main() -> None:
             (hard if level == "ОШИБКА" else warns).append(
                 ("1e", msg, "", msg, display)
             )
+    if json_mode and isinstance(proto, dict):
+        # Зал/аудитория не в полях 2/8 и не в шапке (урок TP-4314755)
+        for where, fragment, word in p_room_in_place(proto, sel):
+            msg = ("помещение «%s» в %s — зал/аудитория/этаж пишутся только "
+                   "в адресе (поле 13 и блок адреса), а не в дате/месте "
+                   "и не в шапке" % (word, where))
+            hard.append(("17", msg, fragment[:160], fragment[:160], display))
     if json_mode:
         # «Доп.информация»: после каждого <br> — пустая строка (правило скилла)
         for level, msg in check_br_blank(proto, sel):
