@@ -145,8 +145,7 @@
     "<p><b>Адрес:</b> Москва, пр.&nbsp;Мира, д.&nbsp;123Б, павильон «Рабочий и&nbsp;колхозница».<br>\n\n<b>Проезд:</b> метро «ВДНХ». <a href=\"https://vdnh.ru/places/pavilon-rabochiy-i-kolkhoznitsa/\" target=\"_blank\">Интерактивная карта ВДНХ</a>.</p>",
     "<p><b>Лекторий.ВДНХ</b>&nbsp;— крупнейший бесплатный культурно-образовательный проект городского масштаба.  Основной локацией программы стал лекторий павильона «Рабочий и колхозница»&nbsp;— современное комфортное мультифункциональное пространство, где проводятся лекции, концерты, встречи с экспертами, кинопоказы, спектакли и мастер-классы.</p>",
     "<!-- @@@ -->",
-    "<p class=\"small\">Информация о&nbsp;лекции <a href=\"https://vdnh.ru/events/4262/\" target=\"_blank\">на сайте ВДНХ</a>.</p>",
-    "<p class=\"small\">Информация о&nbsp;лекции <a href=\"https://lektorij-vdnh.timepad.ru/event/4314509/\" target=\"_blank\">на TimePad</a>.</p>"
+    "<p class=\"small\">Информация о&nbsp;лекции <a href=\"https://vdnh.ru/events/4262/\" target=\"_blank\">на сайте ВДНХ</a>.<br>\n\nИнформация о&nbsp;лекции <a href=\"https://lektorij-vdnh.timepad.ru/event/4314509/\" target=\"_blank\">на TimePad</a>.</p>"
   ],
   "authors": [
     {

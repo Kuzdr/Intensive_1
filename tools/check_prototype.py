@@ -954,6 +954,31 @@ def check_br_blank(proto: dict, sel=None) -> list:
     return out
 
 
+def p_split_info_paras(proto: dict) -> list:
+    """Два соседних абзаца «Информация о лекции …» -> [(первый, второй), ...].
+
+    Ошибка 23.11.2026 (прототипы TP-4306298, TP-4312127, TP-4314509,
+    TP-4316212, TP-4317015): «… на сайте ВДНХ» и «… на TimePad» стояли
+    двумя `<p class="small">`. По общему правилу 12.11.2026 все ссылки-
+    источники именно об этом событии идут в ОДНОМ абзаце через `<br>` и
+    пустую строку (образец — опубликованная 449455). Общая информация
+    о площадке/организаторе — отдельный абзац, её не трогаем.
+    """
+    extra = (proto or {}).get("extra_html")
+    if not isinstance(extra, list):
+        return []
+    out = []
+    for a, b in zip(extra, extra[1:]):
+        if not (isinstance(a, str) and isinstance(b, str)):
+            continue
+        if (a.lstrip().startswith('<p class="small">')
+                and b.lstrip().startswith('<p class="small">')
+                and re.search(r"Информация о(?:&nbsp;|\u00A0|\s)лекции", a)
+                and re.search(r"Информация о(?:&nbsp;|\u00A0|\s)лекции", b)):
+            out.append((a, b))
+    return out
+
+
 def fix_proto_values(proto: dict, sel=None) -> tuple:
     """Применяет автоправки к строковым значениям prototype.json.
 
@@ -1400,6 +1425,14 @@ def main() -> None:
         # «Доп.информация»: после каждого <br> — пустая строка (правило скилла)
         for level, msg in check_br_blank(proto, sel):
             hard.append(("1f", msg, "", msg, display))
+        # Ссылки-источники об этом событии — одним абзацем (правило 12.11.2026)
+        if sel is None or sel_block(sel, "extra"):
+            for a, b in p_split_info_paras(proto):
+                msg = ("ссылки «Информация о лекции …» даны в двух абзацах "
+                       "«Доп. информации» — объедините в один "
+                       "`<p class=\"small\">…<br>⏎⏎…</p>` (образец — 449455)")
+                hard.append(("13", msg, a[:160].replace("\n", " "),
+                             (a + " | " + b)[:200].replace("\n", " "), display))
     if json_mode and isinstance(proto, dict):
         # Автор с on_elementy обязан иметь фото (урок TP-4211635)
         for msg in author_photo_problems(proto):

@@ -446,6 +446,39 @@ def check_nested_b_head() -> list:
     return problems
 
 
+def check_split_info_paras() -> list:
+    """Ссылки-источники — одним абзацем, а не двумя `<p class="small">`.
+
+    Ошибка 23.11.2026 (пять прототипов ВДНХ): «на сайте ВДНХ» и «на TimePad»
+    стояли в двух абзацах. Общая информация о площадке (сайт лектория,
+    соцсети) по-прежнему отдельный абзац — её проверка НЕ должна ловить.
+    """
+    cp, problems = _load_cp("_cp_infoparas")
+    if cp is None:
+        return problems
+    a = '<p class="small">Информация о&nbsp;лекции <a href="x">на сайте ВДНХ</a>.</p>'
+    b = '<p class="small">Информация о&nbsp;лекции <a href="y">на TimePad</a>.</p>'
+    ok = ('<p class="small">Информация о&nbsp;лекции <a href="x">на сайте ВДНХ</a>.'
+          '<br>\n\nИнформация о&nbsp;лекции <a href="y">на TimePad</a>.</p>')
+    venue = '<p class="small"><a href="z">Сайт лектория</a>.</p>'
+    cases = [
+        ({"extra_html": [a, b]}, True, "два абзаца-источника — ошибка"),
+        ({"extra_html": [ok]}, False, "один абзац через <br> — верно"),
+        ({"extra_html": [b, venue]}, False,
+         "источник + общая информация о площадке — верно"),
+        ({"extra_html": [a, venue, b]}, False,
+         "источники не соседние — не под это правило"),
+        ({"extra_html": []}, False, "пустой extra_html"),
+    ]
+    for proto, want_hit, comment in cases:
+        hit = bool(cp.p_split_info_paras(proto))
+        if hit != want_hit:
+            problems.append("проверка абзацев «Информация о лекции» дала "
+                            "срабатывание=%s, ожидалось %s (%s)"
+                            % (hit, want_hit, comment))
+    return problems
+
+
 def check_author_desc_capital() -> list:
     """Поле 7.4 «Описание автора» начинается с заглавной буквы.
 
@@ -609,6 +642,13 @@ def main() -> None:
 
     mech = check_nested_b_head()
     print("%s механика: вложенные <b> в шапке описания"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_split_info_paras()
+    print("%s механика: ссылки-источники одним абзацем"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)
