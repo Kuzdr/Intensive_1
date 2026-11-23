@@ -1,7 +1,6 @@
 {
-  "date": "2026-11-22 19:54:02",
+  "date": "2026-11-23 03:04:42",
   "protos": {
-    "EXP-261122-singh-pod-parusami": "prototype.json:13132:b60d9585b3de|_state.json:-",
     "EXP-261206-gubin-mifologiya-nauki": "prototype.json:11213:0e82d1bc06a6|_state.json:-",
     "EXP-261213-gushinets-bacilly": "prototype.json:11747:0143016f948a|_state.json:-",
     "HZ-261125-asteroidno-kometnaya": "prototype.json:11194:2f3908ecf591|_state.json:-",
@@ -69,8 +68,7 @@
     "TP-4289673": "prototype.json:11549:81394834ad60|_state.json:-",
     "TP-4297583": "prototype.json:12221:bda2f9ccfd05|_state.json:-",
     "TP-4297595": "prototype.json:13307:9c9d9af827aa|_state.json:-",
-    "TP-4298115": "prototype.json:11477:d5358fab932e|_state.json:-",
-    "TP-4299432": "prototype.json:14216:208900bdce96|_state.json:-",
+    "TP-4301442": "prototype.json:13856:709007b438dc|_state.json:-",
     "TP-4306009": "prototype.json:16559:23fe4b724278|_state.json:-",
     "TP-4306298": "prototype.json:10790:37a6b68b36e9|_state.json:-",
     "TP-4306307": "prototype.json:10802:9dbb147adea9|_state.json:-",
