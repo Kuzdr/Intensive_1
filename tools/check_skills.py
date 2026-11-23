@@ -37,7 +37,10 @@
    «Экспериментаниума»).
  12. МЕХАНИКА дедупликации обхода: одно событие из двух источников
     (Timepad + сайт) распознаётся по дате и заголовку/автору, а реестр
-    с BOM читается и не перезаписывается пустым (урок 22.11.2026).
+    с BOM читается и не перезаписывается пустым (урок 22.11.2026);
+ 13. МЕХАНИКА оформления автора: двойная точка, дубль описания из поля
+     7.4 в desc_html и упоминания имени без `<b><i>…</i></b>` ловятся
+     валидатором (урок 23.11.2026, прототип TP-4316212).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -479,6 +482,104 @@ def check_split_info_paras() -> list:
     return problems
 
 
+def check_author_highlight_rules() -> list:
+    """Три дефекта оформления автора (урок 23.11.2026, TP-4316212).
+
+    1) двойная точка в видимом тексте (`.</i>.`);
+    2) дубль описания автора из поля 7.4 в desc_html;
+    3) упоминание имени автора без `<b><i>…</i></b>`.
+    """
+    cp, problems = _load_cp("_cp_author_rules")
+    if cp is None:
+        return problems
+
+    # 1. двойная точка
+    dot_cases = [
+        ("Описание автора.</i>.", True, "две точки вокруг тега — ошибка"),
+        ("SIRIUS-19..", True, "две точки в тексте — ошибка"),
+        ("SIRIUS-19.", False, "одна точка — верно"),
+        ("Подождите...", False, "многоточие — не ошибка"),
+        ("", False, "пустой текст"),
+    ]
+    for text, want_hit, comment in dot_cases:
+        hit = bool(cp.p_double_dot(text))
+        if hit != want_hit:
+            problems.append("проверка двойной точки дала %s, ожидалось %s (%s)"
+                            % (hit, want_hit, comment))
+
+    # 2. дубль описания автора
+    desc_ok = ("<p>Лекция.</p>\n\n<p><b><i>Иван Иванов</i></b>&nbsp;— "
+               "<i>ведущий редактор журнала</i>.</p>")
+    desc_dup = ("<p><b><i>Иван Иванов</i></b>, ведущий редактор журнала, "
+                "расскажет о важном.</p>\n\n<p><b><i>Иван Иванов</i></b>&nbsp;— "
+                "<i>ведущий редактор журнала</i>.</p>")
+    author = {"name": "Иван Иванов",
+              "fields": [{"n": "7.4", "value": "<p>Ведущий редактор журнала.</p>"}]}
+    dup_cases = [
+        ({"desc_html": desc_ok, "authors": [author]}, False,
+         "описание один раз — верно"),
+        ({"desc_html": desc_dup, "authors": [author]}, True,
+         "полное описание продублировано — ошибка"),
+        ({"desc_html": desc_dup, "authors": [author],
+          "verbatim_fragments": ["ведущий редактор журнала"]}, False,
+         "дословная вставка не проверяется"),
+        ({"desc_html": "", "authors": []}, False, "пустой прототип"),
+    ]
+    for proto, want_hit, comment in dup_cases:
+        hit = bool(cp.author_desc_duplicates(proto))
+        if hit != want_hit:
+            problems.append("проверка дубля описания автора дала %s, "
+                            "ожидалось %s (%s)" % (hit, want_hit, comment))
+
+    # 3. выделение упоминаний
+    hi_cases = [
+        ("<p><b><i>Иван Иванов</i></b> расскажет.</p>", False,
+         "имя жирным курсивом — верно"),
+        ("<p><i>Биолог</i> <b><i>Иван Иванов</i></b> расскажет.</p>", False,
+         "регалии курсивом, имя жирным курсивом — верно"),
+        ("<p>Биолог Иван Иванов расскажет.</p>", True,
+         "имя без выделения — ошибка"),
+        ("<p>Биолог <i>Иван Иванов</i> расскажет.</p>", True,
+         "только курсив без жирного — ошибка"),
+        ("<p>Лекция <b><i>Ивана Иванова</i> «Название»</b>.</p>", False,
+         "имя в родительном падеже в шапке внутри жирного — верно"),
+        ("<p><b><i>Иван Иванов</i></b>&nbsp;— <i>биолог</i>.</p>", False,
+         "абзац об авторе — верно"),
+        ("<p>Дословно: Иван Иванов.</p>", True,
+         "обычное упоминание без выделения — ошибка"),
+    ]
+    for desc, want_hit, comment in hi_cases:
+        proto = {"desc_html": desc, "authors": [{"name": "Иван Иванов"}]}
+        hit = bool(cp.author_mentions_unhighlighted(proto))
+        if hit != want_hit:
+            problems.append("проверка выделения упоминаний дала %s, "
+                            "ожидалось %s (%s)" % (hit, want_hit, comment))
+    proto = {"desc_html": "<p>Дословно: Иван Иванов.</p>",
+             "authors": [{"name": "Иван Иванов"}],
+             "verbatim_fragments": ["Дословно: Иван Иванов."]}
+    if cp.author_mentions_unhighlighted(proto):
+        problems.append("упоминание внутри verbatim_fragments не должно проверяться")
+
+    # 3а. склонённые формы — наводка, но без ложных срабатываний на «…»
+    inf_cases = [
+        ("<p>лекция Станислава Дробышевского.</p>", True,
+         "фамилия в родительном падеже без выделения — наводка"),
+        ("<p>лекция <b><i>Станислава Дробышевского</i></b>.</p>", False,
+         "выделенная форма — верно"),
+        ("<p>президент «Проекты Дробышевского».</p>", False,
+         "название организации в кавычках — не автора"),
+        ("<p>лекция <b><i>Станислава Дробышевского</i></b> и&nbsp;труды Станислава Дробышевского.</p>",
+         True, "второе упоминание без выделения — наводка"),
+    ]
+    for desc, want_hit, comment in inf_cases:
+        proto = {"desc_html": desc, "authors": [{"name": "Станислав Дробышевский"}]}
+        hit = bool(cp.author_inflected_mentions(proto))
+        if hit != want_hit:
+            problems.append("проверка склонённых форм дала %s, ожидалось %s (%s)"
+                            % (hit, want_hit, comment))
+    return problems
+
+
 def check_author_desc_capital() -> list:
     """Поле 7.4 «Описание автора» начинается с заглавной буквы.
 
@@ -649,6 +750,13 @@ def main() -> None:
 
     mech = check_split_info_paras()
     print("%s механика: ссылки-источники одним абзацем"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_author_highlight_rules()
+    print("%s механика: автор — двойная точка, дубль, выделения"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)

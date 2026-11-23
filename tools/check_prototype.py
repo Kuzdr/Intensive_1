@@ -72,6 +72,7 @@ nbsp/«ё»-инвариантов и сущностей тире (только 
 правок в середине работы, чтобы не гонять полный проход ради одного поля.
 """
 import datetime
+import html
 import io
 import json
 import os
@@ -979,6 +980,168 @@ def p_split_info_paras(proto: dict) -> list:
     return out
 
 
+# --- Оформление автора: три дефекта, найденные 23.11.2026 (TP-4316212) ---
+
+# Две точки подряд, в том числе разделённые закрывающими тегами (`.</i>.`).
+DOUBLE_DOT_RE = re.compile(r"(?<!\.)\.(?:</[^>]+>)*\.(?!\.)")
+
+
+def p_double_dot(t: str):
+    """Две точки подряд в видимом тексте (типично `.</i>.`) -> match-объекты.
+
+    Ошибка 23.11.2026: в трёх прототипах ВДНХ хвостовой абзац об авторе
+    заканчивался «…</i>.» — лишняя точка осталась после закрывающего тега.
+    Тройная точка (многоточие) не ловится: это корректный знак.
+    """
+    return list(DOUBLE_DOT_RE.finditer(t or ""))
+
+
+def visible_text(s: str) -> str:
+    """Текст без HTML-тегов и сущностей, с нормальными пробелами (для сравнений)."""
+    s = re.sub(r"<[^>]+>", " ", s or "")
+    s = re.sub(r"&nbsp;|&#160;|&#xa0;|\u00a0", " ", s, flags=re.I)
+    return re.sub(r"\s+", " ", html.unescape(s)).strip()
+
+
+def author_name_re(name: str):
+    """Регулярка для точного имени «Имя Фамилия» с любыми nbsp/пробелами."""
+    parts = [re.escape(p) for p in (name or "").split() if p]
+    if not parts:
+        return None
+    return re.compile(r"(?:&nbsp;|&#160;|\u00a0|[ \t])+".join(parts))
+
+
+def is_bold_italic(raw: str, start: int, end: int) -> bool:
+    """Находится ли фрагмент [start,end) внутри `<b>…<i>…</i>…</b>`.
+
+    Важна именно вложенность: `<b><i>Имя</i></b>` и `<b><i>Имени</i> «Название»</b>`
+    верны, а `<i>Имя</i>` без жирного или `<b>Имя</b>` без курсива — нет.
+    """
+    before = raw[:start]
+    opens = list(re.finditer(r"<b\b[^>]*>", before))
+    if not opens:
+        return False
+    closes = list(re.finditer(r"</b\s*>", before))
+    last_open = opens[-1].start()
+    last_close = closes[-1].start() if closes else -1
+    if last_close > last_open:
+        return False
+    if not re.search(r"<i\b[^>]*>", before[last_open:]):
+        return False
+    after = raw[end:]
+    m_i = re.search(r"</i\s*>", after)
+    m_b = re.search(r"</b\s*>", after)
+    if m_i is None:
+        return False
+    return m_b is None or m_i.start() < m_b.start()
+
+
+def author_desc_duplicates(proto: dict, sel=None) -> list:
+    """Повтор описания автора из поля 7.4 в desc_html -> [(имя, описание, n)].
+
+    Правило пользователя 23.11.2026: если полное описание автора уже есть
+    в тексте описания (с выделениями), дублировать его в конце не нужно.
+    Проверяем ТОЛЬКО дословный повтор (нормализованный текст 7.4 встречается
+    в desc_html два и более раза) — это однозначная механика. Частичные
+    совпадения («почти то же самое») остаются на человеческий проход.
+    """
+    if sel is not None and not sel_block(sel, "desc"):
+        return []
+    desc = (proto or {}).get("desc_html") or ""
+    if not desc:
+        return []
+    frag_txt = [visible_text(x).lower() for x in (proto or {}).get("verbatim_fragments") or []
+                if isinstance(x, str)]
+    dn = visible_text(desc).lower()
+    out = []
+    for a in (proto or {}).get("authors") or []:
+        for f in a.get("fields") or []:
+            if str(f.get("n")) != "7.4":
+                continue
+            d = visible_text(f.get("value") or "").rstrip(" .").lower()
+            if len(d) < 15 or any(d in ft for ft in frag_txt):
+                continue
+            cnt, pos = 0, 0
+            while True:
+                i = dn.find(d, pos)
+                if i < 0:
+                    break
+                cnt += 1
+                pos = i + len(d)
+            if cnt >= 2:
+                out.append((a.get("name") or "", d, cnt))
+    return out
+
+
+def author_mentions_unhighlighted(proto: dict, sel=None) -> list:
+    """Упоминания имени автора в desc_html без `<b><i>…</i></b>`.
+
+    Правило пользователя 23.11.2026: «в любом случае, если есть дополнительное
+    упоминание автора в тексте, нужны выделения». Ищем точное имя из карточки
+    автора (склонённые формы человек проверяет по чек-листу post-check).
+    Дословные вставки verbatim_fragments не трогаем.
+    """
+    if sel is not None and not sel_block(sel, "desc"):
+        return []
+    desc = (proto or {}).get("desc_html") or ""
+    if not desc:
+        return []
+    vrange = verbatim_ranges(desc, (proto or {}).get("verbatim_fragments"))
+    out = []
+    for a in (proto or {}).get("authors") or []:
+        name = (a.get("name") or "").strip()
+        rx = author_name_re(name)
+        if rx is None:
+            continue
+        for m in rx.finditer(desc):
+            if vrange and in_verbatim(m.start(), vrange):
+                continue
+            if is_bold_italic(desc, m.start(), m.end()):
+                continue
+            ctx = desc[max(0, m.start() - 60):m.end() + 90].replace("\n", " ")
+            out.append((name, ctx))
+    return out
+
+
+def author_inflected_mentions(proto: dict, sel=None) -> list:
+    """Склонённые формы фамилии автора без выделения — НАВОДКА (тег 16а).
+
+    Точное имя «Имя Фамилия» ловится проверкой 16. Здесь ищем фамилию с любым
+    окончанием («Сурдиным», «Щепкина»), чтобы не пропустить упоминание в
+    косвенном падеже. Склонённая форма часто встречается и в названии
+    организации («Проекты Дробышевского») — такие вхождения внутри «…»
+    пропускаем. Проверка намеренно НЕ блокирующая: решение за человеком.
+    """
+    if sel is not None and not sel_block(sel, "desc"):
+        return []
+    desc = (proto or {}).get("desc_html") or ""
+    if not desc:
+        return []
+    vrange = verbatim_ranges(desc, (proto or {}).get("verbatim_fragments"))
+    quotes = []
+    for qm in re.finditer(r"«", desc):
+        qend = desc.find("»", qm.end())
+        if qend != -1:
+            quotes.append((qm.start(), qend + 1))
+    out = []
+    for a in (proto or {}).get("authors") or []:
+        surname = (a.get("name") or "").split()[-1:] or []
+        if not surname or len(surname[0]) < 4:
+            continue
+        stem = re.escape(surname[0][:max(4, len(surname[0]) - 2)])
+        rx = re.compile(r"\b" + stem + r"[а-яёА-ЯЁ]*\b")
+        for m in rx.finditer(desc):
+            if vrange and in_verbatim(m.start(), vrange):
+                continue
+            if any(a0 <= m.start() < b0 for a0, b0 in quotes):
+                continue
+            if is_bold_italic(desc, m.start(), m.end()):
+                continue
+            ctx = desc[max(0, m.start() - 55):m.end() + 75].replace("\n", " ")
+            out.append((a.get("name") or "", m.group(0), ctx))
+    return out
+
+
 def fix_proto_values(proto: dict, sel=None) -> tuple:
     """Применяет автоправки к строковым значениям prototype.json.
 
@@ -1462,6 +1625,23 @@ def main() -> None:
                     block[:160].replace("\n", " "),
                     display,
                 ))
+        # Двойная точка в видимом тексте (правило 23.11.2026)
+        for m in p_double_dot(t):
+            emit("14", "две точки подряд — оставьте одну (часто «.</i>»)", m)
+        # Оформление автора: дубль описания и упоминания без выделений
+        for name, d, cnt in author_desc_duplicates(proto, sel):
+            msg = ("описание автора «%s» уже есть в тексте описания (%d раза) "
+                   "— уберите дублирующий абзац в конце" % (name, cnt))
+            hard.append(("15", msg, d, d, display))
+        for name, context in author_mentions_unhighlighted(proto, sel):
+            msg = ("упоминание автора «%s» без выделений — имя жирным курсивом "
+                   "<b><i>…</i></b>, регалии курсивом <i>…</i>" % name)
+            hard.append(("16", msg, context, context, display))
+        for name, form, context in author_inflected_mentions(proto, sel):
+            msg = ("склонённая форма «%s» имени «%s» без выделения — проверить "
+                   "(если это упоминание автора, выделить <b><i>…</i></b>)"
+                   % (form, name))
+            warns.append(("16а", msg, context, context, display))
 
     # Слова для проверки «ё» из tools/yo_words.txt (пополняемый список)
     try:
