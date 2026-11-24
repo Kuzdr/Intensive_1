@@ -2285,6 +2285,117 @@
           "updated": ""
         }
       ]
+    },
+    "fondnauk": {
+      "name": "fondnauk",
+      "events": [
+        {
+          "key": "TP-4257910",
+          "status": "added",
+          "date": "2026-11-29",
+          "time": "17:00",
+          "title": "Как праздновали Новый год в Древнем Риме?",
+          "subtitle": "Проекты Станислава Дробышевского",
+          "author": "Иван Миролюбов",
+          "url": "https://fondnauk.timepad.ru/event/4318657/",
+          "prototype_id": "TP-4257910",
+          "review": "include",
+          "note": "Активный повтор 4318657 исходного события 4257910; дата 29.11.2026 подтверждена recurring_events и Telegram (в тексте анонса опечатка «29 октября»). 700 руб., 12+, офлайн и онлайн. Дублей 29.11 и автора на «Элементах» нет. Прототип создан и провалидирован 24.11.2026",
+          "first_seen": "2026-11-24",
+          "last_seen": "2026-11-24",
+          "updated": ""
+        },
+        {
+          "key": "4318603",
+          "status": "rejected",
+          "date": "",
+          "time": "",
+          "title": "Кандидат ленты fondnauk 4318603",
+          "subtitle": "",
+          "author": "",
+          "url": "https://fondnauk.timepad.ru/event/4318603/",
+          "review": "hide",
+          "note": "Не подходит по содержанию при критическом отборе 24.11.2026",
+          "first_seen": "2026-11-24",
+          "last_seen": "2026-11-24",
+          "updated": ""
+        },
+        {
+          "key": "3067997",
+          "status": "rejected",
+          "date": "",
+          "time": "",
+          "title": "Кандидат ленты fondnauk 3067997",
+          "subtitle": "",
+          "author": "",
+          "url": "https://fondnauk.timepad.ru/event/3067997/",
+          "review": "hide",
+          "note": "Не подходит по содержанию при критическом отборе 24.11.2026",
+          "first_seen": "2026-11-24",
+          "last_seen": "2026-11-24",
+          "updated": ""
+        },
+        {
+          "key": "3271257",
+          "status": "rejected",
+          "date": "",
+          "time": "",
+          "title": "Кандидат ленты fondnauk 3271257",
+          "subtitle": "",
+          "author": "",
+          "url": "https://fondnauk.timepad.ru/event/3271257/",
+          "review": "hide",
+          "note": "Не подходит по содержанию при критическом отборе 24.11.2026",
+          "first_seen": "2026-11-24",
+          "last_seen": "2026-11-24",
+          "updated": ""
+        },
+        {
+          "key": "4307067",
+          "status": "rejected",
+          "date": "",
+          "time": "",
+          "title": "Кандидат ленты fondnauk 4307067",
+          "subtitle": "",
+          "author": "",
+          "url": "https://fondnauk.timepad.ru/event/4307067/",
+          "review": "hide",
+          "note": "Не подходит по содержанию при критическом отборе 24.11.2026",
+          "first_seen": "2026-11-24",
+          "last_seen": "2026-11-24",
+          "updated": ""
+        },
+        {
+          "key": "4322482",
+          "status": "rejected",
+          "date": "",
+          "time": "",
+          "title": "Кандидат ленты fondnauk 4322482",
+          "subtitle": "",
+          "author": "",
+          "url": "https://fondnauk.timepad.ru/event/4322482/",
+          "review": "hide",
+          "note": "Не подходит по содержанию при критическом отборе 24.11.2026",
+          "first_seen": "2026-11-24",
+          "last_seen": "2026-11-24",
+          "updated": ""
+        },
+        {
+          "key": "3113944",
+          "status": "rejected",
+          "date": "",
+          "time": "",
+          "title": "Кандидат ленты fondnauk 3113944",
+          "subtitle": "",
+          "author": "",
+          "url": "https://fondnauk.timepad.ru/event/3113944/",
+          "review": "hide",
+          "note": "Не подходит по содержанию при критическом отборе 24.11.2026",
+          "first_seen": "2026-11-24",
+          "last_seen": "2026-11-24",
+          "updated": ""
+        }
+      ]
     }
   }
 }

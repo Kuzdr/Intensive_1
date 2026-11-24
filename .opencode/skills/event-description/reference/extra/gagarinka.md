@@ -9,7 +9,9 @@
 
 <p><b>Адрес:</b> 105005, Москва, Проспект Вернадского, д.&nbsp;109, библиотека №214 им. Н.&nbsp;А.&nbsp;Гагарина.<br>
 
-<b>Проезд:</b> м. «Юго-Западная». тел.: (915) 002-05-26 (справки); <a href="https://yandex.ru/maps/-/CKQgMZPL" target="_blank">Карта проезда</a>.</p>
+<b>Проезд:</b> м. «Юго-Западная». <a href="https://yandex.ru/maps/-/CKQgMZPL" target="_blank">Карта проезда</a>.<br>
+
+<b>Телефон:</b> +7(915)002-05-26.</p>
 
 <p class="small">Подробную информацию можно получить на <a href="https://mos-razvitie.ru/biblio214" target="_blank">сайте библиотеки</a>, а&nbsp;также в&nbsp;<a href="https://t.me/gagarinlib" target="_blank">Telegram</a> и&nbsp;<a href="https://vk.com/gagarinlib" target="_blank">ВКонтакте</a> библиотеки.</p>
 
