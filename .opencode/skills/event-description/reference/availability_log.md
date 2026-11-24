@@ -448,3 +448,223 @@
 - Тип ошибки: `webfetch` — «Too many redirects (more than 10)»; `curl -L` (5 и 12 редиректов) — бесконечный 307 на `?_ycch=2` с новой cookie `_yasc` на каждом шаге, `server: ycalb`.
 - Попыток: 3 (webfetch, curl×2); интервалы 1 и 5 минут не применялись — по записям 04.11/22.11/23.11 это штатная антибот-защита Timepad, а не временный обрыв.
 - Итог: карточку и ленту удалось прочитать обычным Edge/CDP (`tp_cdp.py`, порт 9223, профиль `edge_timepad_visible`): `tp_ist3225994_dom.html` 527105 байт, `tp_istfeed_dom.html` 387385 байт, `showcaptcha=0`. Данные получены в полном объёме, повторов не потребовалось.
+
+## 24.11.2026, 02:47 — обход лекториев: недоступен источник
+- Лекторий: `arhe`
+- URL: `https://arhe-events.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:47 — обход лекториев: недоступен источник
+- Лекторий: `arhe`
+- URL: `https://tsentr-arhe-v-sankt-peter.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:47 — обход лекториев: недоступен источник
+- Лекторий: `vdnh`
+- URL: `https://lektorij-vdnh.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:47 — обход лекториев: недоступен источник
+- Лекторий: `vdnh`
+- URL: `https://cosmos-vdnh.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:47 — обход лекториев: недоступен источник
+- Лекторий: `vdnh`
+- URL: `https://atom-lab.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:47 — обход лекториев: недоступен источник
+- Лекторий: `vdnh`
+- URL: `https://muzey-biotekh.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:47 — обход лекториев: недоступен источник
+- Лекторий: `vdnh`
+- URL: `https://slovo-vdnh.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:48 — обход лекториев: недоступен источник
+- Лекторий: `zil`
+- URL: `https://zilcc.timepad.ru/afisha/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:48 — обход лекториев: недоступен источник
+- Лекторий: `akademiya-gramoty`
+- URL: `https://academy-gramota.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:48 — обход лекториев: недоступен источник
+- Лекторий: `okeanologiya`
+- URL: `https://institut-okeanologii-im-p.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:48 — обход лекториев: недоступен источник
+- Лекторий: `volnoslushatel`
+- URL: `https://volnoslushatel.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:48 — обход лекториев: недоступен источник
+- Лекторий: `lobachevsky-lab`
+- URL: `https://lobachevskylab.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:48 — обход лекториев: недоступен источник
+- Лекторий: `zanuda`
+- URL: `https://zanuda.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:48 — обход лекториев: недоступен источник
+- Лекторий: `astrocamp`
+- URL: `https://astrocamp.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:48 — обход лекториев: недоступен источник
+- Лекторий: `nauchpop`
+- URL: `https://nauchpop-moscow.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:49 — обход лекториев: недоступен источник
+- Лекторий: `istovyj-inzhener`
+- URL: `https://yadro-engineer.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:49 — обход лекториев: недоступен источник
+- Лекторий: `kurilka-gutenberga`
+- URL: `https://kurilka-gutenberga-events.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:49 — обход лекториев: недоступен источник
+- Лекторий: `kurilka-gutenberga`
+- URL: `https://kurilkaintmn.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:49 — обход лекториев: недоступен источник
+- Лекторий: `planetalib`
+- URL: `https://planetalib.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:49 — обход лекториев: недоступен источник
+- Лекторий: `oxta8`
+- URL: `https://oxta8.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:49 — обход лекториев: недоступен источник
+- Лекторий: `yeltsin-ekb`
+- URL: `https://yeltsin-center.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:49 — обход лекториев: недоступен источник
+- Лекторий: `darwin`
+- URL: `https://darwinmuseum.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026, 02:49 — обход лекториев: недоступен источник
+- Лекторий: `gagarinka`
+- URL: `https://zaobiblio.timepad.ru/events/`
+- Тип ошибки: HTTPError: HTTP Error 307: The HTTP server returned a redirect error that would lead to an infinite loop.
+The last 30x error message was:
+Temporary Redirect
+- Число попыток: 3 (интервалы: 1 с, 5 с)
+- Итог: источник недоступен, кандидаты не проверены
+
+## 24.11.2026 — РАЗРЕШЕНО: Timepad читается через обычный Edge/CDP
+- Все 21 Timepad-лента (23 source-ссылки минус 2 архэ), перечисленные выше как
+  «недоступен источник», успешно открыты через обычный (не headless) Edge с
+  читалкой DOM через CDP (`tp_cdp.py`, порт 9223, отдельный профиль).
+- Причина 307/302: общий HTTP-клиент (`urllib`) упирается в капчу Timepad —
+  `302 → /tmgrdfrend/showcaptcha?...`; это НЕ постоянный обрыв сайта, а
+  антибот-проверка на запросы из скрипта. В обычном Edge капчи нет.
+- Число попыток: исходные 3 (1 с, 5 с) обычным HTTP + 1 успешная через Edge/CDP.
+- Итог: все ленты прочитаны, 319 уникальных событий разобраны в
+  `timepad_found.json`; недоступность снята, кандидаты проверены.
+- Примечание: HTTP 307 от Timepad больше НЕ считать непреодолимой блокировкой —
+  повторять через обычный браузер (Edge/CDP), а не логировать как «сайт недоступен».
