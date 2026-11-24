@@ -1181,6 +1181,10 @@ def source_num_id(u):
     m = re.search(r'lectory2\.ru/[^"\s]*?#lecture_(\d+)', u or '')
     if m:
         return m.group(1), 'Живой город'
+    # Telegram: t.me/channel/12345 или t.me/s/channel/12345
+    m = re.search(r't\.me/(?:s/)?[^/\s?#]+/(\d+)', u or '')
+    if m:
+        return m.group(1), 'Telegram'
     return None, ''
 
 
