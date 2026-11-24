@@ -51,7 +51,10 @@
  16. МЕХАНИКА полной даты в афише на стыке лет: `<div class='hdates'>
      14.01.2027</div>` разбирается наравне с `hdates short_date`,
      явный год из афиши/шапки важнее года в тексте описания
-     (урок 23.11.2026, событие 450765).
+     (урок 23.11.2026, событие 450765);
+ 17. МЕХАНИКА списков: пункт перечисления, оставшийся тире в `<p>`,
+     ловится валидатором (тег 18), а генератор Medio Modo собирает
+     тире-абзацы в `<ul><li>` (урок 24.11.2026, прототипы Алипова).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -353,6 +356,48 @@ def check_block_breaks() -> list:
         if hit != want_hit:
             problems.append("проверка абзацев для %r дала срабатывание=%s, "
                             "ожидалось %s (%s)" % (text, hit, want_hit, comment))
+    return problems
+
+
+def check_dash_lists() -> list:
+    """Пункты перечисления — `<ul><li>`, а не тире в `<p>` (24.11.2026)."""
+    import importlib.util
+
+    cp, problems = _load_cp("_cp_dashlist")
+    if cp is None:
+        return problems
+    cases = [
+        ({"desc_html": "<p>Узнаем:</p>\n\n<p>— первый?</p>"},
+         True, "тире-пункт в описании"),
+        ({"desc_html": "<p>Узнаем:</p>\n\n<ul>\n<li>первый?</li>\n<li>второй?</li>\n</ul>"},
+         False, "правильный список"),
+        ({"extra_html": ["<p>—&nbsp;пункт</p>"]},
+         True, "тире-пункт в доп. информации"),
+        ({"desc_html": "<p>Это не список, тут тире — внутри фразы.</p>"},
+         False, "тире в середине абзаца — не список"),
+    ]
+    for proto, want, comment in cases:
+        hit = bool(cp.p_dash_list_paragraphs(proto))
+        if hit != want:
+            problems.append("проверка тире-списка для %r дала %s, ожидалось %s (%s)"
+                            % (proto, hit, want, comment))
+
+    # Генератор Medio Modo: пункты, пришедшие каждый своим абзацем
+    # (`<br /><br />`), тоже обязаны собраться в <ul><li>.
+    path = os.path.join(ROOT, "tools", "mm_prototype.py")
+    if not os.path.isfile(path):
+        return problems + ["нет tools/mm_prototype.py"]
+    spec = importlib.util.spec_from_file_location("_mm_dashlist", path)
+    mm = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(mm)
+    except Exception as e:                       # noqa: BLE001
+        return problems + ["tools/mm_prototype.py не импортируется: %s" % e]
+    src = ("Вопрос:<br /><br />—&nbsp;первый?<br /><br />"
+           "—&nbsp;второй?<br /><br />Приходите.")
+    html = "\n\n".join(mm.paragraphs(src))
+    if "<ul>\n<li>первый?</li>\n<li>второй?</li>\n</ul>" not in html or "<p>—" in html:
+        problems.append("генератор Medio Modo не собрал тире-абзацы в <ul><li>: %r" % html)
     return problems
 
 
@@ -890,6 +935,13 @@ def main() -> None:
 
     mech = check_block_breaks()
     print("%s механика: пустая строка между абзацами описания"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_dash_lists()
+    print("%s механика: пункты списка — <ul><li>, не тире в <p>"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)

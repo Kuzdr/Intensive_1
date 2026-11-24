@@ -124,29 +124,51 @@ def pas_online(txt):
     return t + " и&nbsp;ОНЛАЙН."
 
 
+def _is_dash_line(line: str) -> bool:
+    """Строка начинается с маркера перечисления «—/–/-» (в т.ч. с &nbsp;)."""
+    return bool(re.match(r"^(?:&nbsp;\s*)?[—–-](?:\s|&nbsp;)", line.strip()))
+
+
 def dash_item(line):
-    t = re.sub(r"^[—–-]\s*&nbsp;\s*|^[—–-]\s+", "", line)
+    t = re.sub(r"^(?:&nbsp;\s*)?[—–-](?:\s*&nbsp;\s*|\s+)", "", line.strip())
     return "<li>%s</li>" % t.strip()
 
 
 def paragraphs(html):
     """Текст лекции источника -> список HTML-блоков для аннотации.
 
-    Абзацы разделены в источнике пустой строкой (`<br /><br />`), отдельные
-    пункты перечисления — одиночным `<br />` и начинаются с «—»: они
-    собираются в `<ul><li>`, как на «Элементах» (450580).
+    Абзацы разделены в источнике пустой строкой (`<br /><br />`); пункты
+    перечисления начинаются с «—». Они собираются в `<ul><li>`, как на
+    «Элементах» (450580), независимо от того, идут ли они подряд через
+    одиночный `<br />` или каждый своим абзацем через `<br /><br />`
+    (урок 24.11.2026, прототипы Алипова: тире оставались в `<p>`).
     """
     html = (html or "").strip()
-    out = []
+    chunks = []
     for chunk in re.split(r"<br\s*/?>\s*<br\s*/?>", html):
         chunk = re.sub(r"^<p[^>]*>|</p>$", "", chunk.strip()).strip()
-        if not chunk:
-            continue
-        lines = [x.strip() for x in re.split(r"<br\s*/?>", chunk) if x.strip()]
-        if len(lines) > 1 and all(x.startswith(("—", "&nbsp;—", "-&nbsp;")) for x in lines):
-            out.append("<ul>\n" + "\n".join(dash_item(x) for x in lines) + "\n</ul>")
+        if chunk:
+            chunks.append(chunk)
+    out, dash = [], []
+
+    def flush():
+        if not dash:
+            return
+        if len(dash) == 1:
+            # один маркер — это не список, а отдельная реплика/подпись
+            out.append("<p>%s</p>" % dash[0])
         else:
-            out.append("<p>%s</p>" % chunk)
+            out.append("<ul>\n" + "\n".join(dash_item(x) for x in dash) + "\n</ul>")
+        dash.clear()
+
+    for chunk in chunks:
+        lines = [x.strip() for x in re.split(r"<br\s*/?>", chunk) if x.strip()]
+        if lines and all(_is_dash_line(x) for x in lines):
+            dash.extend(lines)
+            continue
+        flush()
+        out.append("<p>%s</p>" % chunk)
+    flush()
     return out
 
 

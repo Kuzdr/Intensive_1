@@ -956,6 +956,37 @@ def check_br_blank(proto: dict, sel=None) -> list:
     return out
 
 
+_DASH_PARA_RE = re.compile(
+    r'<p(?:\s[^>]*)?>\s*(?:&nbsp;|\u00A0)?\s*[—–−-](?:\s|&nbsp;|\u00A0)', re.S)
+
+
+def p_dash_list_paragraphs(proto: dict, sel=None) -> list:
+    """Пункты перечисления, оставшиеся как `<p>— …</p>` вместо `<ul><li>`.
+
+    В описании используются только абзацы `<p>` и списки `<ul><li>`;
+    каждый пункт перечисления — отдельный `<li>`, пустые строки только
+    между блоками (внутри `<ul>` их нет). Урок 24.11.2026: в трёх
+    прототипах Алипова список из четырёх пунктов остался тире-абзацами,
+    хотя соседние прототипы тот же список уже оформили через `<ul>`.
+    """
+    if sel is not None and not (sel_block(sel, "desc") or sel_block(sel, "extra")):
+        return []
+    areas = []
+    if sel is None or sel_block(sel, "desc"):
+        areas.append(("desc_html", proto.get("desc_html")))
+    if sel is None or sel_block(sel, "extra"):
+        for i, block in enumerate(proto.get("extra_html") or [], 1):
+            areas.append(("extra_html[%d]" % i, block))
+    out = []
+    for where, block in areas:
+        if not isinstance(block, str):
+            continue
+        for m in _DASH_PARA_RE.finditer(block):
+            frag = block[max(0, m.start() - 20):m.end() + 90].replace("\n", " ")
+            out.append((where, frag))
+    return out
+
+
 def p_split_info_paras(proto: dict) -> list:
     """Два соседних абзаца «Информация о лекции …» -> [(первый, второй), ...].
 
@@ -1631,6 +1662,16 @@ def main() -> None:
         # «Доп.информация»: после каждого <br> — пустая строка (правило скилла)
         for level, msg in check_br_blank(proto, sel):
             hard.append(("1f", msg, "", msg, display))
+        # Пункты перечисления тире в <p> — только <ul><li> (урок 24.11.2026)
+        if sel is None or sel_block(sel, "desc") or sel_block(sel, "extra"):
+            for where, fragment in p_dash_list_paragraphs(proto, sel):
+                hard.append((
+                    "18",
+                    "пункт перечисления в %s оформлен тире в <p> — каждый пункт "
+                    "списка пишется <li> внутри <ul> (пустые строки только "
+                    "между блоками, не внутри списка)" % where,
+                    fragment[:160], fragment[:200], display,
+                ))
         # Ссылки-источники об этом событии — одним абзацем (правило 12.11.2026)
         if sel is None or sel_block(sel, "extra"):
             for a, b in p_split_info_paras(proto):
