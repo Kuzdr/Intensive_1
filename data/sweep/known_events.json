@@ -1438,9 +1438,10 @@
           "subtitle": "",
           "author": "Фёдор Сердотецкий",
           "url": "https://zilcc.timepad.ru/event/4307285/",
-          "status": "rejected",
-          "review": "hide",
-          "note": "Решение пользователя 24.11.2026: не берём и больше к ним не возвращаться",
+          "status": "added",
+          "prototype_id": "ZIL-4307285-berneys",
+          "review": "include",
+          "note": "Решение пользователя 24.11.2026 ОТМЕНЕНО: лекцию добавляем, прототип ZIL-4307285-berneys",
           "first_seen": "2026-11-22",
           "last_seen": "2026-11-24",
           "updated": "2026-11-24"
