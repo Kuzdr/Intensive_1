@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-24 21:19:47",
+  "date": "2026-11-25 01:04:44",
   "protos": {
     "EXP-261206-gubin-mifologiya-nauki": "prototype.json:11213:0e82d1bc06a6|_state.json:-",
     "EXP-261213-gushinets-bacilly": "prototype.json:11747:0143016f948a|_state.json:-",
@@ -50,7 +50,6 @@
     "PR-261227-Biologicheskiy-Novyy-god": "prototype.json:12041:510e7b676e4f|_state.json:-",
     "TP-4185611": "prototype.json:13798:8b2da8432eb3|_state.json:-",
     "TP-4185646": "prototype.json:14504:25e484ff2d03|_state.json:-",
-    "TP-4217783": "prototype.json:16368:ab3040d8b714|_state.json:-",
     "TP-4229360": "prototype.json:12120:d6b1a06836f1|_state.json:-",
     "TP-4229376": "prototype.json:12218:4353bd16813e|_state.json:-",
     "TP-4229408": "prototype.json:12134:e815ff9f7477|_state.json:-",
@@ -58,6 +57,7 @@
     "TP-4252096": "prototype.json:16632:94acbff9f2f4|_state.json:-",
     "TP-4252104": "prototype.json:16519:792c54d0a9f0|_state.json:-",
     "TP-4255785": "prototype.json:12824:4cbb64526fee|_state.json:-",
+    "TP-4257910": "prototype.json:15845:0f5c31d3309a|_state.json:-",
     "TP-4258099": "prototype.json:19141:fe58df28de52|_state.json:-",
     "TP-4258224": "prototype.json:18385:a70dd8bbfa04|_state.json:-",
     "TP-4263746": "prototype.json:12957:518f30803020|_state.json:-",
@@ -73,12 +73,13 @@
     "TP-4289673": "prototype.json:11549:81394834ad60|_state.json:-",
     "TP-4297583": "prototype.json:12221:bda2f9ccfd05|_state.json:-",
     "TP-4297595": "prototype.json:13307:9c9d9af827aa|_state.json:-",
-    "TP-4299795": "prototype.json:13190:361561e440c3|_state.json:-",
+    "TP-4299795": "prototype.json:13205:f24f11b0db4c|_state.json:-",
     "TP-4301442": "prototype.json:13856:709007b438dc|_state.json:-",
     "TP-4306009": "prototype.json:16608:41b86dc33570|_state.json:-",
     "TP-4306298": "prototype.json:10550:1f4faa634dbb|_state.json:-",
     "TP-4306307": "prototype.json:10802:9dbb147adea9|_state.json:-",
     "TP-4306350": "prototype.json:11612:7f98631b5f9a|_state.json:-",
+    "TP-4307067": "prototype.json:14580:86fc809876a3|_state.json:-",
     "TP-4312127": "prototype.json:9610:cfe995330e20|_state.json:-",
     "TP-4314268": "prototype.json:9852:d4ab2775dc7f|_state.json:-",
     "TP-4314509": "prototype.json:10751:85cb31595be8|_state.json:-",
@@ -91,6 +92,8 @@
     "TP-4318063": "prototype.json:10440:f2395c6f0305|_state.json:-",
     "TP-4318314": "prototype.json:12222:aefa90e32a7e|_state.json:-",
     "TP-4318592": "prototype.json:15127:1b4653466356|_state.json:-",
+    "TP-4319010": "prototype.json:16172:65fc97c80d51|_state.json:-",
+    "TP-4322482": "prototype.json:12655:691705b3a7bd|_state.json:-",
     "VS-261125-mikhaylova-trappist": "prototype.json:13997:b4a50da7463a|_state.json:-",
     "VS-261205-khoruzhaya-neyrofiziologiya": "prototype.json:15109:5f7a198d23f4|_state.json:-",
     "VS-261206-leontev-ii": "prototype.json:13180:fadf08f85bd2|_state.json:-",
@@ -100,8 +103,8 @@
     "VS-261217-orudiya": "prototype.json:11698:96351b992bb9|_state.json:-",
     "VS-261226-tims-multivselennaya": "prototype.json:13222:1b05918d2282|_state.json:-",
     "YuGeo-261128-tainstvennaya-istoriya-krasnoj-palatki": "prototype.json:16283:42ddbfd671b2|_state.json:-",
-    "ZG-1003": "prototype.json:10443:8bbe63ef05bd|_state.json:-",
     "ZG-1006": "prototype.json:12346:a9d9c8020c5f|_state.json:-",
-    "ZIL-4289705-mariya-kuri": "prototype.json:13723:f288a39c88d8|_state.json:-"
+    "ZIL-4289705-mariya-kuri": "prototype.json:13723:f288a39c88d8|_state.json:-",
+    "ZIL-4307285-berneys": "prototype.json:12288:7d32ee918e03|_state.json:-"
   }
 }
