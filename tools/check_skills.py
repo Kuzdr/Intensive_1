@@ -54,7 +54,10 @@
      (урок 23.11.2026, событие 450765);
  17. МЕХАНИКА списков: пункт перечисления, оставшийся тире в `<p>`,
      ловится валидатором (тег 18), а генератор Medio Modo собирает
-     тире-абзацы в `<ul><li>` (урок 24.11.2026, прототипы Алипова).
+     тире-абзацы в `<ul><li>` (урок 24.11.2026, прототипы Алипова);
+ 18. МЕХАНИКА «ОНЛАЙН»: пометка в описании должна совпадать с полями
+     2 и 8 (тег 19), а генератор Medio Modo добавляет её и в поля
+     (урок 24.11.2026, `MM-261211-alipov-msk`).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -398,6 +401,91 @@ def check_dash_lists() -> list:
     html = "\n\n".join(mm.paragraphs(src))
     if "<ul>\n<li>первый?</li>\n<li>второй?</li>\n</ul>" not in html or "<p>—" in html:
         problems.append("генератор Medio Modo не собрал тире-абзацы в <ul><li>: %r" % html)
+    return problems
+
+
+def check_online_consistency() -> list:
+    """«ОНЛАЙН» в описании и в полях 2/8 — одна и та же пометка.
+
+    Урок 24.11.2026 (`MM-261211-alipov-msk`): `desc_for()` добавлял
+    «и ОНЛАЙН» в шапку, а `fields_for()` не добавлял ни в дату, ни в место.
+    """
+    import datetime
+    import importlib.util
+
+    cp, problems = _load_cp("_cp_online")
+    if cp is None:
+        return problems
+    online_desc = ('<p class="small"><b>Пятница, 11&nbsp;декабря 2026&nbsp;года, '
+                   '19:00, Москва, Аудиториум и&nbsp;ОНЛАЙН.</b></p>')
+    plain_desc = ('<p class="small"><b>Пятница, 11&nbsp;декабря 2026&nbsp;года, '
+                  '19:00, Москва, Аудиториум.</b></p>')
+
+    def proto(desc, f2, f8):
+        return {"desc_html": desc, "fields": [
+            {"n": "2", "name": "Дата события", "value": f2},
+            {"n": "8", "name": "Место", "value": f8},
+        ]}
+
+    pure2 = "11.12.2026, Москва, Аудиториум, 19:00"
+    pure8 = "Москва, Аудиториум"
+    on2 = "11.12.2026, Москва, Аудиториум и&nbsp;ОНЛАЙН, 19:00"
+    on8 = "Москва, Аудиториум и&nbsp;ОНЛАЙН"
+    cases = [
+        (proto(online_desc, pure2, pure8), ["поле 2", "поле 8"],
+         "онлайн только в описании"),
+        (proto(online_desc, on2, on8), [], "всё согласовано"),
+        (proto(plain_desc, pure2, pure8), [], "онлайн нет нигде"),
+        (proto(plain_desc, on2, on8), ["поле 2", "поле 8"],
+         "онлайн только в полях"),
+    ]
+    for p, want, comment in cases:
+        got = [w for w, _fr in cp.p_online_fields_mismatch(p)]
+        if got != want:
+            problems.append("согласование ОНЛАЙН (%s): %s, ожидалось %s"
+                            % (comment, got, want))
+    # Аннотация карточки не участвует, шаблон пропускается
+    p = proto(plain_desc, pure2, pure8)
+    p["annot"] = "Лекция … и&nbsp;ОНЛАЙН."
+    if cp.p_online_fields_mismatch(p):
+        problems.append("annot не должен влиять на согласование ОНЛАЙН")
+    if cp.p_online_fields_mismatch(proto(plain_desc, pure2, "(и ОНЛАЙН)"),
+                                  proto_dir="_template"):
+        problems.append("_template с подсказкой «(и ОНЛАЙН)» должен пропускаться")
+    # Частичная проверка не ловит сквозное рассогласование
+    sel = (set(), {"2"})
+    if cp.p_online_fields_mismatch(cases[0][0], sel):
+        problems.append("--only 2 не должен запускать сквозную проверку")
+
+    # Генератор: поля 2 и 8 обязаны получить ту же пометку, что и описание.
+    path = os.path.join(ROOT, "tools", "mm_prototype.py")
+    if not os.path.isfile(path):
+        return problems + ["нет tools/mm_prototype.py"]
+    spec = importlib.util.spec_from_file_location("_mm_online", path)
+    mm = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(mm)
+    except Exception as e:                       # noqa: BLE001
+        return problems + ["tools/mm_prototype.py не импортируется: %s" % e]
+    ev = {"date_iso": "2026-12-11", "time": "19:00", "city": "Москва",
+          "slug": "alipov-msk", "url": "https://mediomodo.ru/alipov-msk",
+          "online": True}
+    cfg = {"title": "Нейробиология любви"}
+    venue = {"short": "Аудиториум", "place": "Москва, Аудиториум",
+             "address": "Москва, ул.&nbsp;Воздвиженка, 9"}
+    fields = {x["n"]: x["value"] for x in mm.fields_for(
+        ev, cfg, venue, datetime.date(2026, 11, 24))}
+    if "ОНЛАЙН" not in fields.get("2", "") or "ОНЛАЙН" not in fields.get("8", ""):
+        problems.append("генератор Medio Modo не добавил «ОНЛАЙН» в поля 2/8: %r"
+                        % {n: fields.get(n) for n in ("2", "8")})
+    # число в названии площадки: nbsp ПЕРЕД «и»
+    venue2 = {"short": "LOFT 13", "place": "Москва, LOFT 13",
+              "address": "Москва, ул.&nbsp;Воздвиженка, 9"}
+    fields2 = {x["n"]: x["value"] for x in mm.fields_for(
+        ev, cfg, venue2, datetime.date(2026, 11, 24))}
+    if "13&nbsp;и&nbsp;ОНЛАЙН" not in fields2.get("8", ""):
+        problems.append("генератор не поставил nbsp перед «и» после числа: %r"
+                        % fields2.get("8"))
     return problems
 
 
@@ -942,6 +1030,13 @@ def main() -> None:
 
     mech = check_dash_lists()
     print("%s механика: пункты списка — <ul><li>, не тире в <p>"
+          % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_online_consistency()
+    print("%s механика: «ОНЛАЙН» согласован в описании и полях 2/8"
           % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)

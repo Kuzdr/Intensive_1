@@ -344,6 +344,14 @@ def fields_for(ev, cfg, venue, today):
         or ("Лекция %s «%s»" % (who, title))
     nxt = dt + datetime.timedelta(days=1)
     city = ev.get("city") or ""
+    # «и ОНЛАЙН» ставим ОДИНАКОВО в описании (desc_for) и в полях 2/8.
+    # Урок 24.11.2026: desc_for пометку добавлял, а fields_for — нет, и в
+    # пяти прототипах пометка осталась только в шапке описания.
+    place = venue["short"]
+    if ev.get("online"):
+        place += " и&nbsp;ОНЛАЙН"
+        # число в названии площадки («LOFT 13») привязываем к союзу «и»
+        place = re.sub(r"(\d) +и&nbsp;ОНЛАЙН$", r"\1&nbsp;и&nbsp;ОНЛАЙН", place)
     f = []
 
     def add(n, name, value):
@@ -352,7 +360,7 @@ def fields_for(ev, cfg, venue, today):
     add("0", "ID события", proto_id(ev, cfg))
     add("1", "Привязка", binding(ev["date_iso"], ev["time"]))
     add("2", "Дата события", "%s, %s, %s, %s" % (
-        dt.strftime("%d.%m.%Y"), city, venue["short"], ev["time"]))
+        dt.strftime("%d.%m.%Y"), city, place, ev["time"]))
     # Фестиваль — ОДНО событие с одной датой и одним названием, поэтому полей
     # «по лекторам» (2.b/4.b/7.b, 2.c/4.c/7.c) не бывает: в админке у него
     # ровно один комплект полей каждого вида (правило пользователя 06.11.2026).
@@ -377,7 +385,7 @@ def fields_for(ev, cfg, venue, today):
         nbsp_normalize(", ".join(cfg.get("topics") or [])) or "—")
     add("7", "Дата и время", "%s, %d&nbsp;%s %d&nbsp;года, %s" % (
         WD[dt.weekday()].capitalize(), dt.day, MONTHS[dt.month - 1], dt.year, ev["time"]))
-    add("8", "Место", "%s, %s" % (city, venue["short"]))
+    add("8", "Место", "%s, %s" % (city, place))
     add("9", "Источники", ev["url"])
     add("10", "URL регистрации/покупки билета", ev["url"])
     add("11", "Стоимость", price or "—")
