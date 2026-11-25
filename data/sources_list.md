@@ -1,57 +1,100 @@
-# Источники мониторинга (страницы списков/афиш по организаторам)
+# Источники мониторинга (страницы списков/афиш)
 
-> Этот файл — список **страниц-источников для поиска новых событий** (афиши/списки), а не отдельных карточек событий. Обновляется вручную при появлении новых организаторов/страниц. Для каждого источника указаны основной и запасные способы обхода.
+> Список **страниц-источников для поиска новых событий** (афиши/списки), а не отдельных карточек. Обновлять вручную при появлении новых страниц. Для каждого источника указаны основной и запасные способы обхода и ссылки на инструкции в репозитории.
 
-## Общие правила обхода (AGENTS.md / проект)
+## Структура и поля (для расширения)
 
-- **Любой поддомен/домен `timepad.ru` (страницы списков/афиш, в т.ч. `*/events/`): ОСНОВНОЙ способ — запуск Edge через CDP/скрипты проекта.** Использовать `tools/cdp_read.py` (снятие HTML/контента через CDP), при разборе карточек — `tools/timepad_parse.py`; кэши в `data/raw/cdp/`. **Не начинать с `webfetch`/прямых HTTP** для Timepad-страниц (часто капча/JS). Запасные: кэшированные HTML в `data/raw/cdp/`, ручной просмотр в Edge и сохранение для разбора.
-- **`elementy.ru` (общая афиша):** не является «источником-списком организатора» в этом файле — это основной агрегатор проекта; сбор и правила см. в `scrape.py`, `AGENTS.md` и `ПАМЯТКА.md` (раздел про обновление с «Элементов»).
-- **JS-тяжёлые сайты организаторов (часть `vdnh.ru` и др.):** быстрый `webfetch` может дать только меню; запасные — кэши в `data/raw/`, CDP/ручной просмотр в браузере.
-- **Обычные HTML-сайты организаторов:** `webfetch` (text/markdown) первой попыткой; при ошибках — повторы по правилу недоступности (лог `.opencode/skills/event-description/reference/availability_log.md`), затем кэши/CDP/ручной просмотр.
+В таблицах используются поля: **Организатор/лента**, **URL страницы-списка**, **Тип**, **Основной способ**, **Запасные способы**, **Инструкции/примечания** (сюда можно добавлять ссылки на файлы правил, например `AGENTS.md`, `.opencode/skills/update-data/SKILL.md`, `.opencode/skills/event-description/reference/availability_log.md`).
 
 ---
 
-## Архэ (Москва / Санкт-Петербург)
+## Общие правила обхода (из проекта)
 
-**Важно (дубли URL событий):** одни и те же события могут встречаться на разных страницах с разными форматами адресов; дубли нужно «склеивать». Предпочтительный формат адреса события: `https://arhe.msk.ru/?p=<ID>`; следующий по предпочтительности: `https://arhe.msk.ru/?post_type=tribe_events&p=<ID>` (обратите внимание: ID может отличаться на 1 между этими форматами для одного и того же события — сверять по дате/названию/автору). Нежелательный (текстовый) формат: `https://arhe.msk.ru/?tribe_events=…` — использовать только если других форматов нет.
+- **Любой `timepad.ru` / поддомены Timepad (списки/афиши, карточки при разборе): ОСНОВНОЙ способ — запуск Edge через CDP/скрипты проекта.** Не использовать `webfetch`/прямые HTTP как первый шаг. Инструменты: `tools/cdp_read.py` (снятие HTML/контента через CDP), `tools/timepad_parse.py` (разбор карточек из сохранённых данных). Кэши: `data/raw/cdp/` (если есть). Запасные: сохранённые HTML в `data/raw/cdp/`, ручной просмотр в Edge и сохранение для разбора. См. также `AGENTS.md` (раздел «Способ получения страниц Timepad…») и `.opencode/skills/update-data/SKILL.md`.
+- **`elementy.ru/events` (общая афиша):** основной сбор — `scrape.py`, разбор карточек — `tools/elementy_detail.py` (HTTP). При ошибках/пустой афише — правило недоступности: сообщить пользователю, записать в `.opencode/skills/event-description/reference/availability_log.md` (повторы 1 мин → 5 мин), не затирать `data/events.json` при сбое. См. `AGENTS.md`, `ПАМЯТКА.md`.
+- **JS-тяжёлые сайты (часть `vdnh.ru` и др.):** `webfetch` может вернуть только навигацию. Запасные: кэши в `data/raw/`, CDP/ручной просмотр в Edge. При недоступности — лог в `availability_log.md`.
+- **Обычные HTML-сайты:** `webfetch` (text/markdown) первой попыткой; при ошибках — повторы по правилу недоступности, затем кэши/CDP/ручной просмотр. Проблемы доступа фиксировать в `.opencode/skills/event-description/reference/availability_log.md` при необходимости.
 
-| Организатор | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+---
+
+## Элементы (общая афиша)
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
 |---|---|---|---|---|---|
-| Архэ (сайт, страница) | https://arhe.msk.ru/?page_id=369 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP/ручной просмотр | Страница-список/афиша. |
-| Архэ (сайт, лента Tribe Events) | https://arhe.msk.ru/?post_type=tribe_events | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Основная лента событий. |
-| Архэ (сайт, страница) | https://arhe.msk.ru/?page_id=332 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Страница-список/афиша. |
-| Архэ (сайт, страница) | https://arhe.msk.ru/?page_id=3466 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Страница-список/афиша. |
-| Архэ (сайт, страница) | https://arhe.msk.ru/?page_id=81748 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Страница-список/афиша. |
-| Архэ (сайт, страница) | https://arhe.msk.ru/?page_id=32233 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Страница-список/афиша. |
-| Архэ (сайт, страница) | https://arhe.msk.ru/?page_id=77150 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Страница-список/афиша. |
-| Архэ (сайт, страница) | https://arhe.msk.ru/?page_id=14417 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Доп. страница-список (добавлено по запросу). |
-| Архэ (Timepad, Москва/общая лента) | https://arhe-events.timepad.ru/events/ | Timepad (список) | **Запуск Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`; ручной просмотр в Edge и сохранение | ОСНОВНОЙ для Timepad — Edge/CDP. |
-| Архэ (Timepad, Санкт-Петербург) | https://tsentr-arhe-v-sankt-peter.timepad.ru/events/ | Timepad (список) | **Запуск Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`; ручной просмотр в Edge и сохранение | ОСНОВНОЙ для Timepad — Edge/CDP. |
+| Элементы (афиша) | https://elementy.ru/events | HTML (список) | `scrape.py`, `tools/elementy_detail.py` (HTTP) | Повторы по правилу недоступности; лог `availability_log.md`. При сбое не править `data/events.json`. | См. `AGENTS.md`, `ПАМЯТКА.md`, `update-data` skill. |
+
+---
+
+## Архэ
+
+**Дубли URL событий:** одни и те же события могут встречаться в разных форматах; склеивать дубли по смыслу (дата/название/автор). Предпочтительно: (1) `https://arhe.msk.ru/?p=<ID>`; (2) `https://arhe.msk.ru/?post_type=tribe_events&p=<ID>` (ID может отличаться на 1 — сверять по содержимому); (3) текстовый `https://arhe.msk.ru/?tribe_events=…` — только при отсутствии других.
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| Архэ (страница) | https://arhe.msk.ru/?page_id=369 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP/ручной просмотр | См. `update-data` skill (раздел Архэ), `AGENTS.md`. |
+| Архэ (лента Tribe Events) | https://arhe.msk.ru/?post_type=tribe_events | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Основная лента сайта Архэ. |
+| Архэ (страница) | https://arhe.msk.ru/?page_id=332 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Страница-список/афиша. |
+| Архэ (страница) | https://arhe.msk.ru/?page_id=3466 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Страница-список/афиша. |
+| Архэ (страница) | https://arhe.msk.ru/?page_id=81748 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Страница-список/афиша. |
+| Архэ (страница) | https://arhe.msk.ru/?page_id=32233 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Страница-список/афиша. |
+| Архэ (страница) | https://arhe.msk.ru/?page_id=77150 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Страница-список/афиша. |
+| Архэ (страница) | https://arhe.msk.ru/?page_id=14417 | HTML | webfetch / HTTP | Повторы при недоступности; кэши/CDP | Добавлено по запросу. |
+| Архэ, Timepad (Москва/общая лента) | https://arhe-events.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`; ручной просмотр в Edge + сохранение | **Timepad — только Edge/CDP.** См. `AGENTS.md`, `update-data` skill. |
+| Архэ, Timepad (СПб) | https://tsentr-arhe-v-sankt-peter.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`; ручной просмотр в Edge + сохранение | **Timepad — только Edge/CDP.** См. `AGENTS.md`, `update-data` skill. |
 
 ---
 
 ## ВДНХ
 
-| Организатор | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
 |---|---|---|---|---|---|
-| ВДНХ | https://vdnh.ru/events/ | HTML/JS | webfetch (text) первой попыткой | Кэши `data/raw/*`, CDP/ручной просмотр в Edge при JS/пустоте | Часто JS-тяжело; часть событий анонсируется через Timepad-страницы лекториев. |
-| Лекторий ВДНХ (Timepad) | https://lektorij-vdnh.timepad.ru/events/ | Timepad (список) | **Запуск Edge + CDP** | Кэши `data/raw/cdp/`, ручной просмотр в Edge | ОСНОВНОЙ для Timepad — Edge/CDP. |
-| Космос и авиация ВДНХ (Timepad) | https://cosmos-vdnh.timepad.ru/events/ | Timepad (список) | **Запуск Edge + CDP** | Кэши `data/raw/cdp/`, ручной просмотр в Edge | ОСНОВНОЙ для Timepad — Edge/CDP (из найденных в данных поддоменов). |
+| ВДНХ (сайт) | https://vdnh.ru/events/ | HTML/JS (SPA/динамика) | **CDP/ручной просмотр в Edge** (JS обязателен) | Кэши `data/raw/*`, повторный обход после ручного прогона/сохранения | **Важно:** применять фильтр «Лекции»; события подгружаются порциями — нужно итеративно нажимать «Показать ещё» (всё через JS). `webfetch` обычно даёт только оболочку. См. `AGENTS.md`, `update-data` skill, при проблемах — `availability_log.md`. |
+| Лекторий ВДНХ (Timepad) | https://lektorij-vdnh.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** |
+| Космос и авиация ВДНХ (Timepad) | https://cosmos-vdnh.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** |
+| Музей «Слово» (ВДНХ, Timepad) | https://slovo-vdnh.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Выявлено по прототипам/данным. |
 
-> Примечание: другие Timepad-поддомены ВДНХ при появлении добавлять сюда же с пометкой «запуск Edge + CDP».
+> При появлении других Timepad-поддоменов ВДНХ добавлять строки с пометкой «Timepad — только Edge/CDP».
 
 ---
 
-## Прочие организаторы (добавлять по мере появления)
+## Timepad-ленты других организаторов (из репозитория)
 
-| Организатор | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+Ниже — страницы списков `*/events/` на Timepad, найденные по ссылкам в `data/events.json` и прототипах. Для **всех** этих URL основной способ — **запуск Edge через CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`), без `webfetch` как первого шага.
+
+| Организатор/лента (по домену) | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
 |---|---|---|---|---|---|
-| _(заполнять)_ | _(URL)_ | _(тип)_ | _(способ)_ | _(запасные)_ | _(ссылка на инструкцию/заметки)_ |
+| darwinmuseum.timepad.ru | https://darwinmuseum.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. См. `update-data` skill. |
+| fondnauk.timepad.ru | https://fondnauk.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| institut-filosofii--2026.timepad.ru | https://institut-filosofii--2026.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| istorichka.timepad.ru | https://istorichka.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| moscowzoo.timepad.ru | https://moscowzoo.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| neurocampus.timepad.ru | https://neurocampus.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| oxta8.timepad.ru | https://oxta8.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| planetalib.timepad.ru | https://planetalib.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| politvostok.timepad.ru | https://politvostok.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| soobshchestvo-vsmysle.timepad.ru | https://soobshchestvo-vsmysle.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| spbstuni.timepad.ru | https://spbstuni.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| spitsbergen.timepad.ru | https://spitsbergen.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| yadro-engineer.timepad.ru | https://yadro-engineer.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| your-sector-of-space.timepad.ru | https://your-sector-of-space.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| zaobiblio.timepad.ru | https://zaobiblio.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+| zilcc.timepad.ru | https://zilcc.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | Timepad — только Edge/CDP. |
+
+---
+
+## Прочие страницы-списки (не Timepad), встречающиеся в данных/прототипах
+
+Ниже — отдельные URL-списки/афиши организаторов, которые встречались в репозитории (не исчерпывающий список «всех когда-либо упомянутых»). При появлении новых — добавлять сюда по тому же шаблону, указывая инструкции в колонке «Инструкции/примечания».
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| _(пример)_ | _(URL)_ | _(HTML/JS/иное)_ | _(способ)_ | _(запасные)_ | Ссылки на правила: `AGENTS.md`, `.opencode/skills/update-data/SKILL.md`, `.opencode/skills/event-description/reference/availability_log.md` |
 
 ---
 
 ## Как добавлять новые источники
 
-1. Добавить строку в таблицу нужного организатора (или создать новый блок). Вносить **только страницы-списки/афиши**, не отдельные карточки событий (кроме случаев, оговорённых отдельно).
-2. Для любых URL на `timepad.ru` / поддоменах Timepad: основной способ всегда **запуск Edge через CDP** (см. «Общие правила»).
-3. При нестандартном обходе — указать способ и при необходимости ссылку на скрипт/инструкцию в репозитории.
+1. Добавлять **только страницы-списки/афиши** (или явно помеченные ленты), не отдельные карточки событий, если иное не оговорено.
+2. Для любых URL с доменом `timepad.ru` / поддоменами Timepad: в столбце «Основной способ» указывать **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`), в «Инструкции/примечания» — ссылку на `AGENTS.md` и/или `update-data` skill.
+3. Для нестандартного обхода (капча, JS, API и т.п.) — кратко описать способ и дать ссылку на скрипт/инструкцию в репозитории.
+4. При недоступности источника действовать по `AGENTS.md`: уведомить пользователя, писать в `availability_log.md`, повторять 1 мин → 5 мин, при необходимости дополнять `notes` прототипа.
