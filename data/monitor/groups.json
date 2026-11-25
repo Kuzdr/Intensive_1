@@ -3,11 +3,23 @@
   "groups": {
     "all": {
       "description": "Все источники из data/sources_list.md (кроме раздела «Элементы…»)",
-      "source_ids": ["__ALL__"]
+      "source_ids": [
+        "__ALL__"
+      ]
     },
     "timepad_major": {
       "description": "Пример: крупные Timepad-ленты (заполнить вручную при необходимости)",
       "source_ids": []
+    },
+    "vdnh": {
+      "description": "ВДНХ: vdnh.ru/lektorij, vdnh.ru/events?subject=kosmos, vdnh.ru/events?subject=slovo, atom-lab.timepad.ru/events, muzey-biotekh.timepad.ru/events",
+      "source_ids": [
+        "vdnh_lektorij",
+        "vdnh_kosmos",
+        "vdnh_slovo",
+        "vdnh_atom_lab_timepad",
+        "vdnh_muzey_biotech_timepad"
+      ]
     }
   }
 }
