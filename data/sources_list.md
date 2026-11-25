@@ -186,25 +186,96 @@
 
 ---
 
-## Другие источники (по списку пользователя и из репозитория)
+## Лекторий «Вольнослушатель»
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| Вольнослушатель (Timepad) | https://volnoslushatel.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `.opencode/skills/update-data/SKILL.md`, `availability_log.md`. |
+
+---
+
+## Парк науки ННГУ «Лобачевский Lab»
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| Лобачевский Lab (Timepad) | https://lobachevskylab.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill. |
+| Парк науки ННГУ (сайт, мероприятия) | https://naukann.ru/meropriyatiya/ | HTML | webfetch первой попыткой | Недоступность → `availability_log.md`, кэши/CDP/ручной просмотр | `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Зануда
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| Зануда (Timepad) | https://zanuda.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Astrocamp
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| Astrocamp (Timepad) | https://astrocamp.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Свидетели научпопа
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| Свидетели научпопа (Timepad) | https://nauchpop-moscow.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Технопарк Физтех-лицея им. Капицы
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| Капица (сайт, лекции) | https://kapitsa.center/lecture_categories/lectures/ | HTML | webfetch первой попыткой | Недоступность → `availability_log.md`, кэши/CDP/ручной просмотр | `AGENTS.md`, `update-data` skill. |
+
+---
+
+## Курилка Гутенберга
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| Курилка Гутенберга (Timepad, основной) | https://kurilka-gutenberga-events.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+| Курилка Гутенберга (Timepad, Тюмень/другой) | https://kurilkaintmn.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Ельцин Центр
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| Ельцин Центр (Екатеринбург, лекции) | https://yeltsin.ru/affairs/?cid=2&t=lecture | HTML | webfetch первой попыткой | Недоступность → `availability_log.md`, кэши/CDP/ручной просмотр | `AGENTS.md`, `update-data` skill. |
+| Ельцин Центр (Москва, лекции) | https://yeltsin.ru/affairs/?cid=1&t=lecture | HTML | webfetch первой попыткой | Недоступность → `availability_log.md`, кэши/CDP/ручной просмотр | Добавлено по запросу (филиал в Москве). `AGENTS.md`, `update-data` skill. |
+| Ельцин Центр (Timepad) | https://yeltsin-center.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Музей криптографии
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| Музей криптографии (события) | https://cryptography-museum.ru/events | HTML | webfetch первой попыткой | Недоступность → `availability_log.md`, кэши/CDP/ручной просмотр | `AGENTS.md`, `update-data` skill. |
+
+---
+
+## Академия Грамоты
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| Академия Грамоты (Timepad) | https://academy-gramota.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Прочие Timepad-ленты (из репозитория)
 
 Для всех `timepad.ru` — **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`), см. общие правила.
 
 | Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
 |---|---|---|---|---|---|
-| Лекторий «Вольнослушатель» (Timepad) | https://volnoslushatel.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Добавлено по запросу. `AGENTS.md`, `update-data` skill, `availability_log.md`. |
-| Парк науки ННГУ «Лобачевский Lab» (Timepad) | https://lobachevskylab.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill. |
-| Парк науки ННГУ (сайт, мероприятия) | https://naukann.ru/meropriyatiya/ | HTML | webfetch первой попыткой | Недоступность → `availability_log.md`, кэши/CDP/ручной просмотр | Добавлено по запросу (вместе с Timepad-лентой Лобачевский Lab). `AGENTS.md`, `update-data` skill. |
-| Зануда (Timepad) | https://zanuda.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Добавлено по запросу. `AGENTS.md`, `update-data` skill, `availability_log.md`. |
-| Astrocamp (Timepad) | https://astrocamp.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Добавлено по запросу. `AGENTS.md`, `update-data` skill, `availability_log.md`. |
-| Свидетели научпопа (Timepad) | https://nauchpop-moscow.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Добавлено по запросу. `AGENTS.md`, `update-data` skill, `availability_log.md`. |
-| Технопарк Физтех-лицея им. Капицы (сайт) | https://kapitsa.center/lecture_categories/lectures/ | HTML | webfetch первой попыткой | Недоступность → `availability_log.md`, кэши/CDP/ручной просмотр | Добавлено по запросу. `AGENTS.md`, `update-data` skill. |
-| Курилка Гутенберга (Timepad, основной) | https://kurilka-gutenberga-events.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Добавлено по запросу. `AGENTS.md`, `update-data` skill, `availability_log.md`. |
-| Курилка Гутенберга (Timepad, Тюмень/другой филиал?) | https://kurilkaintmn.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Добавлено по запросу. `AGENTS.md`, `update-data` skill, `availability_log.md`. |
-| Ельцин Центр (сайт, лекции) | https://yeltsin.ru/affairs/?cid=2&t=lecture | HTML | webfetch первой попыткой | Недоступность → `availability_log.md`, кэши/CDP/ручной просмотр | Добавлено по запросу. `AGENTS.md`, `update-data` skill. |
-| Ельцин Центр (Timepad) | https://yeltsin-center.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Добавлено по запросу. `AGENTS.md`, `update-data` skill, `availability_log.md`. |
-| Музей криптографии (сайт, события) | https://cryptography-museum.ru/events | HTML | webfetch первой попыткой | Недоступность → `availability_log.md`, кэши/CDP/ручной просмотр | Добавлено по запросу. `AGENTS.md`, `update-data` skill. |
-| Академия Грамоты (Timepad) | https://academy-gramota.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Добавлено по запросу. `AGENTS.md`, `update-data` skill, `availability_log.md`. |
 | oxta8.timepad.ru | https://oxta8.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
 | planetalib.timepad.ru | https://planetalib.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
 | politvostok.timepad.ru | https://politvostok.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
