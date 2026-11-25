@@ -1,4 +1,329 @@
 {
   "_comment": "Известные события по источникам: ключ source_id -> список {external_id, url, first_seen, last_seen, title_hint}. Если запись есть — детально не загружать.",
-  "sources": {}
+  "sources": {
+    "vdnh_atom_lab_timepad": [
+      {
+        "external_id": "2825361",
+        "url": "https://atom-lab.timepad.ru/event/2825361/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2843459",
+        "url": "https://atom-lab.timepad.ru/event/2843459/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2851805",
+        "url": "https://atom-lab.timepad.ru/event/2851805/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2851816",
+        "url": "https://atom-lab.timepad.ru/event/2851816/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2851821",
+        "url": "https://atom-lab.timepad.ru/event/2851821/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2858988",
+        "url": "https://atom-lab.timepad.ru/event/2858988/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2858990",
+        "url": "https://atom-lab.timepad.ru/event/2858990/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2858992",
+        "url": "https://atom-lab.timepad.ru/event/2858992/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2865565",
+        "url": "https://atom-lab.timepad.ru/event/2865565/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2865571",
+        "url": "https://atom-lab.timepad.ru/event/2865571/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2865599",
+        "url": "https://atom-lab.timepad.ru/event/2865599/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2877799",
+        "url": "https://atom-lab.timepad.ru/event/2877799/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2877830",
+        "url": "https://atom-lab.timepad.ru/event/2877830/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2877836",
+        "url": "https://atom-lab.timepad.ru/event/2877836/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2885423",
+        "url": "https://atom-lab.timepad.ru/event/2885423/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2885433",
+        "url": "https://atom-lab.timepad.ru/event/2885433/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2885446",
+        "url": "https://atom-lab.timepad.ru/event/2885446/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2893484",
+        "url": "https://atom-lab.timepad.ru/event/2893484/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2906329",
+        "url": "https://atom-lab.timepad.ru/event/2906329/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      },
+      {
+        "external_id": "2906339",
+        "url": "https://atom-lab.timepad.ru/event/2906339/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "checked_via_cdp_list_2026-11-25 (likely old/past; sample 2825361 was 2024 masterclass)",
+        "note": "from vdnh_atomlab events list snapshot; not downloaded details except sample 2825361 (past masterclass). Marked known to avoid re-checking."
+      }
+    ],
+    "vdnh_muzey_biotech_timepad": [
+      {
+        "external_id": "2825361",
+        "url": "https://atom-lab.timepad.ru/event/2825361/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2843459",
+        "url": "https://atom-lab.timepad.ru/event/2843459/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2851805",
+        "url": "https://atom-lab.timepad.ru/event/2851805/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2851816",
+        "url": "https://atom-lab.timepad.ru/event/2851816/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2851821",
+        "url": "https://atom-lab.timepad.ru/event/2851821/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2858988",
+        "url": "https://atom-lab.timepad.ru/event/2858988/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2858990",
+        "url": "https://atom-lab.timepad.ru/event/2858990/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2858992",
+        "url": "https://atom-lab.timepad.ru/event/2858992/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2865565",
+        "url": "https://atom-lab.timepad.ru/event/2865565/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2865571",
+        "url": "https://atom-lab.timepad.ru/event/2865571/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2865599",
+        "url": "https://atom-lab.timepad.ru/event/2865599/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2877799",
+        "url": "https://atom-lab.timepad.ru/event/2877799/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2877830",
+        "url": "https://atom-lab.timepad.ru/event/2877830/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2877836",
+        "url": "https://atom-lab.timepad.ru/event/2877836/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2885423",
+        "url": "https://atom-lab.timepad.ru/event/2885423/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2885433",
+        "url": "https://atom-lab.timepad.ru/event/2885433/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2885446",
+        "url": "https://atom-lab.timepad.ru/event/2885446/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2893484",
+        "url": "https://atom-lab.timepad.ru/event/2893484/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2906329",
+        "url": "https://atom-lab.timepad.ru/event/2906329/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      },
+      {
+        "external_id": "2906339",
+        "url": "https://atom-lab.timepad.ru/event/2906339/",
+        "first_seen": "2026-11-25",
+        "last_seen": "2026-11-25",
+        "title_hint": "seen_in_muzeybio_list_snapshot_same_as_atomlab_2026-11-25",
+        "note": "Marked known from muzey-biotekh Timepad list snapshot (overlap with atom-lab list)."
+      }
+    ]
+  }
 }
