@@ -1,0 +1,4 @@
+{
+  "_comment": "Известные события по источникам: ключ source_id -> список {external_id, url, first_seen, last_seen, title_hint}. Если запись есть — детально не загружать.",
+  "sources": {}
+}
