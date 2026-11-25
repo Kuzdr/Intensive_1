@@ -52,6 +52,8 @@
 | Лекторий ВДНХ (Timepad) | https://lektorij-vdnh.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** |
 | Космос и авиация ВДНХ (Timepad) | https://cosmos-vdnh.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** |
 | Музей «Слово» (ВДНХ, Timepad) | https://slovo-vdnh.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Выявлено по прототипам/данным. |
+| Павильон «АТОМ» (ВДНХ, Timepad) | https://atom-lab.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Добавлено по указанию пользователя. |
+| Центр биотехнологий «БИОТЕХ» (ВДНХ, Timepad) | https://muzey-biotekh.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Добавлено по указанию пользователя. |
 
 > При появлении других Timepad-поддоменов ВДНХ добавлять строки с пометкой «Timepad — только Edge/CDP».
 
@@ -84,11 +86,14 @@
 
 ## Прочие страницы-списки (не Timepad), встречающиеся в данных/прототипах
 
-Ниже — отдельные URL-списки/афиши организаторов, которые встречались в репозитории (не исчерпывающий список «всех когда-либо упомянутых»). При появлении новых — добавлять сюда по тому же шаблону, указывая инструкции в колонке «Инструкции/примечания».
+Ниже — отдельные URL-списки/афиши организаторов, которые встречались в репозитории. При появлении новых — добавлять сюда по тому же шаблону, указывая инструкции в колонке «Инструкции/примечания» (`AGENTS.md`, `.opencode/skills/update-data/SKILL.md`, `availability_log.md`).
 
 | Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
 |---|---|---|---|---|---|
-| _(пример)_ | _(URL)_ | _(HTML/JS/иное)_ | _(способ)_ | _(запасные)_ | Ссылки на правила: `AGENTS.md`, `.opencode/skills/update-data/SKILL.md`, `.opencode/skills/event-description/reference/availability_log.md` |
+| ZIL Cultural Center (ZILCC) | https://zilcc.ru/afisha | HTML | webfetch (text/markdown) первой попыткой | Повторы по правилу недоступности; кэши/CDP/ручной просмотр | См. `update-data` skill, `AGENTS.md`, `availability_log.md` при ошибках. |
+| Московский планетарий (курсы/афиша) | https://planetarium-moscow.ru/courses/tribuna-uchenogo | HTML | webfetch первой попыткой | Повторы/кэши/CDP при блокировках | Раздел «Трибуна учёного» (пример страницы-ленты). Проверять другие разделы курсов при необходимости. См. `AGENTS.md`. |
+| Политехнический музей — цикл «Вечерняя школа Политехнического музея» | https://polymus.ru/education/cycle/vechernyaya-shkola-politekhnicheskogo-muzeya | HTML | webfetch первой попыткой | Кэши/ручной просмотр | Страница цикла (список анонсов цикла). Карточки событий — `polymus.ru/events/detail/...`. См. `AGENTS.md`. |
+| Лекторий юного географа (МГУ, справочно) | https://www.geogr.msu.ru/admission/lektory/ | HTML | webfetch первой попыткой | Повторы/кэши | Справочная страница лектория; актуальные анонсы часто в прототипах/других источниках. См. карточку лектория в `reference/lectories.md`. |
 
 ---
 
