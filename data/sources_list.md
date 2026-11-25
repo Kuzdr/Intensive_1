@@ -270,20 +270,68 @@
 
 ---
 
-## Прочие Timepad-ленты (из репозитория)
-
-Для всех `timepad.ru` — **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`), см. общие правила.
+## Сообщество «В смысле»
 
 | Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
 |---|---|---|---|---|---|
-| oxta8.timepad.ru | https://oxta8.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+| В смысле (сайт, афиша с фильтром «Лекция») | https://vsmysle.spb.ru/afisha/?f=Лекция | HTML | webfetch первой попыткой | Недоступность → `availability_log.md`, кэши/CDP/ручной просмотр | Основной источник по просьбе пользователя. `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+| В смысле (Timepad) | https://soobshchestvo-vsmysle.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Oxta8
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| Oxta8 (Timepad) | https://oxta8.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Планетарий/PlanetaliB (Timepad)
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
 | planetalib.timepad.ru | https://planetalib.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Политвосток
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
 | politvostok.timepad.ru | https://politvostok.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
-| soobshchestvo-vsmysle.timepad.ru | https://soobshchestvo-vsmysle.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Шпицберген
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
 | spitsbergen.timepad.ru | https://spitsbergen.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Ядро (Yadro Engineer)
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
 | yadro-engineer.timepad.ru | https://yadro-engineer.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Твой космический сектор
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
 | your-sector-of-space.timepad.ru | https://your-sector-of-space.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
-| zaobiblio.timepad.ru | https://zaobiblio.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** `AGENTS.md`, `update-data` skill, `availability_log.md`. |
+
+---
+
+## Заобидлио / Заельцовская библиотека (уточнить)
+
+| Организатор/лента | URL страницы-списка | Тип | Основной способ | Запасные способы | Инструкции/примечания |
+|---|---|---|---|---|---|
+| zaobiblio.timepad.ru | https://zaobiblio.timepad.ru/events/ | Timepad (список) | **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`) | Кэши `data/raw/cdp/`, ручной просмотр в Edge | **Timepad — только Edge/CDP.** Название организатора требует уточнения. `AGENTS.md`, `update-data` skill, `availability_log.md`. |
 
 ---
 
@@ -293,3 +341,4 @@
 2. Для любых URL с доменом `timepad.ru` / поддоменами Timepad: основной способ **Edge + CDP** (`tools/cdp_read.py`, `tools/timepad_parse.py`), в примечаниях указывать ссылки: `AGENTS.md`, `.opencode/skills/update-data/SKILL.md`, `.opencode/skills/event-description/reference/availability_log.md`.
 3. Для нестандартного обхода (JS, капча, API) — кратко описать и указать инструменты/кэши (`data/raw/`, `data/raw/cdp/`).
 4. При недоступности: действовать по `AGENTS.md`, писать в `.opencode/skills/event-description/reference/availability_log.md`, повторы 1 мин → 5 мин, при необходимости дополнять `notes` прототипа.
+5. **Идентификаторы в репозитории (соглашения, если применимо):** для событий с карточками Timepad часто используют префикс `TP-<id>` в `data/prototypes/` (по id события на Timepad). Для ВДНХ без Timepad — `VD-<id страницы vdnh.ru>`. Для «Живого города» — `ZG-<id>`. Для «Прямой речи» — префикс `PR-...` (по принятому правилу в проекте). Для Политеха — `PM-...`. Для Ельцин Центра единый префикс не зафиксирован в явном виде; при добавлении прототипов различать площадку/город в полях (Екатеринбург vs Москва) и при необходимости уточнять в `notes` прототипа. При добавлении нового организатора — фиксировать правило префикса в этом файле (в примечаниях группы).
