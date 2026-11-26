@@ -43,7 +43,8 @@ CONFIG_PATH = os.path.join(SWEEP_DIR, "lectories.json")
 REGISTRY_PATH = os.path.join(SWEEP_DIR, "known_events.json")
 AVAIL_LOG = os.path.join(ROOT, ".opencode", "skills", "event-description",
                          "reference", "availability_log.md")
-STATUSES = ("candidate", "added", "on_elementy", "rejected", "duplicate")
+STATUSES = ("candidate", "added", "on_elementy", "rejected", "duplicate",
+            "undecided", "needs_update")
 
 
 def load_json(path, fallback):
