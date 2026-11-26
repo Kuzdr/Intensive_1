@@ -5,6 +5,7 @@ r"""Сводка кандидатов мониторинга ВДНХ по со�
 data/events.json и data/prototypes/*/prototype.json.
 
     python -X utf8 tools\vdnh_monitor_report.py
+    python -X utf8 tools\vdnh_monitor_report.py --dry-run   # только проверить
 """
 import difflib
 import html as H
@@ -12,12 +13,16 @@ import io
 import json
 import os
 import re
+import sys
+from collections import Counter
 from datetime import date, timedelta
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, "data", "raw", "cdp")
 MON = os.path.join(ROOT, "data", "monitor")
+SWEEP = os.path.join(ROOT, "data", "sweep")
 TODAY = date(2026, 11, 26)
+DRY = "--dry-run" in sys.argv[1:]   # проверить классификацию, ничего не перезаписать
 MONTHS = {
     "января": 1, "февраля": 2, "марта": 3, "апреля": 4, "мая": 5, "июня": 6,
     "июля": 7, "августа": 8, "сентября": 9, "октября": 10, "ноября": 11,
@@ -28,6 +33,23 @@ MONTHS = {
 def load(path):
     with io.open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def registry_ids(path):
+    """(VD|TP, id) → статус из операционного реестра обхода.
+
+    Решения пользователя хранятся в `data/sweep/known_events.json`; без этой
+    сверки отвергнутые лекции каждый раз снова попадали бы в «Нужно».
+    """
+    if not os.path.isfile(path):
+        return {}
+    reg = load(path)
+    out = {}
+    for rec in reg.get("lectories", {}).get("vdnh", {}).get("events", []):
+        m = re.match(r"^(VD|TP)-(\d+)", rec.get("key", ""))
+        if m:
+            out[(m.group(1), m.group(2))] = rec.get("status", "")
+    return out
 
 
 def norm(s):
@@ -132,6 +154,7 @@ def prelim(title, badges=(), url=""):
 
 def main():
     site = load(os.path.join(ROOT, "data", "events.json"))
+    reg_status = registry_ids(os.path.join(SWEEP, "known_events.json"))
     protos = []
     pdir = os.path.join(ROOT, "data", "prototypes")
     for name in os.listdir(pdir):
@@ -208,8 +231,27 @@ def main():
                       any(str(i) == n.split("-")[-1] for i in
                           re.findall(r"\d+", " ".join(g["links"])))]
         g["prototype"] = proto_hits[0] if proto_hits else ""
+        # Сверяем и с операционным реестром: решение пользователя по лекции
+        # не должно теряться при следующем проходе sources.
+        prev = []
+        deferred = False
+        for src, eid in sorted(g.get("ids", {}).items()):
+            eid = str(eid)
+            prefix = "VD" if src == "vdnh_site" else "TP"
+            st = reg_status.get((prefix, eid), "")
+            if st:
+                prev.append("%s-%s (%s)" % (prefix, eid, st))
+                if st == "undecided":
+                    deferred = True
+        g["previous"] = prev
         if g["published"] or g["prototype"]:
             g["final"] = "Уже обработано"
+        elif deferred:
+            g["final"] = "Не решено"
+            g["why"] = "отложено решение пользователя: " + ", ".join(prev)
+        elif prev:
+            g["final"] = "Уже обработано"
+            g["why"] = "ранее рассмотрено: " + ", ".join(prev)
         else:
             g["final"] = g["class"]
 
@@ -221,6 +263,8 @@ def main():
                      key=lambda x: (x["date"], x["time"]))
     done = sorted([g for g in groups if g["final"] == "Уже обработано"],
                   key=lambda x: (x["date"], x["time"]))
+    deferred = sorted([g for g in groups if g["final"] == "Не решено"],
+                      key=lambda x: (x["date"], x["time"]))
 
     def row(g):
         links = " ".join("<a href=\"%s\">%s</a>" % (u, u.rstrip("/").split("/")[-1])
@@ -248,9 +292,11 @@ def main():
                "скачанного первого прохода удалены.")
     out.append("")
     out.append("Всего уникальных будущих событий после объединения источников: %d. "
-               "Из них уже опубликовано/с прототипом — %d, «Не нужно» — %d, "
-               "«Нужно» — %d, «Сомнительные» — %d." % (
-                   len(groups), len(done), len(notneed), len(need), len(doubt)))
+               "Из них уже опубликовано/с прототипом и ранее решено — %d, "
+               "«Не нужно» — %d, «Нужно» — %d, «Сомнительные» — %d, "
+               "«Не решено» — %d." % (
+                   len(groups), len(done), len(notneed), len(need), len(doubt),
+                   len(deferred)))
     out.append("")
     out.append("## Нужно (новые лекции, нет на сайте и без прототипа)")
     out.append("")
@@ -264,6 +310,12 @@ def main():
     out.append("|---|---|---|---|---|")
     out.extend(row(g) for g in doubt)
     out.append("")
+    out.append("## Не решено (отложено ранее)")
+    out.append("")
+    out.append("| Дата | Время | Название | Ссылки | Комментарий |")
+    out.append("|---|---|---|---|---|")
+    out.extend(row(g) for g in deferred)
+    out.append("")
     out.append("## Не нужно")
     out.append("")
     out.append("%d событий: концерты, спектакли, детские программы, мастер-классы, "
@@ -273,30 +325,51 @@ def main():
     out.append("## Уже обработано")
     out.append("")
     out.append("%d событий: либо уже на сайте (`data/events.json`), либо с готовым "
-               "прототипом. Повторно не загружались." % len(done))
+               "прототипом, либо с решением в реестре. Повторно не загружаются." % len(done))
     out.append("")
     out.append("## Реестр и отложенные решения")
     out.append("")
-    out.append("- `data/monitor/known_by_source.json` — добавлены все просмотренные ID.")
-    out.append("- `data/monitor/pending.json` — «Нужно» и «Сомнительные», "
+    out.append("- `data/monitor/known_by_source.json` — все просмотренные ID.")
+    out.append("- `data/sweep/known_events.json` — операционный реестр; отчёт сверяет "
+               "с ним каждый ID и не предлагает уже решенные события заново.")
+    out.append("- `data/monitor/pending.json` — «Нужно», «Сомнительные» и «Не решено», "
                "решение пользователя ожидается.")
+    counts = Counter(reg_status.values())
+    out.append("- Статусы в реестре ВДНХ: " + ", ".join(
+        "%s — %d" % (k, v) for k, v in sorted(counts.items())) + ".")
+    out.append("")
     out.append("")
     text = "\n".join(out)
     path = os.path.join(MON, "run_vdnh_2026-11-26.md")
-    with io.open(path, "w", encoding="utf-8", newline="\n") as f:
-        f.write(text)
-    print("Отчёт:", os.path.relpath(path, ROOT))
-    print("Нужно=%d Сомнительные=%d Не нужно=%d Обработано=%d" % (
-        len(need), len(doubt), len(notneed), len(done)))
+    if not DRY:
+        with io.open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+    print("Отчёт:", os.path.relpath(path, ROOT) + (" (dry-run, не записан)" if DRY else ""))
+    print("Нужно=%d Сомнительные=%d Не нужно=%d Обработано=%d Не решено=%d" % (
+        len(need), len(doubt), len(notneed), len(done), len(deferred)))
     for g in need:
         print("  НУЖНО", g["date"], g["time"], g["title"][:80])
 
     # Файл «Не нужно»
     p = os.path.join(MON, "vdnh_not_needed_2026-11-26.json")
-    with io.open(p, "w", encoding="utf-8", newline="\n") as f:
-        json.dump([{k: g[k] for k in ("source", "external_id", "url", "title", "date",
-                                      "time", "why", "links")} for g in notneed],
-                  f, ensure_ascii=False, indent=2)
+    if not DRY:
+        # Старые решения не теряем: открытый список — это история отказов,
+        # а не список только текущего прохода.
+        old = load(p) if os.path.isfile(p) else []
+        seen = {(str(x.get("source")), str(x.get("external_id"))) for x in old}
+        fresh = []
+        for g in notneed:
+            row = {k: g[k] for k in ("url", "title", "date", "time", "why", "links")}
+            row["source"] = g["source"]
+            row["external_id"] = g["ids"].get(g["source"], "")
+            if (str(row["source"]), str(row["external_id"])) not in seen:
+                old.append(row)
+                seen.add((str(row["source"]), str(row["external_id"])))
+                fresh.append(row)
+        with io.open(p, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(old, f, ensure_ascii=False, indent=2)
+        print("Не нужно: добавлено новых %d, всего в списке %d"
+              % (len(fresh), len(old)))
 
     # Обновление known_by_source.json
     known_path = os.path.join(MON, "known_by_source.json")
@@ -316,8 +389,9 @@ def main():
                 "title_hint": g["title"][:120],
                 "status": g["final"],
             })
-    with io.open(known_path, "w", encoding="utf-8", newline="\n") as f:
-        json.dump(known, f, ensure_ascii=False, indent=2)
+    if not DRY:
+        with io.open(known_path, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(known, f, ensure_ascii=False, indent=2)
 
     # Отложенные решения
     pend_path = os.path.join(MON, "pending.json")
@@ -327,10 +401,12 @@ def main():
         "date": g["date"], "time": g["time"], "title": g["title"],
         "links": g["links"], "status": g["final"],
         "note": g.get("why", "") or "Новый кандидат, решение пользователя ожидается",
-    } for g in need + doubt]
-    with io.open(pend_path, "w", encoding="utf-8", newline="\n") as f:
-        json.dump(pend, f, ensure_ascii=False, indent=2)
-    print("pending:", os.path.relpath(pend_path, ROOT), len(pend["items"]))
+    } for g in need + doubt + deferred]
+    if not DRY:
+        with io.open(pend_path, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(pend, f, ensure_ascii=False, indent=2)
+    print("pending:", os.path.relpath(pend_path, ROOT), len(pend["items"]),
+          "(dry-run, не записан)" if DRY else "")
 
 
 if __name__ == "__main__":

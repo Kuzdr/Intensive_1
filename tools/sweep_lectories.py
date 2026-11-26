@@ -305,6 +305,11 @@ def check_registry_duplicates(reg):
     for lkey, node in reg.get("lectories", {}).items():
         for rec in node.get("events", []):
             for other_lkey, other in seen:
+                # Сайт организатора и Timepad — разные ключи одного события;
+                # такие пары уже помечены also_ids и дублями не считаются.
+                if (rec.get("key") in (other.get("also_ids") or ()) or
+                        other.get("key") in (rec.get("also_ids") or ())):
+                    continue
                 if same_event(rec, other):
                     rows.append((lkey, rec, other_lkey, other))
             seen.append((lkey, rec))
