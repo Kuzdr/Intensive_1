@@ -1,0 +1,5 @@
+2026/11/25-21:09:46.280 9744 Creating DB C:\_PROJ\Zerocoder\Intensiv_1\_cdp_edge_profile\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/11/25-21:09:46.374 9744 Reusing MANIFEST C:\_PROJ\Zerocoder\Intensiv_1\_cdp_edge_profile\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/11/25-21:11:12.185 3084 Level-0 table #5: started
+2026/11/25-21:11:12.207 3084 Level-0 table #5: 683273 bytes OK
+2026/11/25-21:11:12.214 3084 Delete type=0 #3
