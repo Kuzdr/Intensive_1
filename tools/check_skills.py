@@ -57,7 +57,10 @@
      тире-абзацы в `<ul><li>` (урок 24.11.2026, прототипы Алипова);
  18. МЕХАНИКА «ОНЛАЙН»: пометка в описании должна совпадать с полями
      2 и 8 (тег 19), а генератор Medio Modo добавляет её и в поля
-     (урок 24.11.2026, `MM-261211-alipov-msk`).
+     (урок 24.11.2026, `MM-261211-alipov-msk`);
+ 19. МЕХАНИКА общего Timepad-реестра: ID извлекается из ключа и URL,
+     сверка идёт через префиксы лекториев, прототип с Timepad-источником
+     узнаётся по ID, прошедшие даты удаляются (урок 26.11.2026).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -70,6 +73,7 @@
 import os
 import re
 import sys
+import types
 
 try:
     import yaml
@@ -905,6 +909,117 @@ def check_sweep_dedup() -> list:
     return problems
 
 
+def check_timepad_registry() -> list:
+    """Общий ID-реестр: один Timepad ID = одно событие в любом таймпэде.
+
+    Урок 26.11.2026: прототип/решение под одним префиксом не должны
+    появляться заново под другим; ID прототипа считается только при наличии
+    Timepad-источника, прошедшие даты из реестра убираются.
+    """
+    problems = []
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    try:
+        import sweep_lectories as S
+    except Exception as exc:                        # noqa: BLE001
+        return ["не удалось импортировать sweep_lectories: %s" % exc]
+
+    cases = [
+        ({"key": "TP-4288577", "url": "https://vdnh.ru/events/4184/",
+          "sources": ["https://cosmos-vdnh.timepad.ru/event/4288577/"]},
+         {"4288577"}, "Timepad-источник в sources"),
+        ({"key": "ZIL-4307285", "url": "https://zilcc.ru/afisha",
+          "sources": ["https://zilcc.timepad.ru/event/4307285/"]},
+         {"4307285"}, "Timepad ID в ключе и источнике"),
+        ({"key": "VD-4306", "url": "https://vdnh.ru/events/4306/"},
+         set(), "число в ключе ВДНХ — не Timepad ID"),
+        ({"key": "NK-9203", "url": "https://site.ru/9203"},
+         set(), "число в ключе «Некрасовки» — не Timepad ID"),
+    ]
+    for event, want, label in cases:
+        got = S.timepad_ids(event)
+        if got != want:
+            problems.append("извлечение Timepad ID (%s): %s, ожидалось %s"
+                            % (label, got, want))
+
+    # Тот же ID под другим префиксом — уже учтённое событие.
+    reg = {"lectories": {"zil": {"events": [
+        {"key": "ZIL-4307285", "date": "2026-12-05",
+         "title": "От Бернейса до блогеров", "status": "added",
+         "url": "https://zilcc.timepad.ru/event/4307285/"}]}}}
+    found = S.find_existing(reg, {
+        "key": "SITE-1155", "date": "2026-12-05", "title": "Другое название",
+        "url": "https://drugoi.timepad.ru/event/4307285/"})
+    if not found or found[1]["key"] != "ZIL-4307285":
+        problems.append("find_existing не нашёл событие по общему Timepad ID")
+
+    # Прототип с Timepad-источником узнаётся по ID, даже если URL другой.
+    info = {"date": "2026-12-05", "key": "TP-4455667", "status": "added"}
+    proto = {"urls": {"https://site.ru/a"}, "ids": {"4455667": info}}
+    new = {"key": "OTHER-1", "date": "2026-12-05",
+           "url": "https://site.ru/b"}
+    by_id = {"key": "TP-4455667", "date": "2026-12-05",
+             "url": "https://zilcc.ru/afisha#4455"}
+    usual, done = S.split_prototyped([new, by_id], proto)
+    if usual != [new] or done != [by_id]:
+        problems.append("сверка с прототипом по ID не сработала: %r / %r"
+                        % (usual, done))
+
+    # Решение в реестре обновляет ID-запись; прошедшая дата удаляется.
+    reg2 = {"lectories": {"a": {"events": [
+        {"key": "TP-4455667", "date": "2026-12-05", "status": "added",
+         "url": "https://a.timepad.ru/event/4455667/",
+         "title": "Будущее событие"},
+        {"key": "TP-1111111", "date": "2026-10-01", "status": "rejected",
+         "url": "https://b.timepad.ru/event/1111111/",
+         "title": "Прошедшее событие"}]}}}
+    idx, changed = S.sync_timepad_index(reg2, proto, save=False)
+    if not changed or "4455667" not in idx or "1111111" in idx:
+        problems.append("общий ID-реестр не собран или не очищен: %r" % idx)
+    reg2["lectories"]["a"]["events"][0]["status"] = "rejected"
+    idx2, _ = S.sync_timepad_index(reg2, proto, save=False)
+    if idx2.get("4455667", {}).get("status") != "rejected":
+        problems.append("статус решения не попал в общий ID-реестр")
+    if S.sync_timepad_index(reg2, proto, save=False)[1]:
+        problems.append("пересборка ID-реестра не идемпотентна")
+
+    # Две записи с одним ID — не «одно событие в двух источниках».
+    reg3 = {"lectories": {
+        "a": {"events": [{"key": "A", "date": "2026-12-05", "title": "X",
+                          "url": "https://x.timepad.ru/event/5555555/"}]},
+        "b": {"events": [{"key": "B", "date": "2026-12-05", "title": "Y",
+                          "url": "https://z.timepad.ru/event/5555555/"}]}}}
+    if S.check_registry_duplicates(reg3):
+        problems.append("один Timepad ID в двух лекториях помечен дублем")
+
+    # --mark по числовому ID обновляет все записи с этим ID, включая пару
+    # «сайт + Timepad», иначе пересборка реестра вернула бы старый статус.
+    import copy
+    reg4 = {"lectories": {"vdnh": {"events": [
+        {"key": "TP-5555555", "date": "2026-12-05", "status": "duplicate",
+         "url": "https://x.timepad.ru/event/5555555/"},
+        {"key": "VD-123", "date": "2026-12-05", "status": "duplicate",
+         "also_ids": ["TP-5555555"], "url": "https://vdnh.ru/events/123"}]}}}
+    proto_empty = {"urls": set(), "ids": {}}
+    idx4, _ = S.sync_timepad_index(reg4, proto_empty, save=False)
+    args = types.SimpleNamespace(mark="5555555", mark_status="rejected",
+                                 note="причина", lectory=None, date=None,
+                                 title=None, url=None, author=None,
+                                 tp_index=copy.deepcopy(idx4), proto=proto_empty)
+    old_save = S.save_json
+    S.save_json = lambda *a, **kw: None
+    try:
+        S.do_mark({"lectories": [{"key": "vdnh", "name": "ВДНХ"}]}, reg4, args)
+    finally:
+        S.save_json = old_save
+    records = reg4["lectories"]["vdnh"]["events"]
+    if any(r["status"] != "rejected" for r in records):
+        problems.append("--mark по ID обновил не все записи с этим ID")
+    idx5, _ = S.sync_timepad_index(reg4, proto_empty, save=False)
+    if idx5.get("5555555", {}).get("status") != "rejected":
+        problems.append("решение по ID потерялось при пересборке реестра")
+    return problems
+
+
 def check_elementy_full_date() -> list:
     """Афиша на стыке лет: полная дата с годом и приоритет этого года.
 
@@ -1094,6 +1209,13 @@ def main() -> None:
     mech = check_sweep_dedup()
     print("%s механика: дедупликация источников и чтение BOM реестра"
           % ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_timepad_registry()
+    print("%s механика: общий Timepad-реестр по ID" %
+          ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)
     ok = ok and not mech

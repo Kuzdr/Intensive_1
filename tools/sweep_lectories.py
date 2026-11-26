@@ -6,6 +6,13 @@
   data/sweep/lectories.json     — список лекториев и ссылок на источники;
   data/sweep/known_events.json  — реестр уже проверенных событий со статусом.
 
+В `known_events.json` есть ОБЩИЙ раздел `timepad`: ключ — числовой ID
+Timepad (уникален для ВСЕХ таймпэдов, префикс организатора не нужен),
+значение — дата, статус, ключ и лекторий. Он наполняется из всех записей
+реестра и из прототипов с источником Timepad; прошедшие даты удаляются
+при каждом запуске. Благодаря ему одно событие не предлагается дважды,
+даже если оно найдено под другим префиксом/на другом сайте.
+
 Статусы реестра:
   candidate   — найдено, решение ещё не принято;
   added       — добавлено в прототип/на сайт;
@@ -29,11 +36,13 @@
   python -X utf8 tools\\sweep_lectories.py --json report.json
 """
 import argparse
+import copy
 import datetime
 import glob
 import io
 import json
 import os
+import re
 import sys
 import unicodedata
 
@@ -45,6 +54,11 @@ AVAIL_LOG = os.path.join(ROOT, ".opencode", "skills", "event-description",
                          "reference", "availability_log.md")
 STATUSES = ("candidate", "added", "on_elementy", "rejected", "duplicate",
             "undecided", "needs_update")
+
+# Timepad ID: `TP-<id>` в ключе/имени прототипа или `/event/<id>/` в ссылке.
+# ID уникален во всех таймпэдах — сверять можно без префикса организатора.
+TP_KEY_RE = re.compile(r"^TP-(\d{5,})(?:-|$)", re.I)
+TP_URL_RE = re.compile(r"timepad\.ru/[^?\s]*?event/(\d{5,})", re.I)
 
 
 def load_json(path, fallback):
@@ -80,6 +94,12 @@ def future(event):
     return (event.get("date") or "")[:10] >= today_date()
 
 
+def past(date):
+    """Даты в прошлом (без даты — не прошедшая, её удалять не за что)."""
+    d = str(date or "")[:10]
+    return bool(d) and d < today_date()
+
+
 def print_candidates(events):
     """Полный список кандидатов со ссылками (правило пользователя 22.11.2026)."""
     groups = [("include", "ЯВНО ВНОСИТЬ"), ("doubt", "СОМНИТЕЛЬНЫЕ"),
@@ -104,7 +124,7 @@ def print_candidates(events):
 
 def print_registry_candidates(reg, key, name, proto=None):
     """Кандидаты из реестра — даже у лекториев без автоматического сборщика."""
-    proto = prototype_urls() if proto is None else proto
+    proto = prototype_index() if proto is None else proto
     events = [e for e in registry_events(reg, key)
               if future(e) and e.get("status") == "candidate"
               and e.get("review") != "hide"]
@@ -131,9 +151,34 @@ def log_unavailable(url, exc, attempts=1):
                 "Повторить обход после восстановления доступа.\n")
 
 
-def prototype_urls():
-    """URL событий, для которых уже есть прототип (общая сверка для всех)."""
-    urls = set()
+def timepad_ids(event):
+    """Все Timepad ID записи: из ключа/имени и из всех её ссылок.
+
+    ID из `/event/<id>/` — настоящий идентификатор события; числовой ID
+    в ключе `TP-<id>` подходит, только когда рядом есть Timepad-источник
+    (иначе `NK-9203`, `VD-<id>` и т.п. дали бы ложные совпадения).
+    """
+    ids = set()
+    if not isinstance(event, dict):
+        return ids
+    raw = [event.get("key"), event.get("url")]
+    raw += list(event.get("sources") or [])
+    raw += list(event.get("also_urls") or [])
+    raw += list(event.get("also_ids") or [])
+    for value in raw:
+        if not value:
+            continue
+        text = str(value)
+        m = TP_KEY_RE.match(text)
+        if m:
+            ids.add(m.group(1))
+        ids.update(TP_URL_RE.findall(text))
+    return ids
+
+
+def prototype_index():
+    """Прототипы для сверки: URL + Timepad ID (только с Timepad-источником)."""
+    urls, ids = set(), {}
     for p in glob.glob(os.path.join(ROOT, "data", "prototypes", "*",
                                     "prototype.json")):
         try:
@@ -141,10 +186,78 @@ def prototype_urls():
                 data = json.load(f)
         except Exception:                          # noqa: BLE001
             continue
-        for u in [data.get("url")] + list(data.get("sources") or []):
-            if u:
-                urls.add(str(u).rstrip("/"))
-    return urls
+        name = os.path.basename(os.path.dirname(p))
+        proto_urls = [str(u) for u in
+                      [data.get("url")] + list(data.get("sources") or []) if u]
+        for u in proto_urls:
+            urls.add(u.rstrip("/"))
+        tp = set()
+        for u in proto_urls:
+            tp.update(TP_URL_RE.findall(u))
+        m = TP_KEY_RE.match(name)
+        if m and tp:
+            # Имя прототипа тоже несёт ID, но только при наличии Timepad-ссылки.
+            tp.add(m.group(1))
+        for tid in tp:
+            ids.setdefault(tid, {
+                "key": name, "date": str(data.get("date_iso") or "")[:10],
+                "status": "added", "title": data.get("title") or "",
+                "url": data.get("url") or "", "source": "prototype",
+            })
+    return {"urls": urls, "ids": ids}
+
+
+def sync_timepad_index(reg, proto=None, save=True):
+    """Собрать общий ID-реестр из лекториев и прототипов, убрать прошедшие.
+
+    ID уникален во всех таймпэдах, поэтому одна запись на ID заменяет
+    поиск по префиксу/организатору. Дата нужна, чтобы чистка не держала
+    в реестре давно прошедшие события.
+    """
+    proto = prototype_index() if proto is None else proto
+    idx = reg.setdefault("timepad", {})
+    before = copy.deepcopy(idx)
+
+    def put(tid, info, from_registry):
+        old = idx.get(tid)
+        if old is None:
+            idx[tid] = info
+            return
+        merged = dict(old)
+        if from_registry:
+            # Решение пользователя в реестре важнее данных прототипа.
+            merged.update({k: v for k, v in info.items() if v})
+        else:
+            for k, v in info.items():
+                if not merged.get(k):
+                    merged[k] = v
+        if merged != old:
+            idx[tid] = merged
+
+    for lkey, node in reg.get("lectories", {}).items():
+        for rec in node.get("events", []):
+            if past(rec.get("date")):
+                continue
+            for tid in timepad_ids(rec):
+                put(tid, {
+                    "date": str(rec.get("date") or "")[:10],
+                    "key": rec.get("key") or "", "lectory": lkey,
+                    "status": rec.get("status") or "candidate",
+                    "title": rec.get("title") or "",
+                    "url": rec.get("url") or "", "source": "registry",
+                }, True)
+    for tid, info in proto.get("ids", {}).items():
+        if not past(info.get("date")):
+            put(tid, info, False)
+    # Страховка: если запись с прошедшей датой уже лежала в ID-реестре,
+    # удаляем её (основная фильтрация — при добавлении выше).
+    for tid, rec in list(idx.items()):
+        if past(rec.get("date")):
+            del idx[tid]
+    changed = idx != before
+    if changed and save:
+        save_json(REGISTRY_PATH, reg)
+    return idx, changed
 
 
 def split_prototyped(events, proto):
@@ -152,10 +265,15 @@ def split_prototyped(events, proto):
 
     Повод: 22.11.2026 лекция Соколовой (TP-4297595, тот же URL) попала в
     кандидаты, потому что проверка была только в сборщике «Прямой речи».
+    Сверка по Timepad ID добавлена 26.11.2026: URL у одного события может
+    отличаться (сайт организатора вместо карточки Timepad).
     """
+    proto = prototype_index() if proto is None else proto
+    urls = proto.get("urls", set()) if isinstance(proto, dict) else proto
+    ids = set(proto.get("ids", {})) if isinstance(proto, dict) else set()
     usual, done = [], []
     for e in events:
-        if str(e.get("url", "")).rstrip("/") in proto:
+        if str(e.get("url", "")).rstrip("/") in urls or ids & timepad_ids(e):
             done.append(e)
         else:
             usual.append(e)
@@ -287,8 +405,19 @@ def same_event(a, b):
 
 
 def find_existing(reg, event, exclude_keys=None):
-    """Найти в реестре уже учтённое событие; вернуть (лекторий, запись)."""
+    """Найти в реестре уже учтённое событие; вернуть (лекторий, запись).
+
+    Сначала сверка по Timepad ID (глобальная, без префикса лектория),
+    потом прежняя сверка по дате + заголовку/автору.
+    """
     exclude = set(exclude_keys or ())
+    ids = timepad_ids(event)
+    for lkey, node in reg.get("lectories", {}).items():
+        for rec in node.get("events", []):
+            if rec.get("key") in exclude:
+                continue
+            if ids and ids & timepad_ids(rec):
+                return lkey, rec
     for lkey, node in reg.get("lectories", {}).items():
         for rec in node.get("events", []):
             if rec.get("key") in exclude:
@@ -308,7 +437,8 @@ def check_registry_duplicates(reg):
                 # Сайт организатора и Timepad — разные ключи одного события;
                 # такие пары уже помечены also_ids и дублями не считаются.
                 if (rec.get("key") in (other.get("also_ids") or ()) or
-                        other.get("key") in (rec.get("also_ids") or ())):
+                        other.get("key") in (rec.get("also_ids") or ()) or
+                        timepad_ids(rec) & timepad_ids(other)):
                     continue
                 if same_event(rec, other):
                     rows.append((lkey, rec, other_lkey, other))
@@ -328,6 +458,25 @@ def cmd_check_dups(reg):
         print("    %s — %s" % (other_lkey, other.get("key")))
         print("    %s" % (rec.get("url") or "?"))
         print("    %s" % (other.get("url") or "?"))
+    return 0
+
+
+def cmd_sync_timepad(reg):
+    """Показать общий ID-реестр (пересборка происходит в main перед командой)."""
+    idx = reg.get("timepad", {})
+    counts = {}
+    for rec in idx.values():
+        st = rec.get("status") or "?"
+        counts[st] = counts.get(st, 0) + 1
+    print("ОБЩИЙ TIMEPAD-РЕЕСТР: %d ID | %s"
+          % (len(idx), ", ".join("%s=%d" % (k, v)
+                                 for k, v in sorted(counts.items())) or "пусто"))
+    for tid in sorted(idx, key=lambda i: (idx[i].get("date") or "", i)):
+        rec = idx[tid]
+        print("  %s | %s | %s | %s/%s | %s"
+              % (tid, rec.get("date") or "?", rec.get("status") or "?",
+                 rec.get("lectory") or "?", rec.get("key") or "?",
+                 rec.get("title") or ""))
     return 0
 
 
@@ -351,7 +500,8 @@ def cmd_list(cfg, args):
 def do_sweep(cfg, reg, args):
     only = args.lectory
     rows, errors = [], []
-    proto = prototype_urls()          # одна сверка на все лектории
+    proto = args.proto                # одна сверка на все лектории
+    tp_index = args.tp_index
     for lectory in cfg.get("lectories", []):
         key = lectory["key"]
         if only and key != only:
@@ -384,16 +534,32 @@ def do_sweep(cfg, reg, args):
         print_prototyped(lectory["name"], done)
         known = index(registry_events(reg, key))
         new = [e for e in found if e["key"] not in known]
-        # Одно событие из двух источников не считаем двумя новыми: ищем его
-        # отпечаток (дата + заголовок/автор) во всём реестре.
+        # Общий Timepad-реестр: тот же ID уже обработан под другим префиксом
+        # (или оформлен прототипом) — повторно событие не показываем.
+        tp_known = []
         source_dups = []
         fresh = []
         for e in new:
+            tid = next((i for i in sorted(timepad_ids(e)) if i in tp_index), None)
+            if tid:
+                tp_known.append((e, tp_index[tid], tid))
+                continue
+            # Одно событие из двух источников не считаем двумя новыми: ищем
+            # его отпечаток (дата + заголовок/автор) во всём реестре.
             match = find_existing(reg, e, exclude_keys={e["key"]})
             if match:
                 source_dups.append((e, match[1]))
             else:
                 fresh.append(e)
+        if tp_known:
+            print("\n%s: уже обработано по общему Timepad ID — НЕ новые (%d):"
+                  % (lectory["name"], len(tp_known)))
+            for e, rec, tid in tp_known:
+                print("    %s (ID %s) → %s/%s [%s] | %s | %s"
+                      % (e["key"], tid, rec.get("lectory") or "?",
+                         rec.get("key") or "?", rec.get("status") or "?",
+                         e.get("date") or "?", e.get("title") or "?"))
+                print("      %s" % e.get("url", "?"))
         if source_dups:
             print("\n%s: уже в реестре под другим ключом — НЕ новые (%d):"
                   % (lectory["name"], len(source_dups)))
@@ -405,7 +571,12 @@ def do_sweep(cfg, reg, args):
         new = fresh
         counts = {}
         for e in found:
-            st = known[e["key"]]["status"] if e["key"] in known else "new"
+            if e["key"] in known:
+                st = known[e["key"]]["status"]
+            else:
+                tid = next((i for i in sorted(timepad_ids(e)) if i in tp_index),
+                           None)
+                st = (tp_index[tid].get("status") or "known") if tid else "new"
             counts[st] = counts.get(st, 0) + 1
         print("\n%s: всего %d (прошедших скрыто %d, уже с прототипом %d), "
               "НОВЫХ %d | %s"
@@ -430,6 +601,9 @@ def do_sweep(cfg, reg, args):
                      "source_duplicates": [{"key": e["key"],
                                             "registry_key": rec.get("key")}
                                            for e, rec in source_dups],
+                     "timepad_known": [{"key": e["key"], "id": tid,
+                                        "status": rec.get("status")}
+                                       for e, rec, tid in tp_known],
                      "prototyped": [e["key"] for e in done], "counts": counts})
         if args.update_seen:
             for e in found + done:
@@ -450,7 +624,7 @@ def do_bootstrap(cfg, reg, args):
     """Добавить в реестр все найденные события, которых там ещё нет."""
     lm = lectory_map(cfg)
     added = 0
-    proto = prototype_urls()          # та же сверка, что и при обходе
+    proto = args.proto                # та же сверка, что и при обходе
     for lectory in cfg.get("lectories", []):
         key = lectory["key"]
         if args.lectory and key != args.lectory:
@@ -483,6 +657,10 @@ def do_bootstrap(cfg, reg, args):
                 urls = old.setdefault("also_urls", [])
                 if e.get("url") and e["url"] not in urls:
                     urls.append(e["url"])
+                ids = old.setdefault("also_ids", [])
+                for tid in sorted(timepad_ids(e)):
+                    if tid not in ids:
+                        ids.append(tid)
                 old["note"] = (old.get("note", "") +
                                " | ещё источник: %s" % e["key"]).strip(" |")
                 old["updated"] = today()
@@ -512,37 +690,74 @@ def do_mark(cfg, reg, args):
         print("Неизвестный статус. Допустимо: %s" % ", ".join(STATUSES))
         return 2
     lm = lectory_map(cfg)
+    # Числовой ID — это тот же ключ для всех таймпэдов. Ищем запись и по
+    # ключу из общего ID-реестра, и по самому ID среди всех лекториев.
+    mark = args.mark
+    tp_id = mark if (mark.isdigit() and mark in args.tp_index) else None
+    direct = args.tp_index.get(tp_id) if tp_id else None
+    if direct:
+        mark = direct.get("key") or ("TP-" + tp_id)
     candidates = []
     for key, node in reg.get("lectories", {}).items():
         for e in node.get("events", []):
-            if e["key"] == args.mark and (not args.lectory or key == args.lectory):
+            if args.lectory and key != args.lectory:
+                continue
+            if e["key"] == mark or (tp_id and tp_id in timepad_ids(e)):
                 candidates.append((key, e))
-    if len(candidates) > 1 and not args.lectory:
+    if len(candidates) > 1 and not args.lectory and not tp_id:
         print("Ключ встречен несколько раз — укажите --lectory: %s"
               % ", ".join(k for k, _ in candidates))
         return 2
     if candidates:
         key, rec = candidates[0]
+    elif direct is not None:
+        # Прототип без записи в лекториях. Если лекторий известен, создаём
+        # запись в нём — иначе пересборка реестра перезаписала бы решение.
+        key = direct.get("lectory") or "pryamaya"
+        if key in lm:
+            rec = {"key": direct.get("key") or ("TP-" + tp_id)}
+            registry_events(reg, key).append(rec)
+            print("Запись добавлена в реестр (поля заполнены из ID-реестра)")
+        else:
+            rec = direct
+            for field in ("date", "title", "url", "author"):
+                val = getattr(args, field)
+                if val:
+                    rec[field] = val
+            if args.note:
+                rec["note"] = args.note
+            rec["status"] = status
+            rec["updated"] = today()
+            save_json(REGISTRY_PATH, reg)
+            print("%s: %s → %s (общий Timepad-реестр)" % (args.mark, key, status))
+            return 0
     else:
         key = args.lectory or "pryamaya"
         if key not in lm:
             print("Лекторий %s нет в списке" % key)
             return 2
-        rec = {"key": args.mark}
+        rec = {"key": mark}
         registry_events(reg, key).append(rec)
         print("Запись добавлена в реестр (заполните поля при необходимости)")
-    rec["status"] = status
-    for field in ("date", "title", "url", "author"):
-        val = getattr(args, field)
-        if val:
-            rec[field] = val
-    if args.note:
-        rec["note"] = args.note
-    rec["updated"] = today()
-    rec.setdefault("first_seen", today())
-    rec.setdefault("last_seen", rec["first_seen"])
+    # Один Timepad ID может встречаться в нескольких записях (сайт + Timepad):
+    # решение обязательно применяем ко всем, иначе пересборка вернёт старый статус.
+    targets = candidates if tp_id else [(key, rec)]
+    for tk, target in targets:
+        target["status"] = status
+        for field in ("date", "title", "url", "author"):
+            val = getattr(args, field)
+            if val:
+                target[field] = val
+        if args.note:
+            target["note"] = args.note
+        target["updated"] = today()
+        target.setdefault("first_seen", today())
+        target.setdefault("last_seen", target["first_seen"])
     save_json(REGISTRY_PATH, reg)
-    print("%s: %s → %s" % (args.mark, key, status))
+    key = targets[0][0]
+    print("%s: %s → %s%s" % (args.mark, key, status,
+                            (" (+%d записи с тем же ID)" % (len(targets) - 1))
+                            if len(targets) > 1 else ""))
     return 0
 
 
@@ -565,6 +780,8 @@ def main():
                     help="обновить last_seen у известных событий")
     ap.add_argument("--check-dups", action="store_true",
                     help="показать события, найденные дважды (один отпечаток)")
+    ap.add_argument("--sync-timepad", action="store_true",
+                    help="показать общий реестр Timepad ID (пересобрать и убрать прошедшие)")
     ap.add_argument("--json", dest="json_out", help="сохранить отчёт в JSON")
     args = ap.parse_args()
 
@@ -580,18 +797,32 @@ def main():
               % REGISTRY_PATH)
         return 2
 
+    # Общий реестр пересобирается перед ЛЮБОЙ командой: он отражает и решения
+    # пользователя, и прототипы, и чистку прошедших событий по дате.
+    proto = prototype_index()
+    changed = sync_timepad_index(reg, proto, save=False)[1]
+    args.proto, args.tp_index = proto, reg.get("timepad", {})
+
     if args.check_dups:
-        return cmd_check_dups(reg)
-    if args.list:
-        return cmd_list(cfg, args)
-    if args.mark:
+        rc = cmd_check_dups(reg)
+    elif args.sync_timepad:
+        rc = cmd_sync_timepad(reg)
+    elif args.list:
+        rc = cmd_list(cfg, args)
+    elif args.mark:
         if not args.mark_status:
             print("Для --mark укажите --mark-status")
             return 2
-        return do_mark(cfg, reg, args)
-    if args.bootstrap:
-        return do_bootstrap(cfg, reg, args)
-    return do_sweep(cfg, reg, args)
+        rc = do_mark(cfg, reg, args)
+    elif args.bootstrap:
+        rc = do_bootstrap(cfg, reg, args)
+    else:
+        rc = do_sweep(cfg, reg, args)
+    # После команды индекс мог измениться (например, --mark по ID).
+    changed = sync_timepad_index(reg, proto, save=False)[1] or changed
+    if changed:
+        save_json(REGISTRY_PATH, reg)
+    return rc
 
 
 if __name__ == "__main__":

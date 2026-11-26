@@ -3340,5 +3340,908 @@
         }
       ]
     }
+  },
+  "timepad": {
+    "4278460": {
+      "date": "2026-11-26",
+      "key": "TP-4278460",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Онлайн-лекция «Муравьи-рабовладельцы»",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4278460/",
+      "source": "registry"
+    },
+    "4306350": {
+      "date": "2026-11-26",
+      "key": "TP-4306350",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Онлайн-лекция биолога Алексея Сивухина Олива «Дерево, изменившее цивилизацию» и встреча с руководителем компании Georgian Olive",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4306350/",
+      "source": "registry"
+    },
+    "4224294": {
+      "date": "2026-11-27",
+      "key": "TP-4224294",
+      "lectory": "arhe",
+      "status": "duplicate",
+      "title": "Онлайн-лекция Михаила Магида «Саудовская Аравия, ОАЭ и Катар: арабские нефтяные монархии в поисках будущего»",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4224294/",
+      "source": "registry"
+    },
+    "4263746": {
+      "date": "2026-11-27",
+      "key": "TP-4263746",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Лекция со свободным входом «Сколько нужно слов, чтобы говорить, читать и писать?»",
+      "url": "https://arhe-events.timepad.ru/event/4263746/",
+      "source": "registry"
+    },
+    "4301536": {
+      "date": "2026-11-28",
+      "key": "TP-4301536",
+      "lectory": "arhe",
+      "status": "rejected",
+      "title": "Лекция П.В. Рябова «Националистические и имперские мотивы в декабризме. Декабристы и: Польша, Кавказ и евреи. Между русским шовинизмом и борьбой «За вашу и нашу свободу!»»",
+      "url": "https://arhe-events.timepad.ru/event/4301536/",
+      "source": "registry"
+    },
+    "4270095": {
+      "date": "2026-11-29",
+      "key": "TP-4270095",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Лекция «Почему Япония не стала маленьким Китаем?» в рамках презентации книги Василия Щепкина «Как Япония стала Японией»(Санкт-Петербург)",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4270095/",
+      "source": "registry"
+    },
+    "4185611": {
+      "date": "2026-12-01",
+      "key": "TP-4185611",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Лекция астрофизика Сергея Попова «Из чего состоит Вселенная»",
+      "url": "https://arhe-events.timepad.ru/event/4185611/",
+      "source": "registry"
+    },
+    "4252096": {
+      "date": "2026-12-01",
+      "key": "TP-4252096",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Онлайн-лекция Константина Фомичёва «Псилотовые, ужовниковые и мараттиевые: эуспорангиатные линии папоротников»",
+      "url": "https://arhe-events.timepad.ru/event/4252096/",
+      "source": "registry"
+    },
+    "4173357": {
+      "date": "2026-12-02",
+      "key": "TP-4173357",
+      "lectory": "arhe",
+      "status": "rejected",
+      "title": "Онлайн-лекция Данила Рябчикова «Инструментальная музыка Средневековья»",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4173357/",
+      "source": "registry"
+    },
+    "4229521": {
+      "date": "2026-12-02",
+      "key": "TP-4229521",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Онлайн-лекция Павла Квартальнова «Зима, животные и человек»",
+      "url": "https://arhe-events.timepad.ru/event/4229521/",
+      "source": "registry"
+    },
+    "4279148": {
+      "date": "2026-12-03",
+      "key": "TP-4279148",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Онлайн-лекция «Муравей — это тот же человек, но меньше и другой»",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4279148/",
+      "source": "registry"
+    },
+    "4229360": {
+      "date": "2026-12-04",
+      "key": "TP-4229360",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Онлайн-лекция Михаила Магида «Йемен: государство многих конфликтов»",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4229360/",
+      "source": "registry"
+    },
+    "4263754": {
+      "date": "2026-12-04",
+      "key": "TP-4263754",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Лекция со свободным входом «Можно ли выучить грамматику без учебника?»",
+      "url": "https://arhe-events.timepad.ru/event/4263754/",
+      "source": "registry"
+    },
+    "4301559": {
+      "date": "2026-12-05",
+      "key": "TP-4301559",
+      "lectory": "arhe",
+      "status": "rejected",
+      "title": "Лекция П.В. Рябова «Портреты: Иван Пущин и братья Кюхельбекеры (Вильгельм и Михаил)»",
+      "url": "https://arhe-events.timepad.ru/event/4301559/",
+      "source": "registry"
+    },
+    "4306009": {
+      "date": "2026-12-05",
+      "key": "TP-4306009",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Презентация книги Василия Щепкина «Как Япония стала Японией?» и беседа с её научным редактором Степаном Родиным",
+      "url": "https://arhe-events.timepad.ru/event/4306009/",
+      "source": "registry"
+    },
+    "4252104": {
+      "date": "2026-12-08",
+      "key": "TP-4252104",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Онлайн-лекция Константина Фомичёва «Лептоспорангиатные папоротники: система, эволюция и разнообразие»",
+      "url": "https://arhe-events.timepad.ru/event/4252104/",
+      "source": "registry"
+    },
+    "4173378": {
+      "date": "2026-12-09",
+      "key": "TP-4173378",
+      "lectory": "arhe",
+      "status": "rejected",
+      "title": "Онлайн-лекция Данила Рябчикова «Современная история исполнения средневековой музыки»",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4173378/",
+      "source": "registry"
+    },
+    "4270052": {
+      "date": "2026-12-09",
+      "key": "TP-4270052",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Лекция Александра Бутягина «Древние римляне дома» (Санкт-Петербург)",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4270052/",
+      "source": "registry"
+    },
+    "4318592": {
+      "date": "2026-12-10",
+      "key": "TP-4318592",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Лекция биолога Ильи Гомыранова «Доктор, у меня лапки: медицина в мире животных» в рамках презентации книги «Доктора от природы: Как животные лечат себя и помогают людям»",
+      "url": "https://arhe-events.timepad.ru/event/4318592/",
+      "source": "registry"
+    },
+    "4229376": {
+      "date": "2026-12-11",
+      "key": "TP-4229376",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Онлайн-лекция Михаила Магида «Ирак: государство между внутренними и внешними силами»",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4229376/",
+      "source": "registry"
+    },
+    "4258224": {
+      "date": "2026-12-11",
+      "key": "TP-4258224",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Научная дача с Василием Щепкиным «Как Япония стала Японией»",
+      "url": "https://arhe-events.timepad.ru/event/4258224/",
+      "source": "registry"
+    },
+    "4317016": {
+      "date": "2026-12-11",
+      "key": "TP-4317016",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Лекция со свободным входом «Ошибки, страх и языковой барьер»",
+      "url": "https://arhe-events.timepad.ru/event/4317016/",
+      "source": "registry"
+    },
+    "4303278": {
+      "date": "2026-12-12",
+      "key": "TP-4303278",
+      "lectory": "arhe",
+      "status": "rejected",
+      "title": "Лекция П.В. Рябова «Портреты «стратегов»-неудачников: Батеньков и Булатов»",
+      "url": "https://arhe-events.timepad.ru/event/4303278/",
+      "source": "registry"
+    },
+    "4277765": {
+      "date": "2026-12-16",
+      "key": "TP-4277765",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Лекция Александра Бутягина «Древние римляне вне дома» (Санкт-Петербург)",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4277765/",
+      "source": "registry"
+    },
+    "4229408": {
+      "date": "2026-12-18",
+      "key": "TP-4229408",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Онлайн-лекция Михаила Магида «Китай на Ближнем Востоке: новый центр силы?»",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4229408/",
+      "source": "registry"
+    },
+    "4317032": {
+      "date": "2026-12-18",
+      "key": "TP-4317032",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Лекция со свободным входом «Как найти свой формат обучения, и что можно отдать ИИ»",
+      "url": "https://arhe-events.timepad.ru/event/4317032/",
+      "source": "registry"
+    },
+    "4314434": {
+      "date": "2026-12-19",
+      "key": "TP-4314434",
+      "lectory": "arhe",
+      "status": "rejected",
+      "title": "Лекция П.В. Рябова «Портреты: декабристы-«цареубийцы» и романтики: Пётр Каховский и Александр Якубович»",
+      "url": "https://arhe-events.timepad.ru/event/4314434/",
+      "source": "registry"
+    },
+    "4314450": {
+      "date": "2026-12-26",
+      "key": "TP-4314450",
+      "lectory": "arhe",
+      "status": "rejected",
+      "title": "Лекция П.В. Рябова «Декабристы-литераторы: от Рылеева, Раевского и Глинки до Кюхельбекера, Катенина, Одоевского и Бестужева-Марлинского. Между классицизмом и романтизмом»",
+      "url": "https://arhe-events.timepad.ru/event/4314450/",
+      "source": "registry"
+    },
+    "4185646": {
+      "date": "2026-12-29",
+      "key": "TP-4185646",
+      "lectory": "arhe",
+      "status": "added",
+      "title": "Лекция астрофизика Сергея Попова «Скорости и горизонты»",
+      "url": "https://arhe-events.timepad.ru/event/4185646/",
+      "source": "registry"
+    },
+    "4318063": {
+      "date": "2026-11-28",
+      "key": "TP-4318063",
+      "lectory": "vdnh",
+      "status": "added",
+      "title": "Космос как бизнес: самые интересные космические стартапы",
+      "url": "https://cosmos-vdnh.timepad.ru/event/4318063/",
+      "source": "registry"
+    },
+    "4306298": {
+      "date": "2026-11-28",
+      "key": "TP-4306298",
+      "lectory": "vdnh",
+      "status": "added",
+      "title": "Таких берут в космонавты! Как стать космонавтом и возможно ли это?",
+      "url": "https://cosmos-vdnh.timepad.ru/event/4306298/",
+      "source": "registry"
+    },
+    "4312127": {
+      "date": "2026-11-29",
+      "key": "TP-4312127",
+      "lectory": "vdnh",
+      "status": "added",
+      "title": "Космическая психология",
+      "url": "https://cosmos-vdnh.timepad.ru/event/4312127/",
+      "source": "registry"
+    },
+    "4316212": {
+      "date": "2026-11-29",
+      "key": "TP-4316212",
+      "lectory": "vdnh",
+      "status": "added",
+      "title": "Владимир Иванович Даль: не только словарь",
+      "url": "https://slovo-vdnh.timepad.ru/event/4316212/",
+      "source": "registry"
+    },
+    "4318314": {
+      "date": "2026-12-05",
+      "key": "TP-4318314",
+      "lectory": "vdnh",
+      "status": "added",
+      "title": "Аэлита Алексея Толстого и экранизация 1924 года",
+      "url": "https://cosmos-vdnh.timepad.ru/event/4318314/",
+      "source": "registry"
+    },
+    "4314509": {
+      "date": "2026-12-05",
+      "key": "TP-4314509",
+      "lectory": "vdnh",
+      "status": "added",
+      "title": "Невидимые гении: женщины науки и искусства, стертые из истории",
+      "url": "https://lektorij-vdnh.timepad.ru/event/4314509/",
+      "source": "registry"
+    },
+    "4317015": {
+      "date": "2026-12-06",
+      "key": "TP-4317015",
+      "lectory": "vdnh",
+      "status": "added",
+      "title": "Межзвёздная среда: неидеальный вакуум",
+      "url": "https://cosmos-vdnh.timepad.ru/event/4317015/",
+      "source": "registry"
+    },
+    "4248842": {
+      "date": "2026-11-27",
+      "key": "TP-4248842",
+      "lectory": "vdnh",
+      "status": "duplicate",
+      "title": "SOS из космоса. Истории о спасении аппаратов на орбите",
+      "url": "https://cosmos-vdnh.timepad.ru/event/4248842/",
+      "source": "registry"
+    },
+    "4314403": {
+      "date": "2026-11-30",
+      "key": "TP-4314403",
+      "lectory": "vdnh",
+      "status": "duplicate",
+      "title": "Пан или морлок: биологическое будущее человека",
+      "url": "https://lektorij-vdnh.timepad.ru/event/4314403/",
+      "source": "registry"
+    },
+    "4301262": {
+      "date": "2026-12-10",
+      "key": "TP-4301262",
+      "lectory": "vdnh",
+      "status": "duplicate",
+      "title": "Анатомия манускрипта: миниатюры, инициалы и маргиналии",
+      "url": "https://lektorij-vdnh.timepad.ru/event/4301262/",
+      "source": "registry"
+    },
+    "4299704": {
+      "date": "",
+      "key": "TP-4299704",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Фридрих Ницше: плачь, плачь, танцуй, танцуй",
+      "url": "https://lektorij-vdnh.timepad.ru/event/4299704/",
+      "source": "registry"
+    },
+    "4299896": {
+      "date": "",
+      "key": "TP-4299896",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Битва титанов: Вера Мухина и Парижская выставка 1925 года",
+      "url": "https://lektorij-vdnh.timepad.ru/event/4299896/",
+      "source": "registry"
+    },
+    "4299938": {
+      "date": "",
+      "key": "TP-4299938",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Рабочий и колхозница: Вера Мухина на международных выставках",
+      "url": "https://lektorij-vdnh.timepad.ru/event/4299938/",
+      "source": "registry"
+    },
+    "4306394": {
+      "date": "",
+      "key": "TP-4306394",
+      "lectory": "vdnh",
+      "status": "undecided",
+      "title": "Зигмунд Фрейд: человек, который знает, что тебе снилось",
+      "url": "https://lektorij-vdnh.timepad.ru/event/4306394/",
+      "source": "registry"
+    },
+    "4306436": {
+      "date": "",
+      "key": "TP-4306436",
+      "lectory": "vdnh",
+      "status": "undecided",
+      "title": "Карл Густав Юнг: НЛО, Таро и твоя тёмная сторона",
+      "url": "https://lektorij-vdnh.timepad.ru/event/4306436/",
+      "source": "registry"
+    },
+    "4314300": {
+      "date": "",
+      "key": "TP-4314300",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Шостакович: страх, смех и «Нос». Рассказ свидетеля XX века",
+      "url": "https://lektorij-vdnh.timepad.ru/event/4314300/",
+      "source": "registry"
+    },
+    "4248845": {
+      "date": "2026-11-28",
+      "key": "TP-4248845",
+      "lectory": "vdnh",
+      "status": "duplicate",
+      "title": "Плеяда космических исследовательниц: женщины-астрономы",
+      "url": "https://cosmos-vdnh.timepad.ru/event/4248845/",
+      "source": "registry"
+    },
+    "4324253": {
+      "date": "2026-12-06",
+      "key": "VD-4308",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Лекция «Дмитрий Шостакович: свидетель эпохи»",
+      "url": "https://vdnh.ru/events/4308",
+      "source": "registry"
+    },
+    "4322622": {
+      "date": "2026-12-06",
+      "key": "VD-4287",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Лекция «Иосиф Бродский: посох пилигрима»",
+      "url": "https://vdnh.ru/events/4287",
+      "source": "registry"
+    },
+    "4324269": {
+      "date": "2026-12-08",
+      "key": "TP-4324269",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "К выходу «Приключений Клиффа Бута»",
+      "url": "",
+      "source": "registry"
+    },
+    "4324239": {
+      "date": "2026-12-16",
+      "key": "VD-4302",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Лекция «Даниил Хармс: абсурдист и джентльмен»",
+      "url": "https://vdnh.ru/events/4302",
+      "source": "registry"
+    },
+    "4299971": {
+      "date": "2026-12-26",
+      "key": "TP-4299971",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Я – проектировщик! Вера Мухина у истоков дизайна",
+      "url": "",
+      "source": "registry"
+    },
+    "4311045": {
+      "date": "2026-11-29",
+      "key": "VD-4265",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Лекция «Музыкально-театральные проекты Алексея Верстовского»",
+      "url": "https://vdnh.ru/events/4265",
+      "source": "registry"
+    },
+    "4318382": {
+      "date": "2026-12-01",
+      "key": "VD-4280",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Лекция-концерт «Дмитрий Шостакович и русский музыкальный авангард»",
+      "url": "https://vdnh.ru/events/4280",
+      "source": "registry"
+    },
+    "4288577": {
+      "date": "2026-12-13",
+      "key": "TP-4288577",
+      "lectory": "vdnh",
+      "status": "added",
+      "title": "Космическое право",
+      "url": "https://cosmos-vdnh.timepad.ru/event/4288577/",
+      "source": "registry"
+    },
+    "4314826": {
+      "date": "2026-12-18",
+      "key": "TP-4314826",
+      "lectory": "vdnh",
+      "status": "needs_update",
+      "title": "От Большого взрыва и дальше: что понятно, а что не совсем",
+      "url": "https://lektorij-vdnh.timepad.ru/event/4314826/",
+      "source": "registry"
+    },
+    "4288391": {
+      "date": "2026-12-03",
+      "key": "TP-4296032",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Обзорная экскурсия для маломобильных посетителей",
+      "url": "https://cosmos-vdnh.timepad.ru/event/4288391/",
+      "source": "registry"
+    },
+    "4288397": {
+      "date": "2026-12-03",
+      "key": "TP-4288397",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Обзорная экскурсия с тифлокомментированием",
+      "url": "https://cosmos-vdnh.timepad.ru/event/4288397/",
+      "source": "registry"
+    },
+    "4318414": {
+      "date": "",
+      "key": "TP-4318414",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "«Аэлита» с живым саундтреком от Петра Термена",
+      "url": "https://vdnh.ru/events/4281",
+      "source": "registry"
+    },
+    "4312890": {
+      "date": "",
+      "key": "VD-4256",
+      "lectory": "vdnh",
+      "status": "duplicate",
+      "title": "«Власть мертвых царей. Как владыки прошлого влияют на современность». Лекция-презентация книги Дмитрия Тараторина «Древн",
+      "url": "https://vdnh.ru/events/4256",
+      "source": "registry"
+    },
+    "4314436": {
+      "date": "",
+      "key": "TP-4314436",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Концерт «Шуман на 1-2-3»",
+      "url": "https://vdnh.ru/events/4261",
+      "source": "registry"
+    },
+    "4314803": {
+      "date": "",
+      "key": "VD-4264",
+      "lectory": "vdnh",
+      "status": "duplicate",
+      "title": "Лекция Алексея Савватеева «Занимательная вероятность»",
+      "url": "https://vdnh.ru/events/4264",
+      "source": "registry"
+    },
+    "4317679": {
+      "date": "",
+      "key": "VD-4274",
+      "lectory": "vdnh",
+      "status": "duplicate",
+      "title": "Егор Москвитин и Алексей Решетун: тру-крайм глазами кинокритика и судмедэксперта",
+      "url": "https://vdnh.ru/events/4274",
+      "source": "registry"
+    },
+    "4324437": {
+      "date": "",
+      "key": "TP-4324437",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Детский спектакль «Аленький цветочек»",
+      "url": "https://vdnh.ru/events/4304",
+      "source": "registry"
+    },
+    "4324448": {
+      "date": "2026-12-02",
+      "key": "VD-4306",
+      "lectory": "vdnh",
+      "status": "duplicate",
+      "title": "Лекция «Удивительные приключения воронежского чернозёма в Париже: как зарождалось почвоведение»",
+      "url": "https://vdnh.ru/events/4306",
+      "source": "registry"
+    },
+    "4324931": {
+      "date": "",
+      "key": "TP-4324931",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Детская программа «Музыкальные загадки»",
+      "url": "https://vdnh.ru/events/4309",
+      "source": "registry"
+    },
+    "4326373": {
+      "date": "",
+      "key": "TP-4326373",
+      "lectory": "vdnh",
+      "status": "duplicate",
+      "title": "Концерт «Роскошь французского барокко»",
+      "url": "https://vdnh.ru/events/4312",
+      "source": "registry"
+    },
+    "3792953": {
+      "date": "2026-11-30",
+      "key": "TP-3792953",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Экзамен в Музее \"Слово\" (для аккредитованных по территории ВДНХ гидов)",
+      "url": "https://slovo-vdnh.timepad.ru/event/3792953/",
+      "source": "registry"
+    },
+    "3793266": {
+      "date": "2026-11-26",
+      "key": "TP-3793266",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Ознакомительная обзорная экскурсия по Музею «Слово» для гидов-переводчиков в составе сборной группы (Присоединение к сборной группе!) Подтверждение входа и учас",
+      "url": "https://slovo-vdnh.timepad.ru/event/3793266/",
+      "source": "registry"
+    },
+    "4296032": {
+      "date": "2026-12-03",
+      "key": "TP-4323137",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Бесплатная обзорная экскурсия к Международному дню инвалидов (для слепых и слабовидящих посетителей ) «Кириллица в пространстве и времени: от момента создания д",
+      "url": "https://slovo-vdnh.timepad.ru/event/4296032/",
+      "source": "registry"
+    },
+    "4323137": {
+      "date": "2026-12-03",
+      "key": "TP-4323137",
+      "lectory": "vdnh",
+      "status": "rejected",
+      "title": "Бесплатная обзорная экскурсия к Международному дню инвалидов (для слепых и слабовидящих посетителей ) «Кириллица в пространстве и времени: от момента создания д",
+      "url": "https://slovo-vdnh.timepad.ru/event/4296032/",
+      "source": "registry"
+    },
+    "4255785": {
+      "date": "2026-12-03",
+      "key": "ZIL-4255785-emotsii",
+      "lectory": "zil",
+      "status": "duplicate",
+      "title": "Вечерняя школа: Почему эмоции важны для человека?",
+      "url": "https://zilcc.timepad.ru/event/4255785/",
+      "source": "registry"
+    },
+    "4307285": {
+      "date": "2026-12-05",
+      "key": "ZIL-4307285-berneys",
+      "lectory": "zil",
+      "status": "added",
+      "title": "От Бернейса до блогеров: сто лет управления общественным мнением",
+      "url": "https://zilcc.timepad.ru/event/4307285/",
+      "source": "registry"
+    },
+    "4297583": {
+      "date": "2026-12-10",
+      "key": "ZIL-4297583-ii-pedagog",
+      "lectory": "zil",
+      "status": "duplicate",
+      "title": "Научить ИИ учить: как нейросети меняют работу педагога",
+      "url": "https://zilcc.timepad.ru/event/4297583/",
+      "source": "registry"
+    },
+    "4289705": {
+      "date": "2026-12-12",
+      "key": "ZIL-4289705-mariya-kuri",
+      "lectory": "zil",
+      "status": "added",
+      "title": "Мария Кюри: радиоактивность, ответственность, свобода",
+      "url": "https://zilcc.timepad.ru/event/4289705/",
+      "source": "registry"
+    },
+    "4297595": {
+      "date": "2026-12-24",
+      "key": "ZIL-4297595-remesla",
+      "lectory": "zil",
+      "status": "added",
+      "title": "От бересты до щучьей кожи: ремесла хантов и манси",
+      "url": "https://zilcc.timepad.ru/event/4297595/",
+      "source": "registry"
+    },
+    "4194633": {
+      "date": "2027-01-14",
+      "key": "ZIL-4194633-rentgen",
+      "lectory": "zil",
+      "status": "duplicate",
+      "title": "Рентгеновские методы исследования состава и структуры",
+      "url": "https://zilcc.timepad.ru/event/4194633/",
+      "source": "registry"
+    },
+    "4277996": {
+      "date": "",
+      "key": "TP-4277996",
+      "lectory": "zil",
+      "status": "rejected",
+      "title": "Имперский культ и все-все-все: верования во вселенной Warhammer 40,000",
+      "url": "https://zilcc.timepad.ru/event/4277996/",
+      "source": "registry"
+    },
+    "4317348": {
+      "date": "2026-12-11",
+      "key": "TP-4317348",
+      "lectory": "istovyj-inzhener",
+      "status": "added",
+      "title": "Инженерные разгоны",
+      "url": "https://yadro-engineer.timepad.ru/event/4317348/",
+      "source": "registry"
+    },
+    "4269864": {
+      "date": "2026-11-27",
+      "key": "TP-4269864",
+      "lectory": "planetalib",
+      "status": "added",
+      "title": "Современный феномен романтических отношений между ИИ и человеком",
+      "url": "https://planetalib.timepad.ru/event/4269864/",
+      "source": "registry"
+    },
+    "4239652": {
+      "date": "2026-11-29",
+      "key": "TP-4239652",
+      "lectory": "oxta8",
+      "status": "duplicate",
+      "title": "Голоса из чужого гнезда: секреты птиц-пересмешников",
+      "url": "https://oxta8.timepad.ru/event/4239652/",
+      "source": "registry"
+    },
+    "4283799": {
+      "date": "2026-12-10",
+      "key": "TP-4283799",
+      "lectory": "oxta8",
+      "status": "added",
+      "title": "Всё есть яд: как алхимики изобретали лекарства",
+      "url": "https://oxta8.timepad.ru/event/4283799/",
+      "source": "registry"
+    },
+    "4314268": {
+      "date": "2026-12-13",
+      "key": "TP-4314268",
+      "lectory": "oxta8",
+      "status": "added",
+      "title": "Ватикан: маленькая территория и огромная география",
+      "url": "https://oxta8.timepad.ru/event/4314268/",
+      "source": "registry"
+    },
+    "4309742": {
+      "date": "2026-11-28",
+      "key": "TP-4309742",
+      "lectory": "yeltsin-ekb",
+      "status": "rejected",
+      "title": "Пётр Иванов. Город изнутри: от повседневности к активизму",
+      "url": "https://yeltsin-center.timepad.ru/event/4309742/",
+      "source": "registry"
+    },
+    "4301442": {
+      "date": "2026-12-24",
+      "key": "TP-4301442",
+      "lectory": "darwin",
+      "status": "added",
+      "title": "Лекция Ю.А. Краус «Личинки, эмбрионы и эволюция: как устроены жизненные циклы»",
+      "url": "https://darwinmuseum.timepad.ru/event/4301442/",
+      "source": "registry"
+    },
+    "4319010": {
+      "date": "2026-12-05",
+      "key": "TP-4319010",
+      "lectory": "spitsbergen",
+      "status": "added",
+      "title": "Когда Шпицберген был на экваторе",
+      "url": "https://spitsbergen.timepad.ru/event/4319010/",
+      "source": "registry"
+    },
+    "4257910": {
+      "date": "2026-11-29",
+      "key": "TP-4257910",
+      "lectory": "fondnauk",
+      "status": "added",
+      "title": "Как праздновали Новый год в Древнем Риме?",
+      "url": "https://fondnauk.timepad.ru/event/4318657/",
+      "source": "registry"
+    },
+    "4318657": {
+      "date": "2026-11-29",
+      "key": "TP-4257910",
+      "lectory": "fondnauk",
+      "status": "added",
+      "title": "Как праздновали Новый год в Древнем Риме?",
+      "url": "https://fondnauk.timepad.ru/event/4318657/",
+      "source": "registry"
+    },
+    "4318603": {
+      "date": "",
+      "key": "4318603",
+      "lectory": "fondnauk",
+      "status": "rejected",
+      "title": "Кандидат ленты fondnauk 4318603",
+      "url": "https://fondnauk.timepad.ru/event/4318603/",
+      "source": "registry"
+    },
+    "3067997": {
+      "date": "",
+      "key": "3067997",
+      "lectory": "fondnauk",
+      "status": "rejected",
+      "title": "Кандидат ленты fondnauk 3067997",
+      "url": "https://fondnauk.timepad.ru/event/3067997/",
+      "source": "registry"
+    },
+    "3271257": {
+      "date": "",
+      "key": "3271257",
+      "lectory": "fondnauk",
+      "status": "rejected",
+      "title": "Кандидат ленты fondnauk 3271257",
+      "url": "https://fondnauk.timepad.ru/event/3271257/",
+      "source": "registry"
+    },
+    "4318656": {
+      "date": "2026-11-28",
+      "key": "4307067",
+      "lectory": "fondnauk",
+      "status": "added",
+      "title": "Мышцы-невидимки: кто на самом деле удерживает наш позвоночник?",
+      "url": "https://fondnauk.timepad.ru/event/4318656/",
+      "source": "registry"
+    },
+    "4322482": {
+      "date": "2026-12-14",
+      "key": "4322482",
+      "lectory": "fondnauk",
+      "status": "added",
+      "title": "Предновогодний интеллектуальный клуб Савватеев VS Дробышевский",
+      "url": "https://fondnauk.timepad.ru/event/4322482/",
+      "source": "registry"
+    },
+    "3113944": {
+      "date": "",
+      "key": "3113944",
+      "lectory": "fondnauk",
+      "status": "rejected",
+      "title": "Кандидат ленты fondnauk 3113944",
+      "url": "https://fondnauk.timepad.ru/event/3113944/",
+      "source": "registry"
+    },
+    "4258099": {
+      "key": "TP-4258099",
+      "date": "2027-01-15",
+      "status": "added",
+      "title": "Что такое фундаментальная физика",
+      "url": "https://arhe-events.timepad.ru/event/4258099/",
+      "source": "prototype"
+    },
+    "4299795": {
+      "key": "TP-4299795",
+      "date": "2026-12-11",
+      "status": "added",
+      "title": "Феномен Льва Семеновича Выготского в&nbsp;отечественной психологии",
+      "url": "https://zaobiblio.timepad.ru/event/4299795/",
+      "source": "prototype"
+    },
+    "4307067": {
+      "key": "TP-4307067",
+      "date": "2026-11-28",
+      "status": "added",
+      "title": "Мышцы-невидимки: кто на самом деле удерживает наш позвоночник?",
+      "url": "https://fondnauk.timepad.ru/event/4318656/",
+      "source": "prototype"
+    },
+    "4314755": {
+      "key": "TP-4314755",
+      "date": "2026-11-28",
+      "status": "added",
+      "title": "Дольмены. Рождение Европы. Часть вторая",
+      "url": "https://istorichka.timepad.ru/event/4314755/",
+      "source": "prototype"
+    },
+    "4282970": {
+      "key": "VS-261205-khoruzhaya-neyrofiziologiya",
+      "date": "2026-12-05",
+      "status": "added",
+      "title": "Нейрофизиология впечатлений: инструкция по сборке запоминающегося путешествия",
+      "url": "https://vsmysle.spb.ru/community/afisha/anna-khoruzhaya-neyrofiziologiya-vpechatleniy-instruktsiya-po-sborke-zapominayushchegosya-puteshestv/",
+      "source": "prototype"
+    },
+    "4249864": {
+      "key": "VS-261206-leontev-ii",
+      "date": "2026-12-06",
+      "status": "added",
+      "title": "ИИ умеет больше, чем кажется, — и&nbsp;меньше, чем обещают",
+      "url": "https://vsmysle.spb.ru/community/afisha/lektsiya-germana-leonteva-ii-umeet-bolshe-chem-kazhetsya-i-menshe-chem-obeshchayut/",
+      "source": "prototype"
+    },
+    "4281773": {
+      "key": "VS-261210-zheltova-ritual",
+      "date": "2026-12-10",
+      "status": "added",
+      "title": "Ритуал в&nbsp;человеческой культуре: взгляд археолога",
+      "url": "https://vsmysle.spb.ru/community/afisha/lektsiya-marii-zheltovoy-ritual-v-chelovecheskoy-kulture-vzglyad-arkheologa/",
+      "source": "prototype"
+    },
+    "4270128": {
+      "key": "VS-261226-tims-multivselennaya",
+      "date": "2026-12-26",
+      "status": "added",
+      "title": "Мультивселенная: 6&nbsp;способов создать другую Вселенную",
+      "url": "https://vsmysle.spb.ru/community/afisha/lektsiya-s-viktorinoy-multivselennaya-6-sposobov-sozdat-druguyu-vselennuyu/",
+      "source": "prototype"
+    }
   }
 }
