@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 r"""Сбор афиш.Timepad всех источников ВДНХ через Edge/CDP.
 
-Каждая лента открывается в Edge и листается через ?page=N, но только до
-ПЕРВОГО прошедшего события: дальше в ленте идут старые даты, и собирать их
-не нужно. Снимки DOM и карточки сохраняются в data\raw\cdp\.
+Каждая лента открывается в Edge и листается через ?page=N. Прошедшие карточки
+в НАЧАЛЕ ленты (бывает у КЦ ЗИЛ) пропускаются: они не граница обхода.
+Останавливаемся на первом прошедшем событии ПОСЛЕ блока будущих («вторая
+граница») — дальше в ленте идут старые даты. Снимки DOM и карточки
+сохраняются в data\raw\cdp\. Функции is_past()/parse_cards()/
+select_future_cards() пригодны для любой Timepad-афиши, не только ВДНХ.
 
     python -X utf8 tools\cdp_vdnh_timepad_collect.py
 """
@@ -33,6 +36,8 @@ MONTHS = {
     "декабря": 12,
 }
 TODAY = date.today()
+PAST_WORDS = ("назад", "вчера", "позавчера")
+FUTURE_WORDS = ("через ", "сегодня", "завтра", "послезавтра")
 
 
 def clean(s):
@@ -41,21 +46,29 @@ def clean(s):
 
 
 def is_past(date_text):
-    """Прошедшее событие: метка «назад» в ленте либо дата раньше сегодня."""
+    """Прошедшее событие по метке в ленте либо по дате раньше сегодняшней.
+
+    Timepad показывает относительные метки: «через 3 дня», «сегодня»,
+    «завтра» — будущее; «10 часов назад», «вчера», «позавчера» — прошедшее.
+    Метки важнее календарной даты: «24 ноября … позавчера» — прошедшее,
+    даже если до конца месяца ещё есть дни.
+    """
     low = date_text.lower()
-    if "назад" in low:
+    if any(word in low for word in PAST_WORDS):
         return True
-    m = re.search(r'\b(\d{1,2})\s+([а-яё]+)', low)
+    if any(word in low for word in FUTURE_WORDS):
+        return False
+    m = re.search(r'\b(\d{1,2})\s+([а-яё]+)(?:\s+(\d{4}))?', low)
     if not m:
         return False
     month = MONTHS.get(m.group(2))
     if not month:
         return False
     day = int(m.group(1))
-    year = TODAY.year
-    if (month, day) < (TODAY.month, TODAY.day):
-        year += 1
-    return date(year, month, day) < TODAY
+    if m.group(3):
+        return date(int(m.group(3)), month, day) < TODAY
+    # Год в ленте не указан: день/месяц раньше сегодняшнего — уже прошло.
+    return (month, day) < (TODAY.month, TODAY.day)
 
 
 def parse_cards(t):
@@ -78,6 +91,32 @@ def parse_cards(t):
             "desc": (clean(desc.group(1))[:500] if desc else ""),
         })
     return cards
+
+
+def select_future_cards(found, seen_future=False, log=None):
+    """Выбрать будущие карточки до «второй границы» ленты.
+
+    Прошедшие карточки в начале ленты пропускаются (у КЦ ЗИЛ 26.11.2026
+    первых пять карточек прошедшие, затем 15 будущих). Останавливаемся
+    на ПЕРВОМ прошедшем событии после того, как встретилось будущее, —
+    на этой «второй границе» начинается архив.
+    """
+    future = []
+    stop = False
+    say = log or (lambda message: None)
+    for card in found:
+        if card["past"]:
+            if seen_future:
+                say("  стоп: прошедшее событие после блока будущих %s — %s"
+                    % (card["id"], card["date"]))
+                stop = True
+                break
+            say("  пропущено прошедшее в начале ленты: %s — %s"
+                % (card["id"], card["date"]))
+            continue
+        seen_future = True
+        future.append(card)
+    return future, seen_future, stop
 
 
 def navigate(b, url):
@@ -112,7 +151,7 @@ def main():
         for tag, url in FEEDS:
             cards = []
             known_ids = set()
-            stop = False
+            seen_future = False
             for page in range(1, 9):
                 u = url if page == 1 else url + "?page=%d" % page
                 navigate(b, u)
@@ -126,18 +165,18 @@ def main():
                 if not found:
                     print("  стоп: страница пуста")
                     break
-                # Главное правило: при первом же прошедшем событии прекращаем
-                # обход ленты и не открываем следующие страницы.
-                for c in found:
-                    if c["past"]:
-                        print("  стоп: первое прошедшее событие %s — %s" % (
-                            c["id"], c["date"]))
-                        stop = True
-                        break
+                # Прошедшие в начале — не граница; стоп только после блока
+                # будущих. Следующую страницу открываем, если границы нет.
+                page_future, seen_future, stop = select_future_cards(
+                    found, seen_future, print)
+                for c in page_future:
                     if c["id"] not in known_ids:
                         cards.append(c)
                         known_ids.add(c["id"])
                 if stop:
+                    break
+                if not page_future and not seen_future:
+                    print("  стоп: на странице только прошедшие, будущих в ленте нет")
                     break
             all_cards[tag] = {"url": url, "count": len(cards), "cards": cards}
             print("  ИТОГО %s: %d будущих событий" % (tag, len(cards)))

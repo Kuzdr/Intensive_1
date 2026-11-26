@@ -60,7 +60,10 @@
      (урок 24.11.2026, `MM-261211-alipov-msk`);
  19. МЕХАНИКА общего Timepad-реестра: ID извлекается из ключа и URL,
      сверка идёт через префиксы лекториев, прототип с Timepad-источником
-     узнаётся по ID, прошедшие даты удаляются (урок 26.11.2026).
+     узнаётся по ID, прошедшие даты удаляются (урок 26.11.2026);
+ 20. МЕХАНИКА «второй границы» Timepad: прошедшие в начале ленты
+     пропускаются, стоп — на прошедшем после блока будущих, метки
+     «позавчера/назад» важнее календарной даты (урок 26.11.2026, КЦ ЗИЛ).
 
 Требует PyYAML (проверка YAML детерминированным парсером, а не «на глаз»).
 
@@ -1020,6 +1023,95 @@ def check_timepad_registry() -> list:
     return problems
 
 
+def check_timepad_stop_boundary() -> list:
+    """Timepad: стоп на прошедшем ПОСЛЕ блока будущих, не на первом прошедшем.
+
+    Урок 26.11.2026 (лента КЦ ЗИЛ): в начале первой страницы пять прошедших
+    карточек, затем 15 будущих, и только на второй странице — `4289673`
+    «10 часов назад». Это и есть «вторая граница»: лидирующие прошедшие
+    пропускаются, следующую страницу после них открываем.
+    """
+    problems = []
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    try:
+        import cdp_vdnh_timepad_collect as T
+    except Exception as exc:                        # noqa: BLE001
+        return ["не удалось импортировать cdp_vdnh_timepad_collect: %s" % exc]
+
+    for text, want in [
+        ("10 часов назад", True),
+        ("позавчера", True),
+        ("вчера", True),
+        ("через 12 часов", False),
+        ("через 5 дней", False),
+        ("сегодня", False),
+        ("завтра", False),
+        ("послезавтра", False),
+        ("8 ноября %d" % (T.TODAY.year - 1), True),
+    ]:
+        got = T.is_past(text)
+        if got != want:
+            problems.append("is_past(%r) = %s, ожидалось %s"
+                            % (text, got, want))
+
+    from datetime import timedelta
+    months_rev = {v: k for k, v in T.MONTHS.items()}
+    old = T.TODAY - timedelta(days=3)
+    no_year_past = "%d %s" % (old.day, months_rev[old.month])
+    if not T.is_past(no_year_past):
+        problems.append("дата без года раньше сегодняшней не признана прошедшей: %r"
+                        % no_year_past)
+    soon = T.TODAY + timedelta(days=5)
+    with_year_future = "%d %s %d" % (soon.day, months_rev[soon.month], soon.year)
+    if T.is_past(with_year_future):
+        problems.append("будущая дата с явным годом признана прошедшей: %r"
+                        % with_year_future)
+
+    def card(i, past, date_text):
+        return {"id": i, "past": past, "date": date_text}
+
+    cards = [
+        card(3943251, True, "179 дней назад"),
+        card(3886403, True, "242 дня назад"),
+        card(4277639, False, "через 12 часов"),
+        card(4277996, False, "завтра"),
+        card(4289673, True, "10 часов назад"),
+        card(4289705, False, "через 16 дней"),
+    ]
+    messages = []
+    future, seen, stop = T.select_future_cards(cards, False, messages.append)
+    if [c["id"] for c in future] != [4277639, 4277996]:
+        problems.append("вторая граница: выбраны %r, ожидалось [4277639, 4277996]"
+                        % [c["id"] for c in future])
+    if not seen or not stop:
+        problems.append("вторая граница: seen_future=%s, stop=%s (ожидалось True/True)"
+                        % (seen, stop))
+    if not any("пропущено прошедшее в начале" in m for m in messages):
+        problems.append("лидирующие прошедшие не помечены как пропущенные: %r"
+                        % messages)
+    if not any("4289673" in m for m in messages):
+        problems.append("остановка на второй границе не зафиксирована в логе: %r"
+                        % messages)
+
+    # Прошедшая карточка после будущей на следующей странице тоже граница,
+    # а будущие карточки ДО неё продолжают список.
+    page2 = [card(4301558, False, "через 22 дня"),
+             card(4309116, True, "3 дня назад")]
+    future2, seen2, stop2 = T.select_future_cards(page2, seen)
+    if [c["id"] for c in future2] != [4301558] or not seen2 or not stop2:
+        problems.append("переход между страницами: %r, seen=%s, stop=%s"
+                        % ([c["id"] for c in future2], seen2, stop2))
+
+    # Страница только из прошедших не останавливает обход сама по себе —
+    # её обрабатывает main(), проверяя `not page_future and not seen_future`.
+    only_past, seen3, stop3 = T.select_future_cards(
+        [card(1, True, "3 дня назад")], False)
+    if only_past or seen3 or stop3:
+        problems.append("страница без будущих дала future=%r, seen=%s, stop=%s"
+                        % (only_past, seen3, stop3))
+    return problems
+
+
 def check_elementy_full_date() -> list:
     """Афиша на стыке лет: полная дата с годом и приоритет этого года.
 
@@ -1216,6 +1308,13 @@ def main() -> None:
     mech = check_timepad_registry()
     print("%s механика: общий Timepad-реестр по ID" %
           ("OK  " if not mech else "FAIL"))
+    for p in mech:
+        print("     - %s" % p)
+    ok = ok and not mech
+
+    mech = check_timepad_stop_boundary()
+    print("%s механика: Timepad — стоп на второй границе (после будущих)"
+          % ("OK  " if not mech else "FAIL"))
     for p in mech:
         print("     - %s" % p)
     ok = ok and not mech
