@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-27 05:15:58",
+  "date": "2026-11-27 17:11:59",
   "protos": {
     "EXP-261206-gubin-mifologiya-nauki": "prototype.json:11213:0e82d1bc06a6|_state.json:-",
     "EXP-261213-gushinets-bacilly": "prototype.json:11747:0143016f948a|_state.json:-",
@@ -86,6 +86,7 @@
     "TP-4319010": "prototype.json:16172:65fc97c80d51|_state.json:-",
     "TP-4322482": "prototype.json:12655:691705b3a7bd|_state.json:-",
     "TP-4324448": "prototype.json:6799:3e231c6f22aa|_state.json:-",
+    "TP-4324715": "prototype.json:19907:f64f49b630d2|_state.json:-",
     "VS-261205-khoruzhaya-neyrofiziologiya": "prototype.json:15109:5f7a198d23f4|_state.json:-",
     "VS-261206-leontev-ii": "prototype.json:13180:fadf08f85bd2|_state.json:-",
     "VS-261210-zheltova-ritual": "prototype.json:12821:2fcacd6001dd|_state.json:-",
