@@ -349,6 +349,7 @@ def proto_lectorium(p):
 ORGANIZER_NAMES = {
     'spbu.ru': 'Санкт-Петербургский государственный университет',
     'festivalnauki.ru': 'Фестиваль науки NAUKA 0+',
+    'ipae.uran.ru': 'Фестиваль науки NAUKA 0+',
     'yeltsin.ru': 'Филиал Ельцин Центра в Москве',
     'your-sector-of-space.timepad.ru': 'Твой сектор космоса',
     'space-school.org': 'Твой сектор космоса',
