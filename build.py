@@ -384,6 +384,8 @@ ORGANIZER_NAMES = {
     'cryptography-museum.ru': 'Музей криптографии',
     'www.cryptography-museum.ru': 'Музей криптографии',
     'yeltsin-center.timepad.ru': 'Ельцин Центр (Екатеринбург)',
+    'trovant.ru': 'Троицкий вариант живьём',
+    'prologevent.timepad.ru': 'Троицкий вариант живьём',
 }
 # Эти сайты организатором не считаются: «Элементы» — витрина, а не организатор.
 NOT_ORGANIZER = ('elementy.ru', 'elementy.com')
