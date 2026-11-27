@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-26 07:05:05",
+  "date": "2026-11-27 05:15:58",
   "protos": {
     "EXP-261206-gubin-mifologiya-nauki": "prototype.json:11213:0e82d1bc06a6|_state.json:-",
     "EXP-261213-gushinets-bacilly": "prototype.json:11747:0143016f948a|_state.json:-",
@@ -60,7 +60,6 @@
     "TP-4270052": "prototype.json:12837:87b7da9054be|_state.json:-",
     "TP-4270095": "prototype.json:13685:8cc03e1c4644|_state.json:-",
     "TP-4277765": "prototype.json:13255:f283d1bdb77d|_state.json:-",
-    "TP-4278460": "prototype.json:9862:08dc04776a30|_state.json:-",
     "TP-4279148": "prototype.json:10414:b37de2b17120|_state.json:-",
     "TP-4283799": "prototype.json:12292:ef65a6ec8b0f|_state.json:-",
     "TP-4288577": "prototype.json:9385:80fe8ec8e81a|_state.json:-",
@@ -70,7 +69,6 @@
     "TP-4301442": "prototype.json:13856:709007b438dc|_state.json:-",
     "TP-4306009": "prototype.json:16608:41b86dc33570|_state.json:-",
     "TP-4306298": "prototype.json:10550:1f4faa634dbb|_state.json:-",
-    "TP-4306350": "prototype.json:11612:7f98631b5f9a|_state.json:-",
     "TP-4307067": "prototype.json:14580:86fc809876a3|_state.json:-",
     "TP-4312127": "prototype.json:9610:cfe995330e20|_state.json:-",
     "TP-4314268": "prototype.json:9852:d4ab2775dc7f|_state.json:-",
