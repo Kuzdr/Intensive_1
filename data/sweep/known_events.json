@@ -844,16 +844,16 @@
         {
           "key": "TP-4229521",
           "date": "2026-12-02",
-          "time": "",
+          "time": "19:00",
           "title": "Онлайн-лекция Павла Квартальнова «Зима, животные и человек»",
           "subtitle": "",
           "author": "",
           "url": "https://arhe-events.timepad.ru/event/4229521/",
           "source_status": "added",
-          "note": "Есть прототип TP-<timepad-id>",
-          "status": "added",
+          "note": "Обход 2026-11-28: та же 6-я лекция курса уже опубликована на «Элементах» 25.11.2026 (450810), прототип в архиве; новая дата 02.12 — решение пользователя ожидается (pending.json). Второй аккаунт — TP-4229529.",
+          "status": "undecided",
           "first_seen": "2026-11-22 01:40",
-          "last_seen": "2026-11-22 01:40"
+          "last_seen": "2026-11-28"
         },
         {
           "key": "TP-4279148",
@@ -1120,6 +1120,104 @@
           "status": "added",
           "first_seen": "2026-11-22 01:40",
           "last_seen": "2026-11-22 01:40"
+        },
+        {
+          "key": "TP-4330744",
+          "date": "2026-11-30",
+          "time": "16:00",
+          "title": "Онлайн-занятие для детей «Тираннозавр в лицах: биографии королей мезозоя»",
+          "subtitle": "",
+          "author": "Ярослав Попов, палеонтолог",
+          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4330744/",
+          "source_status": "candidate",
+          "note": "Обход 2026-11-28: Сомнительные; решение пользователя ожидается (см. pending.json)",
+          "status": "undecided",
+          "first_seen": "2026-11-28",
+          "last_seen": "2026-11-28"
+        },
+        {
+          "key": "TP-4329831",
+          "date": "2026-12-10",
+          "time": "19:00",
+          "title": "Лекция «Как климат менял историю человечества»",
+          "subtitle": "",
+          "author": "Рамиз Алиев, доктор химических наук, НИЦ «Курчатовский институт»",
+          "url": "https://arhe-events.timepad.ru/event/4329831/",
+          "source_status": "candidate",
+          "note": "Обход 2026-11-28: Нужно; решение пользователя ожидается (см. pending.json)",
+          "status": "undecided",
+          "first_seen": "2026-11-28",
+          "last_seen": "2026-11-28"
+        },
+        {
+          "key": "TP-4330538",
+          "date": "2026-12-11",
+          "time": "19:00",
+          "title": "Онлайн-лекция «Когда звёзды глотают чёрные дыры. Астрономические новости ноября с Кириллом Масленниковым»",
+          "subtitle": "",
+          "author": "Кирилл Масленников, кандидат физико-математических наук",
+          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4330538/",
+          "source_status": "candidate",
+          "note": "Обход 2026-11-28: Нужно; решение пользователя ожидается (см. pending.json)",
+          "status": "undecided",
+          "first_seen": "2026-11-28",
+          "last_seen": "2026-11-28"
+        },
+        {
+          "key": "TP-4330559",
+          "date": "2026-12-12",
+          "time": "17:00",
+          "title": "Лекция Ольги Арнольд «Психотерапевты с хвостами: зачем человеку домашние животные?» в рамках презентации книги «Зверотерапия»",
+          "subtitle": "",
+          "author": "Ольга Арнольд, кандидат психологических наук",
+          "url": "https://arhe-events.timepad.ru/event/4330559/",
+          "source_status": "candidate",
+          "note": "Обход 2026-11-28: Сомнительные; решение пользователя ожидается (см. pending.json)",
+          "status": "undecided",
+          "first_seen": "2026-11-28",
+          "last_seen": "2026-11-28"
+        },
+        {
+          "key": "TP-4330590",
+          "date": "2026-12-22",
+          "time": "19:00",
+          "title": "Лекция экономиста Филиппа Картаева «Что мы знаем о нерациональности, и как это можно использовать: о книге Ричарда Талера и Алекса Имаса «Проклятье победителя»»",
+          "subtitle": "",
+          "author": "Филипп Картаев, доктор экономических наук, МГУ",
+          "url": "https://arhe-events.timepad.ru/event/4330590/",
+          "source_status": "candidate",
+          "note": "Обход 2026-11-28: Сомнительные; решение пользователя ожидается (см. pending.json)",
+          "status": "undecided",
+          "first_seen": "2026-11-28",
+          "last_seen": "2026-11-28"
+        },
+        {
+          "key": "TP-4252112",
+          "date": "2026-12-01",
+          "time": "19:00",
+          "title": "Онлайн-лекция Константина Фомичёва «Псилотовые, ужовниковые и мараттиевые: эуспорангиатные линии папоротников» (второй аккаунт)",
+          "subtitle": "",
+          "author": "Константин Фомичёв",
+          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4252112/",
+          "source_status": "candidate",
+          "note": "Копия TP-4252096 в СПб-аккаунте (дата/название/автор совпадают); прототип TP-4252096 уже есть.",
+          "status": "duplicate",
+          "first_seen": "2026-11-28",
+          "last_seen": "2026-11-28"
+        },
+        {
+          "key": "TP-4229529",
+          "date": "2026-12-02",
+          "time": "19:00",
+          "title": "Онлайн-лекция Павла Квартальнова «Зима, животные и человек» (второй аккаунт)",
+          "subtitle": "",
+          "author": "Павел Квартальнов",
+          "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4229529/",
+          "source_status": "candidate",
+          "note": "Копия TP-4229521 в СПб-аккаунте; решение по самой лекции ожидается (pending.json, undecided).",
+          "status": "duplicate",
+          "first_seen": "2026-11-28",
+          "last_seen": "2026-11-28"
         }
       ],
       "name": "Центр «Архэ»"
@@ -3354,42 +3452,6 @@
     }
   },
   "timepad": {
-    "4278460": {
-      "date": "2026-11-26",
-      "key": "TP-4278460",
-      "lectory": "arhe",
-      "status": "added",
-      "title": "Онлайн-лекция «Муравьи-рабовладельцы»",
-      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4278460/",
-      "source": "registry"
-    },
-    "4306350": {
-      "date": "2026-11-26",
-      "key": "TP-4306350",
-      "lectory": "arhe",
-      "status": "added",
-      "title": "Онлайн-лекция биолога Алексея Сивухина Олива «Дерево, изменившее цивилизацию» и встреча с руководителем компании Georgian Olive",
-      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4306350/",
-      "source": "registry"
-    },
-    "4224294": {
-      "date": "2026-11-27",
-      "key": "TP-4224294",
-      "lectory": "arhe",
-      "status": "duplicate",
-      "title": "Онлайн-лекция Михаила Магида «Саудовская Аравия, ОАЭ и Катар: арабские нефтяные монархии в поисках будущего»",
-      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4224294/",
-      "source": "registry"
-    },
-    "4263746": {
-      "date": "2026-11-27",
-      "key": "TP-4263746",
-      "lectory": "arhe",
-      "status": "added",
-      "title": "Лекция со свободным входом «Сколько нужно слов, чтобы говорить, читать и писать?»",
-      "url": "https://arhe-events.timepad.ru/event/4263746/",
-      "source": "registry"
-    },
     "4301536": {
       "date": "2026-11-28",
       "key": "TP-4301536",
@@ -3439,7 +3501,7 @@
       "date": "2026-12-02",
       "key": "TP-4229521",
       "lectory": "arhe",
-      "status": "added",
+      "status": "undecided",
       "title": "Онлайн-лекция Павла Квартальнова «Зима, животные и человек»",
       "url": "https://arhe-events.timepad.ru/event/4229521/",
       "source": "registry"
@@ -3676,15 +3738,6 @@
       "status": "added",
       "title": "Межзвёздная среда: неидеальный вакуум",
       "url": "https://cosmos-vdnh.timepad.ru/event/4317015/",
-      "source": "registry"
-    },
-    "4248842": {
-      "date": "2026-11-27",
-      "key": "TP-4248842",
-      "lectory": "vdnh",
-      "status": "duplicate",
-      "title": "SOS из космоса. Истории о спасении аппаратов на орбите",
-      "url": "https://cosmos-vdnh.timepad.ru/event/4248842/",
       "source": "registry"
     },
     "4314403": {
@@ -3957,15 +4010,6 @@
       "url": "https://slovo-vdnh.timepad.ru/event/3792953/",
       "source": "registry"
     },
-    "3793266": {
-      "date": "2026-11-26",
-      "key": "TP-3793266",
-      "lectory": "vdnh",
-      "status": "rejected",
-      "title": "Ознакомительная обзорная экскурсия по Музею «Слово» для гидов-переводчиков в составе сборной группы (Присоединение к сборной группе!) Подтверждение входа и учас",
-      "url": "https://slovo-vdnh.timepad.ru/event/3793266/",
-      "source": "registry"
-    },
     "4296032": {
       "date": "2026-12-03",
       "key": "TP-4323137",
@@ -4054,15 +4098,6 @@
       "status": "added",
       "title": "Инженерные разгоны",
       "url": "https://yadro-engineer.timepad.ru/event/4317348/",
-      "source": "registry"
-    },
-    "4269864": {
-      "date": "2026-11-27",
-      "key": "TP-4269864",
-      "lectory": "planetalib",
-      "status": "added",
-      "title": "Современный феномен романтических отношений между ИИ и человеком",
-      "url": "https://planetalib.timepad.ru/event/4269864/",
       "source": "registry"
     },
     "4239652": {
@@ -4253,6 +4288,77 @@
       "status": "added",
       "title": "Мультивселенная: 6&nbsp;способов создать другую Вселенную",
       "url": "https://vsmysle.spb.ru/community/afisha/lektsiya-s-viktorinoy-multivselennaya-6-sposobov-sozdat-druguyu-vselennuyu/",
+      "source": "prototype"
+    },
+    "4330744": {
+      "date": "2026-11-30",
+      "key": "TP-4330744",
+      "lectory": "arhe",
+      "status": "undecided",
+      "title": "Онлайн-занятие для детей «Тираннозавр в лицах: биографии королей мезозоя»",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4330744/",
+      "source": "registry"
+    },
+    "4329831": {
+      "date": "2026-12-10",
+      "key": "TP-4329831",
+      "lectory": "arhe",
+      "status": "undecided",
+      "title": "Лекция «Как климат менял историю человечества»",
+      "url": "https://arhe-events.timepad.ru/event/4329831/",
+      "source": "registry"
+    },
+    "4330538": {
+      "date": "2026-12-11",
+      "key": "TP-4330538",
+      "lectory": "arhe",
+      "status": "undecided",
+      "title": "Онлайн-лекция «Когда звёзды глотают чёрные дыры. Астрономические новости ноября с Кириллом Масленниковым»",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4330538/",
+      "source": "registry"
+    },
+    "4330559": {
+      "date": "2026-12-12",
+      "key": "TP-4330559",
+      "lectory": "arhe",
+      "status": "undecided",
+      "title": "Лекция Ольги Арнольд «Психотерапевты с хвостами: зачем человеку домашние животные?» в рамках презентации книги «Зверотерапия»",
+      "url": "https://arhe-events.timepad.ru/event/4330559/",
+      "source": "registry"
+    },
+    "4330590": {
+      "date": "2026-12-22",
+      "key": "TP-4330590",
+      "lectory": "arhe",
+      "status": "undecided",
+      "title": "Лекция экономиста Филиппа Картаева «Что мы знаем о нерациональности, и как это можно использовать: о книге Ричарда Талера и Алекса Имаса «Проклятье победителя»»",
+      "url": "https://arhe-events.timepad.ru/event/4330590/",
+      "source": "registry"
+    },
+    "4252112": {
+      "date": "2026-12-01",
+      "key": "TP-4252112",
+      "lectory": "arhe",
+      "status": "duplicate",
+      "title": "Онлайн-лекция Константина Фомичёва «Псилотовые, ужовниковые и мараттиевые: эуспорангиатные линии папоротников» (второй аккаунт)",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4252112/",
+      "source": "registry"
+    },
+    "4229529": {
+      "date": "2026-12-02",
+      "key": "TP-4229529",
+      "lectory": "arhe",
+      "status": "duplicate",
+      "title": "Онлайн-лекция Павла Квартальнова «Зима, животные и человек» (второй аккаунт)",
+      "url": "https://tsentr-arhe-v-sankt-peter.timepad.ru/event/4229529/",
+      "source": "registry"
+    },
+    "4324715": {
+      "key": "TP-4324715",
+      "date": "2027-01-30",
+      "status": "added",
+      "title": "Как расширялась, расширяется и&nbsp;будет расширяться Вселенная",
+      "url": "https://trovant.ru/events/",
       "source": "prototype"
     }
   }
