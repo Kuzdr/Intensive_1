@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-28 07:34:50",
+  "date": "2026-11-28 07:59:29",
   "protos": {
     "0+-261128-Bessonova": "prototype.json:13292:e48d484f917c|_state.json:-",
     "0+-261128-Maslintsyna": "prototype.json:12628:eec51f4db406|_state.json:-",
@@ -89,6 +89,7 @@
     "TP-4329831": "prototype.json:14242:1003b3b82896|_state.json:-",
     "TP-4330538": "prototype.json:11789:493a9d40518c|_state.json:-",
     "TP-4330559": "prototype.json:15209:00d30ce9e9d8|_state.json:-",
+    "TP-4330590": "prototype.json:15993:97a44bada12b|_state.json:-",
     "VS-261205-khoruzhaya-neyrofiziologiya": "prototype.json:15109:5f7a198d23f4|_state.json:-",
     "VS-261206-leontev-ii": "prototype.json:13180:fadf08f85bd2|_state.json:-",
     "VS-261210-zheltova-ritual": "prototype.json:12821:2fcacd6001dd|_state.json:-",
